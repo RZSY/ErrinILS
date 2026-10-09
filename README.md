@@ -9,10 +9,8 @@
   School library system  -  Version 1.2.2
 
   GitHub:  https://github.com/RZSY/ErrinILS
-
-==============================================================
+  
   DEVICE REQUIREMENTS
-==============================================================
 
   Operating system   Windows 7, 8, 8.1, 10 or 11 (32-bit or 64-bit)
 
@@ -36,9 +34,7 @@
                      Printer - for barcode labels, spine labels and
                      library cards.
 
-==============================================================
   INSTALLATION GUIDE
-==============================================================
 
   1. Download  ErrinILS-Setup-1.2.2.exe  and double-click it.
 
