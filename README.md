@@ -10,8 +10,9 @@
 
   GitHub:  https://github.com/RZSY/ErrinILS
   
+  ```text
   DEVICE REQUIREMENTS
-
+  ```
   Operating system   Windows 7, 8, 8.1, 10 or 11 (32-bit or 64-bit)
 
   Required software  Microsoft .NET Framework 4.0 or newer
@@ -33,9 +34,9 @@
                      keyboard).
                      Printer - for barcode labels, spine labels and
                      library cards.
-
+  ```text
   INSTALLATION GUIDE
-
+  ```
   1. Download  ErrinILS-Setup-1.2.2.exe  and double-click it.
 
   2. Windows asks "Do you want to allow this app to make changes?"
