@@ -37,14 +37,14 @@ namespace Errin
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
             db = store.Load(); bool fresh = db == null; if (fresh) db = Lib.Seed();
             lib = new Lib(db); lib.FixItems(); if (db.Set == null) db.Set = new Settings(); lib.Purge();
-            BuildFrame(); Save(); LoadCfg(); ApplyZ(); Render();
+            BuildFrame(); Save(); LoadCfg(); ApplyZ(); ApplyWeb(); Render();
             DragEnter += (s, e) => { if (e.Data.GetDataPresent(DataFormats.FileDrop)) e.Effect = DragDropEffects.Copy; };
             DragDrop += (s, e) =>
             {
                 var f = e.Data.GetData(DataFormats.FileDrop) as string[];
                 if (f != null && f.Length > 0 && Regex.IsMatch(f[0], @"\.(mrc|marc|dat|xml|mrk|txt)$", RegexOptions.IgnoreCase)) { Go("cat"); ImportFile(f[0]); }
             };
-            FormClosing += (s, e) => { if (zsrv != null) zsrv.Stop(); };
+            FormClosing += (s, e) => { if (zsrv != null) zsrv.Stop(); if (wsrv != null) wsrv.Stop(); };
         }
 
         void BuildFrame()
@@ -379,11 +379,238 @@ namespace Errin
             var pf = Ui.Flow(); pf.Controls.Add(Ui.Field("Current password", pc, 260)); pf.Controls.Add(Ui.Field("New password", pn, 260)); pf.Controls.Add(Ui.Field("Type the new password again", pn2, 260));
             var pwBody = Vbox(para("The password protects Settings, deleting records and restoring backups. Use at least 4 characters and keep it somewhere safe.", 44), pf,
                 Ui.Btn("Change password", 0, (a, b) => { if (ChangePw(pc.Text, pn.Text, pn2.Text)) { pc.Text = ""; pn.Text = ""; pn2.Text = ""; } }));
+            var wE = Ui.Combo(150, "Off", "On"); var wP = Ui.Num(110, 1, 65535, wc.port); var wB = Ui.Combo(170, "Other computers", "This computer only");
+            wE.SelectedIndex = wc.enabled ? 1 : 0; wB.SelectedIndex = wc.bind == "local" ? 1 : 0;
+            var ws = new Label { UseMnemonic = false, AutoSize = false, Size = new Size(Ui.S(820), Ui.S(54)), ForeColor = Th.Mut, Margin = Ui.S(new Padding(0, 10, 0, 0)) };
+            wStatusLabel = ws; WebShow();
+            var wf = Ui.Flow(); wf.Controls.Add(Ui.Field("Server", wE, 160)); wf.Controls.Add(Ui.Field("Port", wP, 120)); wf.Controls.Add(Ui.Field("Reachable from", wB, 190));
+            wGrid = Ui.Grid(); wGrid.Height = Ui.S(130); wGrid.Width = Ui.S(820); WebRefreshGrid();
+            var wBtns = Ui.Flow(false);
+            wBtns.Controls.Add(Ui.Btn("+ Pair new device", 0, (a, b) => PairNewDeviceDialog()));
+            wBtns.Controls.Add(Ui.Btn("Remove selected", 1, (a, b) => WebRemoveSelected()));
+            var webBody = Vbox(
+                para("Allows phones, tablets, iPads, and other computers to access ErrinILS over the network using secure device pairing. Paired devices have full circulation, catalog, and student access.", 44),
+                wf,
+                Ui.Btn("Apply", 0, (a, b) => WebApply(wE.SelectedIndex == 1, (int)wP.Value, wB.SelectedIndex == 1 ? "local" : "network")),
+                ws,
+                new Label { UseMnemonic = false, Text = "Paired Devices", Font = Th.FT, AutoSize = true, ForeColor = Th.Ink, Margin = Ui.S(new Padding(0, 10, 0, 4)) },
+                wGrid,
+                wBtns,
+                Ui.Lbl("Clicking 'Pair new device' shows a code. Type it on the other device's screen to connect it.", true));
             return ScrollPage(Ui.Heading("Settings", "Policies and data management"), Ui.Card("Policies", polBody), Ui.Card("Admin password", pwBody),
+                Ui.Card("Remote Access", webBody),
                 Ui.Card("Data retention", para("Student records (with their loan and fine history) are deleted " + Lib.RET_YEARS + " years after their last activity, provided they have no unreturned items or unpaid fines. This happens automatically when ErrinILS starts.", 44)),
                 Ui.Card("Switching systems?", Vbox(para("Export every catalogued item as MARC 21, MARCXML, MarcEdit text, JSON and CSV to move to another ILS. To bring records in, use Import MARC on the Catalog page.", 44), Ui.Btn("Export catalog", 0, (a, b) => ExportDialog()))),
                 Ui.Card("z39.50 server", zBody),
                 Ui.Card("Local database", Vbox(para("Every change is written to the database file on this computer the instant you make it. No save button needed.", 24), Ui.Lbl("Database file: " + store.DataFile, true))));
+        }
+
+        /* ---------- Remote Access (Web server settings + lifecycle) ---------- */
+        class WebCfg { public bool enabled; public int port = 8585; public string bind = "network"; public List<Web.Device> devices = new List<Web.Device>(); }
+        WebCfg wc = new WebCfg(); Web.Server wsrv; string werr = ""; Label wStatusLabel; DataGridView wGrid;
+        void ApplyWeb()
+        {
+            if (wsrv != null) { wsrv.Stop(); wsrv = null; }
+            werr = ""; if (!wc.enabled) return;
+            try
+            {
+                wsrv = Web.StartServer(wc.port, wc.bind == "local", wc.devices,
+                    getDb: () => db,
+                    getLib: () => lib,
+                    saveDb: Save,
+                    runOnUi: act =>
+                    {
+                        if (InvokeRequired) Invoke(act);
+                        else act();
+                    },
+                    onRemoteWrite: msg =>
+                    {
+                        Commit(msg != null ? "Remote: " + msg : null);
+                    },
+                    onDevicePaired: dev =>
+                    {
+                        SaveCfg();
+                        if (InvokeRequired) BeginInvoke(new Action(() => { WebRefreshGrid(); Toast("Device paired: " + dev.name); }));
+                        else { WebRefreshGrid(); Toast("Device paired: " + dev.name); }
+                    },
+                    log: null);
+            }
+            catch (SocketException e)
+            {
+                werr = e.SocketErrorCode == SocketError.AddressAlreadyInUse ? "Port " + wc.port + " is already in use by another program. Choose a different port."
+                    : e.SocketErrorCode == SocketError.AccessDenied ? "Windows did not allow port " + wc.port + ". Choose a different port." : e.Message;
+            }
+            catch (Exception e) { werr = e.Message; }
+        }
+        void WebApply(bool on, int port, string bind)
+        {
+            wc.enabled = on; wc.port = port; wc.bind = bind; SaveCfg(); ApplyWeb(); WebShow();
+            Toast(werr != "" ? werr : wsrv != null ? "Remote Access server is running" : "Remote Access server is off");
+        }
+        void WebShow()
+        {
+            if (wStatusLabel == null || wStatusLabel.IsDisposed) return;
+            if (werr != "") { wStatusLabel.ForeColor = Th.Red; wStatusLabel.Text = "Problem: " + werr; return; }
+            if (wsrv != null)
+            {
+                var addrs = wc.bind == "local" ? new List<string> { "127.0.0.1" } : Z.LanAddresses().Concat(new[] { "127.0.0.1" }).ToList();
+                wStatusLabel.ForeColor = Th.Yel;
+                wStatusLabel.Text = "\u25CF Running on http://" + (addrs.Count > 0 ? addrs[0] : "127.0.0.1") + ":" + wc.port +
+                    (addrs.Count > 1 ? "  (also http://" + string.Join(":" + wc.port + ", http://", addrs.Skip(1).ToArray()) + ":" + wc.port + ")" : "") +
+                    "\nShare this address with devices on the school network or remote devices.";
+            }
+            else { wStatusLabel.ForeColor = Th.Mut; wStatusLabel.Text = "\u25CB Off. Remote access is disabled."; }
+        }
+        void WebRefreshGrid()
+        {
+            if (wGrid == null || wGrid.IsDisposed) return;
+            string[] headers = new[] { "Name", "Paired", "Last seen" };
+            var rows = new List<string[]>();
+            var tags = new List<object>();
+            foreach (var d in wc.devices)
+            {
+                rows.Add(new[] { d.name, d.paired, d.seen });
+                tags.Add(d);
+            }
+            Ui.Fill(wGrid, headers, rows, tags, "No devices paired yet. Click '+ Pair new device' to connect one.");
+        }
+        void WebRemoveSelected()
+        {
+            if (wGrid == null || wGrid.CurrentRow == null) { Toast("Select a device to remove"); return; }
+            var dev = wGrid.CurrentRow.Tag as Web.Device;
+            if (dev == null) return;
+            if (Ui.Confirm(this, "Disconnect and revoke access for '" + dev.name + "'?\nThis device will no longer be able to access the library system."))
+            {
+                wc.devices.Remove(dev);
+                SaveCfg();
+                WebRefreshGrid();
+                Toast("Device revoked: " + dev.name);
+            }
+        }
+        void PairNewDeviceDialog()
+        {
+            if (wsrv == null || !wc.enabled)
+            {
+                Toast("Please turn Remote Access ON and click Apply first.");
+                return;
+            }
+
+            var rng = new Random();
+            int codeNum = rng.Next(100000, 1000000);
+            string codeFormatted = string.Format("{0:D3} {1:D3}", codeNum / 1000, codeNum % 1000);
+            string codeClean = codeNum.ToString();
+
+            wsrv.StartPairing(codeClean, 300);
+
+            var addrs = wc.bind == "local" ? new List<string> { "127.0.0.1" } : Z.LanAddresses().Concat(new[] { "127.0.0.1" }).ToList();
+            string primaryUrl = "http://" + (addrs.Count > 0 ? addrs[0] : "127.0.0.1") + ":" + wc.port;
+
+            using (var d = Ui.Dlg("Pair a device", 420, 370))
+            {
+                var fl = new FlowLayoutPanel
+                {
+                    Dock = DockStyle.Fill,
+                    FlowDirection = FlowDirection.TopDown,
+                    WrapContents = false,
+                    AutoScroll = true,
+                    Padding = Ui.S(new Padding(24, 20, 24, 20)),
+                    BackColor = Th.Card
+                };
+
+                fl.Controls.Add(new Label
+                {
+                    UseMnemonic = false,
+                    Text = "On the other device, open:",
+                    Font = Th.F,
+                    ForeColor = Th.Mut,
+                    AutoSize = true
+                });
+
+                fl.Controls.Add(new Label
+                {
+                    UseMnemonic = false,
+                    Text = primaryUrl,
+                    Font = Th.FT,
+                    ForeColor = Th.Ink,
+                    AutoSize = true,
+                    Margin = Ui.S(new Padding(0, 4, 0, 14))
+                });
+
+                fl.Controls.Add(new Label
+                {
+                    UseMnemonic = false,
+                    Text = "Then enter this code:",
+                    Font = Th.F,
+                    ForeColor = Th.Mut,
+                    AutoSize = true
+                });
+
+                var codeBox = new Label
+                {
+                    UseMnemonic = false,
+                    Text = codeFormatted,
+                    Font = Th.FBig,
+                    ForeColor = Th.Yel,
+                    BackColor = Th.Bg,
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    Size = new Size(Ui.S(360), Ui.S(56)),
+                    Margin = Ui.S(new Padding(0, 6, 0, 12))
+                };
+                fl.Controls.Add(codeBox);
+
+                int timeLeft = 300;
+                var expLbl = new Label
+                {
+                    UseMnemonic = false,
+                    Text = "Code expires in 5:00",
+                    Font = Th.FSub,
+                    ForeColor = Th.Mut,
+                    AutoSize = true,
+                    Margin = Ui.S(new Padding(0, 0, 0, 16))
+                };
+                fl.Controls.Add(expLbl);
+
+                var cancelBtn = Ui.Btn("Cancel", 1, (s, e) => d.Close());
+                fl.Controls.Add(cancelBtn);
+
+                d.Controls.Add(fl);
+
+                var timer = new Timer { Interval = 1000 };
+                timer.Tick += (s, e) =>
+                {
+                    timeLeft--;
+                    if (timeLeft <= 0)
+                    {
+                        timer.Stop();
+                        wsrv.CancelPairing();
+                        expLbl.Text = "Code expired. Close and click 'Pair new device' again.";
+                        expLbl.ForeColor = Th.Red;
+                    }
+                    else
+                    {
+                        expLbl.Text = string.Format("Code expires in {0}:{1:D2}", timeLeft / 60, timeLeft % 60);
+                        if (wsrv.LastPairedDevice != null)
+                        {
+                            timer.Stop();
+                            codeBox.ForeColor = Th.Green;
+                            codeBox.Text = "\u2713 Connected!";
+                            expLbl.Text = wsrv.LastPairedDevice.name + " paired successfully.";
+                            expLbl.ForeColor = Th.Green;
+                            WebRefreshGrid();
+                        }
+                    }
+                };
+                timer.Start();
+
+                d.FormClosing += (s, e) =>
+                {
+                    timer.Stop();
+                    timer.Dispose();
+                    wsrv.CancelPairing();
+                };
+
+                d.ShowDialog(this);
+            }
         }
 
         /* ---------- Z39.50 server (settings + lifecycle) ---------- */
@@ -397,6 +624,17 @@ namespace Errin
                 if (z.ContainsKey("enabled")) zc.enabled = z["enabled"] is bool && (bool)z["enabled"];
                 if (z.ContainsKey("port")) zc.port = (int)Json.Num(z, "port"); if (z.ContainsKey("db")) zc.db = Json.Str(z, "db"); if (z.ContainsKey("bind")) zc.bind = Json.Str(z, "bind") == "local" ? "local" : "network";
                 var pw = Json.Obj(root, "pw"); pwSalt = Json.Str(pw, "s"); pwHash = Json.Str(pw, "h"); pwIter = pw.ContainsKey("i") ? (int)Json.Num(pw, "i") : Auth.Iterations;
+
+                var w = Json.Obj(root, "web");
+                if (w.ContainsKey("enabled")) wc.enabled = w["enabled"] is bool && (bool)w["enabled"];
+                if (w.ContainsKey("port")) wc.port = (int)Json.Num(w, "port");
+                if (w.ContainsKey("bind")) wc.bind = Json.Str(w, "bind") == "local" ? "local" : "network";
+                wc.devices = new List<Web.Device>();
+                foreach (var dObj in Json.Arr(w, "devices"))
+                {
+                    var d = dObj as Dictionary<string, object>;
+                    if (d != null) wc.devices.Add(Web.Device.FromJ(d));
+                }
             }
             catch { }
         }
@@ -407,6 +645,17 @@ namespace Errin
                 Directory.CreateDirectory(store.Dir);
                 var cfg = new Dictionary<string, object> { { "z", new Dictionary<string, object> { { "enabled", zc.enabled }, { "port", (double)zc.port }, { "db", zc.db }, { "bind", zc.bind } } } };
                 if (pwHash != "") cfg["pw"] = new Dictionary<string, object> { { "s", pwSalt }, { "h", pwHash }, { "i", (double)pwIter } };
+
+                var wDevs = new List<object>();
+                foreach (var d in wc.devices) wDevs.Add(d.ToJ());
+                cfg["web"] = new Dictionary<string, object>
+                {
+                    { "enabled", wc.enabled },
+                    { "port", (double)wc.port },
+                    { "bind", wc.bind },
+                    { "devices", wDevs }
+                };
+
                 File.WriteAllText(store.ConfigFile, Json.Write(cfg));
             }
             catch { }

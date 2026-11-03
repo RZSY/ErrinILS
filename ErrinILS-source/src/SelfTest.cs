@@ -154,6 +154,116 @@ static class SelfTest
         var rb = Z.Search(new Z.SearchOpts { Host = "127.0.0.1", Port = port + 1, Db = "errin", Field = "title", Term = "bulk", Max = 50 });
         Ok(rb.Count == 60 && rb.Items.Count == 50, "fetch 50 of 60 across several Present calls (" + rb.Items.Count + ")");
         s2.Stop();
+
+        // Web / Remote Access tests
+        int wport = 28585;
+        var wdb = Lib.Seed(); var wlib = new Lib(wdb);
+        var wdevs = new List<Web.Device>();
+        var wsrv = Web.StartServer(wport, true, wdevs, () => wdb, () => wlib, () => { }, act => act(), null, null, null);
+
+        // 1. Device serialization roundtrip
+        var devTest = new Web.Device { token = "tok123", name = "Test iPad", paired = "2026-11-03", seen = "2026-11-03 12:00" };
+        var devRound = Web.Device.FromJ(devTest.ToJ());
+        Ok(devRound.token == "tok123" && devRound.name == "Test iPad" && devRound.seen == "2026-11-03 12:00", "Device serialization roundtrip");
+
+        // 2. GET / serves HTML
+        using (var wc = new System.Net.WebClient())
+        {
+            string html = wc.DownloadString("http://127.0.0.1:" + wport + "/");
+            Ok(html.Contains("<!DOCTYPE html>") && html.Contains("errin."), "GET / serves embedded SPA");
+        }
+
+        // 3. Unauthenticated request to /api/dashboard returns 401
+        try
+        {
+            using (var wc = new System.Net.WebClient())
+            {
+                wc.DownloadString("http://127.0.0.1:" + wport + "/api/dashboard");
+                Ok(false, "Unauthenticated request should have failed");
+            }
+        }
+        catch (System.Net.WebException wex)
+        {
+            var resp = wex.Response as System.Net.HttpWebResponse;
+            Ok(resp != null && resp.StatusCode == System.Net.HttpStatusCode.Unauthorized, "Unauthenticated request rejected with 401");
+        }
+
+        // 4. Pairing: start pairing code
+        wsrv.StartPairing("847291", 300);
+
+        // Wrong code fails
+        using (var wc = new System.Net.WebClient())
+        {
+            try
+            {
+                wc.Headers[System.Net.HttpRequestHeader.ContentType] = "application/json";
+                wc.UploadString("http://127.0.0.1:" + wport + "/api/pair", "{\"code\":\"000000\",\"name\":\"Hacker\"}");
+                Ok(false, "Wrong pairing code should have failed");
+            }
+            catch (System.Net.WebException wex)
+            {
+                var resp = wex.Response as System.Net.HttpWebResponse;
+                Ok(resp != null && resp.StatusCode == System.Net.HttpStatusCode.BadRequest, "Wrong code returns 400 Bad Request");
+            }
+        }
+
+        // Correct code succeeds and returns token
+        string issuedToken = "";
+        using (var wc = new System.Net.WebClient())
+        {
+            wc.Headers[System.Net.HttpRequestHeader.ContentType] = "application/json";
+            string pairJson = wc.UploadString("http://127.0.0.1:" + wport + "/api/pair", "{\"code\":\"847 291\",\"name\":\"Library Counter 2\"}");
+            var pairObj = Json.Parse(pairJson) as Dictionary<string, object>;
+            Ok(pairObj != null && (bool)pairObj["ok"], "Pairing succeeded with code format '847 291'");
+            issuedToken = Json.Str(pairObj, "token");
+            Ok(issuedToken.Length == 64, "Issued token is 32 bytes hex (64 chars)");
+            Ok(wdevs.Count == 1 && wdevs[0].name == "Library Counter 2", "Device added to authorized devices list");
+        }
+
+        // 5. Authenticated GET /api/dashboard with X-Errin-Token
+        using (var wc = new System.Net.WebClient())
+        {
+            wc.Headers["X-Errin-Token"] = issuedToken;
+            string dashJson = wc.DownloadString("http://127.0.0.1:" + wport + "/api/dashboard");
+            var dashObj = Json.Parse(dashJson) as Dictionary<string, object>;
+            Ok(dashObj != null && (bool)dashObj["ok"] && Json.Num(dashObj, "activeTitles") > 0, "Dashboard data retrieved with token");
+        }
+
+        // 6. Authenticated checkout and return via API
+        using (var wc = new System.Net.WebClient())
+        {
+            wc.Headers["X-Errin-Token"] = issuedToken;
+            wc.Headers[System.Net.HttpRequestHeader.ContentType] = "application/json";
+            string coJson = wc.UploadString("http://127.0.0.1:" + wport + "/api/checkout", "{\"patron\":\"" + wdb.Patrons[0].id + "\",\"barcode\":\"B1001\"}");
+            var coObj = Json.Parse(coJson) as Dictionary<string, object>;
+            Ok(coObj != null && (bool)coObj["ok"], "Remote checkout completed");
+            Ok(wlib.OpenLoan(wlib.ItemByBarcode("B1001").id) != null, "Loan recorded in Db");
+
+            // Return item
+            string retJson = wc.UploadString("http://127.0.0.1:" + wport + "/api/return", "{\"barcode\":\"B1001\"}");
+            var retObj = Json.Parse(retJson) as Dictionary<string, object>;
+            Ok(retObj != null && (bool)retObj["ok"], "Remote return completed");
+            Ok(wlib.OpenLoan(wlib.ItemByBarcode("B1001").id) == null, "Loan closed in Db");
+        }
+
+        // 7. Revoke token
+        wdevs.Clear();
+        using (var wc = new System.Net.WebClient())
+        {
+            wc.Headers["X-Errin-Token"] = issuedToken;
+            try
+            {
+                wc.DownloadString("http://127.0.0.1:" + wport + "/api/dashboard");
+                Ok(false, "Revoked token should be rejected");
+            }
+            catch (System.Net.WebException wex)
+            {
+                var resp = wex.Response as System.Net.HttpWebResponse;
+                Ok(resp != null && resp.StatusCode == System.Net.HttpStatusCode.Unauthorized, "Revoked token rejected with 401");
+            }
+        }
+
+        wsrv.Stop();
         Console.WriteLine("\nall " + n + " checks passed");
         return 0;
     }

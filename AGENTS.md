@@ -51,6 +51,7 @@ d:/errin/
     │   ├── SelfTest.cs           # Automated self-tests (MARC, Z39.50, circulation rules, JSON)
     │   ├── Simple.cs             # Simplified student self-checkout / checkin kiosk mode
     │   ├── Ui.cs                 # UI controls, styles, layout, and rendering helpers
+    │   ├── Web.cs                # Remote access HTTP server, device pairing, and web SPA
     │   ├── Z3950.cs              # ASN.1 BER encoding/decoding and Z39.50 v3 client & server
     │   └── Zip.cs                # Pure C# ZIP archive writer (DEFLATE) for backups
     └── tools/                    # Diagnostics & interop tools
@@ -91,6 +92,11 @@ d:/errin/
   4. HathiTrust (HTTP JSON / MARCXML)
   5. K10plus German union catalogue (SRU MARCXML)
 
+### 3.5 Remote Access & Device Pairing (`Web.cs`)
+- **Device Pairing Model**: Zero-password access control using temporary 6-digit pairing codes (5-minute expiry, 3-attempt lockout) and persistent 32-byte cryptographically secure device tokens (`X-Errin-Token`).
+- **Multi-Network / Multi-Wi-Fi Support**: Pure C# HTTP server (`TcpListener`) binding to `0.0.0.0` (all interfaces: Ethernet, Wi-Fi 2.4/5GHz, VLANs, VPNs, and Tailscale mesh). Allows devices on different school Wi-Fi SSIDs/APs, subnets, or remote networks (via Tailscale or Cloudflare Tunnel) to connect seamlessly.
+- **Single Page App (SPA)**: Embedded mobile-friendly web replica covering Dashboard, Circulation, Catalog, Students, Fines, and Reports with instant barcode scanner support.
+
 ### 3.4 User Interface & High-DPI Sharpness (`MainForm.cs`, `Simple.cs`, `Ui.cs`, `Dialogs.cs`)
 - Standard WinForms application with custom styling and flat controls in `Ui.cs`.
 - **High-DPI Sharpness**: Native PerMonitorV2 awareness via `Program.cs` and `app.manifest`. Prevents blurry DWM bitmap scaling on modern displays (125%, 150%, 200%), rendering razor-sharp ClearType text and proportional layouts without extra GPU/CPU consumption.
@@ -130,6 +136,7 @@ C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe
     ErrinILS-source\src\AssemblyInfo.cs `
     ErrinILS-source\src\Ui.cs `
     ErrinILS-source\src\Simple.cs `
+    ErrinILS-source\src\Web.cs `
     ErrinILS-source\src\MainForm.cs `
     ErrinILS-source\src\Dialogs.cs `
     ErrinILS-source\src\Program.cs
@@ -148,6 +155,7 @@ C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe
     ErrinILS-source\src\Lookup.cs `
     ErrinILS-source\src\Zip.cs `
     ErrinILS-source\src\Auth.cs `
+    ErrinILS-source\src\Web.cs `
     ErrinILS-source\src\SelfTest.cs
 
 .\selftest.exe
