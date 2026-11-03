@@ -412,6 +412,7 @@ namespace Errin
         {
             if (wsrv != null) { wsrv.Stop(); wsrv = null; }
             werr = ""; if (!wc.enabled) return;
+            NetHelper.EnsureFirewallRule();
             try
             {
                 wsrv = Web.StartServer(wc.port, wc.bind == "local", wc.devices,
@@ -502,7 +503,8 @@ namespace Errin
 
             wsrv.StartPairing(codeClean, 300);
 
-            var addrs = wc.bind == "local" ? new List<string> { "127.0.0.1" } : Z.LanAddresses().Concat(new[] { "127.0.0.1" }).ToList();
+            var ips = NetHelper.GetReachableIpAddresses();
+            var addrs = wc.bind == "local" ? new List<string> { "127.0.0.1" } : (ips.Count > 0 ? ips : new List<string> { "127.0.0.1" });
             string primaryUrl = "http://" + (addrs.Count > 0 ? addrs[0] : "127.0.0.1") + ":" + wc.port;
 
             using (var d = Ui.Dlg("Pair a device", 420, 370))

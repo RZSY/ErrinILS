@@ -46,7 +46,8 @@ d:/errin/
     │   ├── Lookup.cs             # Multi-source ISBN copy-cataloguing (LOC, OpenLib, Google, Hathi, K10plus)
     │   ├── MainForm.cs           # Primary WinForms interface (Circulation, Catalog, Patrons, Reports)
     │   ├── Marc.cs               # MARC21 parser & generator (ISO 2709 .mrc, MARCXML, MRK, MARC-8)
-    │   ├── Models.cs             # Data models (Item, Patron, Loan, Hold, Fine, Db, Settings)
+    │   ├── Models.cs
+    │   ├── NetHelper.cs          # Network interface discovery, hotspot IP filtering, firewall integration             # Data models (Item, Patron, Loan, Hold, Fine, Db, Settings)
     │   ├── Program.cs            # Single-instance mutex & application entry point
     │   ├── SelfTest.cs           # Automated self-tests (MARC, Z39.50, circulation rules, JSON)
     │   ├── Simple.cs             # Simplified student self-checkout / checkin kiosk mode
@@ -132,7 +133,8 @@ C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe
     ErrinILS-source\src\Lib.cs `
     ErrinILS-source\src\Lookup.cs `
     ErrinILS-source\src\Zip.cs `
-    ErrinILS-source\src\Auth.cs `
+    ErrinILS-source\src\Auth.cs 
+    ErrinILS-source\src\NetHelper.cs `
     ErrinILS-source\src\AssemblyInfo.cs `
     ErrinILS-source\src\Ui.cs `
     ErrinILS-source\src\Simple.cs `
@@ -154,7 +156,8 @@ C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe
     ErrinILS-source\src\Lib.cs `
     ErrinILS-source\src\Lookup.cs `
     ErrinILS-source\src\Zip.cs `
-    ErrinILS-source\src\Auth.cs `
+    ErrinILS-source\src\Auth.cs 
+    ErrinILS-source\src\NetHelper.cs `
     ErrinILS-source\src\Web.cs `
     ErrinILS-source\src\SelfTest.cs
 
