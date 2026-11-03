@@ -52,6 +52,7 @@ namespace Errin
                 case "Student not found": return "I can't find that card. Please ask the librarian to help.";
                 case "Item not found": return "I don't know this book. Please ask the librarian.";
                 case "Item is already checked out": return "Someone else has this book right now.";
+                case "Item has been weeded and withdrawn from circulation": return "This book has been retired from the library. Please choose another.";
                 case "Blocked: student has overdue items": return "You have a late book. Please bring it back first.";
                 case "Loan limit reached": return "You have the most books you can borrow. Bring one back first.";
                 case "Reserved for another student": return "This book is saved for a friend.";
@@ -70,11 +71,27 @@ namespace Errin
             return D.Loans.Where(l => l.pid == pid && Overdue(l)).Sum(l => Diff(Today(), l.due) * D.Set.rate) + Unpaid(pid);
         }
 
+        /* ---- weeding helpers ---- */
+        public bool IsWeeded(Item i) { return i != null && !string.IsNullOrEmpty(i.weeded); }
+        public void Weed(Item i, string reason)
+        {
+            if (i == null) return;
+            i.weeded = Today();
+            i.weed_reason = (reason ?? "Weeded").Trim();
+        }
+        public void Unweed(Item i)
+        {
+            if (i == null) return;
+            i.weeded = "";
+            i.weed_reason = "";
+        }
+
         /* ---- circulation: each returns null on success or an error message; msg carries the success text ---- */
         public string Checkout(string pid, string bc, out string msg)
         {
             msg = null; var p = PatronById(pid); var i = ItemByBarcode(bc);
             if (p == null) return "Student not found"; if (i == null) return "Item not found";
+            if (IsWeeded(i)) return "Item has been weeded and withdrawn from circulation";
             if (OpenLoan(i.id) != null) return "Item is already checked out";
             double un = Unpaid(p.id); if (un >= D.Set.block) return "Blocked: unpaid fines " + Money(un);
             if (D.Loans.Any(l => l.pid == p.id && Overdue(l))) return "Blocked: student has overdue items";
@@ -113,6 +130,7 @@ namespace Errin
         {
             msg = null; var p = PatronById(pid); var i = ItemByBarcode(bc);
             if (p == null || i == null) return "Student or item not found";
+            if (IsWeeded(i)) return "Cannot place hold on a weeded item";
             if (OpenLoan(i.id) == null) return "Item is available. Check it out instead";
             if (D.Holds.Any(h => h.iid == i.id && h.pid == p.id && h.st != "done")) return "Hold already exists";
             D.Holds.Add(new Hold { id = Uid(), iid = i.id, pid = p.id, date = Today(), st = "waiting" });
@@ -200,7 +218,8 @@ namespace Errin
         public static string ToCsv(IEnumerable<Item> items)
         {
             string[][] H = { new[]{"ctl","Control number"}, new[]{"acq","Acquisition number"}, new[]{"barcode","Barcode"}, new[]{"title","Title"}, new[]{"sub","Subtitle"}, new[]{"author","Author"},
-                new[]{"isbn","ISBN"}, new[]{"publisher","Publisher"}, new[]{"place","Place"}, new[]{"year","Year"}, new[]{"pages","Pages"}, new[]{"subject","Subject"}, new[]{"call","Call number"} };
+                new[]{"isbn","ISBN"}, new[]{"publisher","Publisher"}, new[]{"place","Place"}, new[]{"year","Year"}, new[]{"pages","Pages"}, new[]{"subject","Subject"}, new[]{"call","Call number"},
+                new[]{"weeded","Weeded date"}, new[]{"weed_reason","Weeding reason"} };
             Func<string, string> q = x => "\"" + (x ?? "").Replace("\"", "\"\"") + "\"";
             var sb = new System.Text.StringBuilder();
             sb.Append(string.Join(",", H.Select(h => q(h[1])).ToArray())).Append("\r\n");

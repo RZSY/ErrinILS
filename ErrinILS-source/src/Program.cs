@@ -10,10 +10,35 @@ namespace Errin
         [DllImport("user32.dll")] static extern IntPtr FindWindow(string cls, string title);
         [DllImport("user32.dll")] static extern bool SetForegroundWindow(IntPtr h);
         [DllImport("user32.dll")] static extern bool ShowWindow(IntPtr h, int cmd);
+        [DllImport("user32.dll")] static extern bool SetProcessDPIAware();
+        [DllImport("shcore.dll")] static extern int SetProcessDpiAwareness(int awareness);
+        [DllImport("user32.dll")] static extern bool SetProcessDpiAwarenessContext(IntPtr dpiContext);
+
+        static void EnableDpiAwareness()
+        {
+            try
+            {
+                if (Environment.OSVersion.Version.Major >= 6)
+                {
+                    bool set = false;
+                    try { set = SetProcessDpiAwarenessContext((IntPtr)(-4)); } catch { }
+                    if (!set)
+                    {
+                        try { SetProcessDpiAwareness(2); set = true; } catch { }
+                    }
+                    if (!set)
+                    {
+                        try { SetProcessDPIAware(); } catch { }
+                    }
+                }
+            }
+            catch { }
+        }
 
         [STAThread]
         static void Main()
         {
+            EnableDpiAwareness();
             bool created;
             using (var m = new Mutex(true, "Local\\ErrinILS.SingleInstance", out created))
             {

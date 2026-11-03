@@ -67,13 +67,13 @@ namespace Errin
             var c1 = Ui.Card("Check out", Vbox(Ui.Caption("Library card (IC number)"), sIc, Ui.Caption("Book barcode"), sBc, coBtns));
             var c2 = Ui.Card("Return", Vbox(Ui.Caption("Book barcode"), sRb, Ui.Btn("Return", 0, (s, e) => doRet())));
 
-            sBanner = new Label { UseMnemonic = false, Font = new Font("Segoe UI", 15f, FontStyle.Bold), Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, Padding = new Padding(18, 0, 18, 0) };
-            sBannerBox = new Panel { Height = 86, Margin = new Padding(0, 0, 0, 14) }; sBannerBox.Controls.Add(sBanner);
+            sBanner = new Label { UseMnemonic = false, Font = new Font("Segoe UI", 15f, FontStyle.Bold), Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, Padding = Ui.S(new Padding(18, 0, 18, 0)) };
+            sBannerBox = new Panel { Height = Ui.S(86), Margin = Ui.S(new Padding(0, 0, 0, 14)) }; sBannerBox.Controls.Add(sBanner);
             SBanner("Ready. Scan a library card.", "");
 
             sGrid = Ui.Grid(); Ui.Fill(sGrid, new[] { "Time", "Student", "Book", "Result" }, sLog, null, "Nothing yet. Scan a book to begin.");
             var recent = Ui.Card("Done so far", sGrid, 230);
-            var exit = Ui.Flow(false); exit.Margin = new Padding(0, 0, 0, 10); exit.Controls.Add(Ui.Btn("Exit Simplified View", 1, (s, e) => Go("dash")));
+            var exit = Ui.Flow(false); exit.Margin = Ui.S(new Padding(0, 0, 0, 10)); exit.Controls.Add(Ui.Btn("Exit Simplified View", 1, (s, e) => Go("dash")));
             BeginInvoke(new Action(() => { if (sIc != null && !sIc.IsDisposed) sIc.Focus(); }));
             return ScrollPage(Ui.Heading("Simplified View", "Just check out and return. Scan the library card, then scan the book."), Cols(250, c1, c2), sBannerBox, recent, exit);
         }

@@ -7,7 +7,7 @@
 #   dist/ErrinILS-Setup-<version>.exe    installer (Start-menu + desktop shortcuts, uninstaller)
 #   dist/ErrinILS-Windows.zip            portable copy (unzip and run ErrinILS.exe)
 set -e
-VERSION=1.2.2
+VERSION=1.2.3
 cd "$(dirname "$0")"
 REF=/usr/lib/mono/4.0-api
 CORE="src/Json.cs src/Models.cs src/Marc.cs src/Z3950.cs src/Lib.cs src/Lookup.cs src/Zip.cs src/Auth.cs"

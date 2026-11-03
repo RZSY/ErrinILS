@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Printing;
+using System.Drawing.Text;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -14,48 +15,93 @@ namespace Errin
 {
     public static class Th
     {
-        public static readonly Color Bg = Color.FromArgb(0x23, 0x24, 0x27), Card = Color.FromArgb(0x2c, 0x2d, 0x31), Ink = Color.FromArgb(0xf1, 0xef, 0xe8), Mut = Color.FromArgb(0x9a, 0x9a, 0x94),
-            Dim = Color.FromArgb(0x44, 0x45, 0x4a), Blue = Color.FromArgb(0x2f, 0x6b, 0xff), Red = Color.FromArgb(0xe8, 0x39, 0x2f), Yel = Color.FromArgb(0xf6, 0xc6, 0x1b), Green = Color.FromArgb(0x2f, 0xb3, 0x6b), Dark = Color.FromArgb(0x1b, 0x1b, 0x1b);
-        public static readonly Font F = new Font("Segoe UI", 9.75f), FB = new Font("Segoe UI", 9.75f, FontStyle.Bold), FS = new Font("Segoe UI", 8.5f),
-            FH = new Font("Segoe UI", 20f, FontStyle.Bold), FBig = new Font("Segoe UI", 20f, FontStyle.Bold), FT = new Font("Segoe UI", 11.5f, FontStyle.Bold), FLogo = new Font("Segoe UI", 26f, FontStyle.Bold);
+        public static readonly Color Bg = Color.FromArgb(0x23, 0x24, 0x27),
+            Card = Color.FromArgb(0x2c, 0x2d, 0x31),
+            Ink = Color.FromArgb(0xf1, 0xef, 0xe8),
+            Mut = Color.FromArgb(0x9a, 0x9a, 0x94),
+            Dim = Color.FromArgb(0x44, 0x45, 0x4a),
+            Border = Color.FromArgb(0x52, 0x54, 0x5c),
+            Blue = Color.FromArgb(0x2f, 0x6b, 0xff),
+            Red = Color.FromArgb(0xe8, 0x39, 0x2f),
+            Yel = Color.FromArgb(0xf6, 0xc6, 0x1b),
+            Green = Color.FromArgb(0x2f, 0xb3, 0x6b),
+            Dark = Color.FromArgb(0x1b, 0x1b, 0x1b);
+
+        public static readonly Font F = new Font("Segoe UI", 9.75f),
+            FB = new Font("Segoe UI", 9.75f, FontStyle.Bold),
+            FS = new Font("Segoe UI", 8.5f),
+            FH = new Font("Segoe UI", 20f, FontStyle.Bold),
+            FBig = new Font("Segoe UI", 20f, FontStyle.Bold),
+            FT = new Font("Segoe UI", 11.5f, FontStyle.Bold),
+            FLogo = new Font("Segoe UI", 26f, FontStyle.Bold),
+            FCaption = new Font("Segoe UI", 8.5f, FontStyle.Bold),
+            FSub = new Font("Segoe UI", 9.5f);
     }
 
     public static class Ui
     {
+        public static readonly float DpiScale = GetDpiScale();
+        private static float GetDpiScale()
+        {
+            try
+            {
+                using (var g = Graphics.FromHwnd(IntPtr.Zero))
+                {
+                    float s = g.DpiX / 96f;
+                    return (s > 0.5f && s < 5f) ? s : 1f;
+                }
+            }
+            catch { return 1f; }
+        }
+        public static int S(int v) { return (int)Math.Round(v * DpiScale); }
+        public static Size S(Size s) { return new Size(S(s.Width), S(s.Height)); }
+        public static Point S(Point p) { return new Point(S(p.X), S(p.Y)); }
+        public static Padding S(Padding p) { return new Padding(S(p.Left), S(p.Top), S(p.Right), S(p.Bottom)); }
+
         public static Label Lbl(string t, bool muted = false, Font f = null)
         {
-            return new Label { UseMnemonic = false, Text = t, AutoSize = true, ForeColor = muted ? Th.Mut : Th.Ink, BackColor = Color.Transparent, Font = f ?? Th.F, Margin = new Padding(0, 2, 0, 2) };
+            return new Label { UseMnemonic = false, Text = t, AutoSize = true, ForeColor = muted ? Th.Mut : Th.Ink, BackColor = Color.Transparent, Font = f ?? Th.F, Margin = S(new Padding(0, 2, 0, 2)) };
         }
-        public static Label Caption(string t) { return new Label { UseMnemonic = false, Text = System.Text.RegularExpressions.Regex.Replace(t.ToUpperInvariant(), @"\$([A-Z])", m => "$" + m.Groups[1].Value.ToLowerInvariant()), AutoSize = true, ForeColor = Th.Mut, BackColor = Color.Transparent, Font = new Font("Segoe UI", 8f, FontStyle.Bold), Margin = new Padding(0, 4, 0, 0) }; }
+        public static Label Caption(string t)
+        {
+            return new Label { UseMnemonic = false, Text = System.Text.RegularExpressions.Regex.Replace(t.ToUpperInvariant(), @"\$([A-Z])", m => "$" + m.Groups[1].Value.ToLowerInvariant()), AutoSize = true, ForeColor = Th.Mut, BackColor = Color.Transparent, Font = Th.FCaption, Margin = S(new Padding(0, 4, 0, 0)) };
+        }
         public static Button Btn(string t, int kind = 0, EventHandler click = null)   // 0 primary, 1 secondary, 2 danger
         {
-            var b = new Button { Text = t, FlatStyle = FlatStyle.Flat, Font = Th.FB, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = new Padding(10, 3, 10, 3), Margin = new Padding(0, 0, 8, 0), Cursor = Cursors.Hand, UseVisualStyleBackColor = false };
-            b.MinimumSize = new Size(0, 32);
+            var b = new Button { Text = t, FlatStyle = FlatStyle.Flat, Font = Th.FB, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Padding = S(new Padding(10, 3, 10, 3)), Margin = S(new Padding(0, 0, 8, 0)), Cursor = Cursors.Hand, UseVisualStyleBackColor = false };
+            b.MinimumSize = new Size(0, S(32));
             if (kind == 0) { b.BackColor = Th.Yel; b.ForeColor = Th.Dark; b.FlatAppearance.BorderColor = Th.Yel; b.FlatAppearance.MouseOverBackColor = Color.FromArgb(0xff, 0xd8, 0x4a); }
-            else if (kind == 1) { b.BackColor = Th.Card; b.ForeColor = Th.Ink; b.FlatAppearance.BorderColor = Th.Ink; b.FlatAppearance.MouseOverBackColor = Th.Blue; }
+            else if (kind == 1) { b.BackColor = Th.Card; b.ForeColor = Th.Ink; b.FlatAppearance.BorderColor = Th.Border; b.FlatAppearance.MouseOverBackColor = Th.Blue; }
             else { b.BackColor = Th.Red; b.ForeColor = Color.White; b.FlatAppearance.BorderColor = Th.Red; b.FlatAppearance.MouseOverBackColor = Color.FromArgb(0xff, 0x5a, 0x4f); }
-            b.FlatAppearance.BorderSize = 2;
+            b.FlatAppearance.BorderSize = 1;
             if (click != null) b.Click += click;
             return b;
         }
         public static TextBox Txt(int w = 200, bool pw = false)
         {
-            return new TextBox { Width = w, BackColor = Th.Bg, ForeColor = Th.Ink, BorderStyle = BorderStyle.FixedSingle, Font = Th.F, UseSystemPasswordChar = pw, Margin = new Padding(0, 2, 0, 8) };
+            return new TextBox { Width = S(w), BackColor = Th.Bg, ForeColor = Th.Ink, BorderStyle = BorderStyle.FixedSingle, Font = Th.F, UseSystemPasswordChar = pw, Margin = S(new Padding(0, 2, 0, 8)) };
         }
         public static ComboBox Combo(int w, params string[] items)
         {
-            var c = new ComboBox { Width = w, DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat, BackColor = Th.Bg, ForeColor = Th.Ink, Font = Th.F, Margin = new Padding(0, 2, 0, 8) };
+            var c = new ComboBox { Width = S(w), DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat, BackColor = Th.Bg, ForeColor = Th.Ink, Font = Th.F, Margin = S(new Padding(0, 2, 0, 8)) };
             c.Items.AddRange(items); if (items.Length > 0) c.SelectedIndex = 0; return c;
         }
         public static NumericUpDown Num(int w, decimal min, decimal max, decimal val, int dec = 0, decimal inc = 1)
         {
-            return new NumericUpDown { Width = w, Minimum = min, Maximum = max, Value = val, DecimalPlaces = dec, Increment = inc, BackColor = Th.Bg, ForeColor = Th.Ink, Font = Th.F, BorderStyle = BorderStyle.FixedSingle, Margin = new Padding(0, 2, 0, 8) };
+            return new NumericUpDown { Width = S(w), Minimum = min, Maximum = max, Value = val, DecimalPlaces = dec, Increment = inc, BackColor = Th.Bg, ForeColor = Th.Ink, Font = Th.F, BorderStyle = BorderStyle.FixedSingle, Margin = S(new Padding(0, 2, 0, 8)) };
         }
         /// <summary>A caption above a control.</summary>
         public static Panel Field(string caption, Control c, int w)
         {
-            var p = new Panel { Width = w, Height = 24 + c.Height + 8, Margin = new Padding(0, 0, 14, 0), BackColor = Color.Transparent };
-            var l = Caption(caption); l.Location = new Point(0, 0); c.Location = new Point(0, 18); c.Width = w - 4; p.Controls.Add(l); p.Controls.Add(c); return p;
+            int sw = S(w);
+            var l = Caption(caption);
+            int capH = Math.Max(S(18), l.PreferredHeight);
+            var p = new Panel { Width = sw, Height = capH + c.Height + S(6), Margin = S(new Padding(0, 0, 14, 0)), BackColor = Color.Transparent };
+            l.Location = new Point(0, 0);
+            c.Location = new Point(0, capH);
+            c.Width = sw - S(4);
+            p.Controls.Add(l); p.Controls.Add(c);
+            return p;
         }
         public static FlowLayoutPanel Flow(bool wrap = true, FlowDirection d = FlowDirection.LeftToRight)
         {
@@ -63,13 +109,13 @@ namespace Errin
         }
         public static Panel Card(string title, Control body, int height = 0)
         {
-            var p = new Panel { BackColor = Th.Card, Padding = new Padding(18, 12, 14, 12), Margin = new Padding(0, 0, 0, 14), Dock = DockStyle.Fill };
-            var bar = new Panel { Dock = DockStyle.Left, Width = 2, BackColor = Th.Ink };
+            var p = new Panel { BackColor = Th.Card, Padding = S(new Padding(18, 12, 14, 12)), Margin = S(new Padding(0, 0, 0, 14)), Dock = DockStyle.Fill };
+            var bar = new Panel { Dock = DockStyle.Left, Width = Math.Max(1, S(2)), BackColor = Th.Ink };
             var tl = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, BackColor = Color.Transparent, RowCount = 2, Margin = new Padding(0) };
             tl.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            if (title != null) { tl.RowStyles.Add(new RowStyle(SizeType.AutoSize)); var t = new Label { UseMnemonic = false, Text = title.ToLowerInvariant(), Font = Th.FT, ForeColor = Th.Ink, AutoSize = true, Margin = new Padding(0, 0, 0, 8) }; tl.Controls.Add(t, 0, 0); }
+            if (title != null) { tl.RowStyles.Add(new RowStyle(SizeType.AutoSize)); var t = new Label { UseMnemonic = false, Text = title.ToLowerInvariant(), Font = Th.FT, ForeColor = Th.Ink, AutoSize = true, Margin = S(new Padding(0, 0, 0, 8)) }; tl.Controls.Add(t, 0, 0); }
             else tl.RowStyles.Add(new RowStyle(SizeType.Absolute, 0));
-            if (height > 0) { tl.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); body.Dock = DockStyle.Fill; p.Height = height; }
+            if (height > 0) { tl.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); body.Dock = DockStyle.Fill; p.Height = S(height); }
             else { tl.RowStyles.Add(new RowStyle(SizeType.AutoSize)); body.Dock = DockStyle.Top; p.AutoSize = true; p.AutoSizeMode = AutoSizeMode.GrowAndShrink; tl.AutoSize = true; tl.Dock = DockStyle.Top; }
             tl.Controls.Add(body, 0, 1);
             p.Controls.Add(tl); p.Controls.Add(bar);
@@ -88,19 +134,21 @@ namespace Errin
         }
         public static Control Heading(string title, string sub)
         {
-            var p = new Panel { Height = 66, BackColor = Color.Transparent, Margin = new Padding(0) };
+            var p = new Panel { Height = S(68), BackColor = Color.Transparent, Margin = new Padding(0) };
             var h = new Label { UseMnemonic = false, Text = title.ToLowerInvariant(), Font = Th.FH, ForeColor = Th.Ink, AutoSize = true, Location = new Point(0, 0) };
             var dot = new Label { UseMnemonic = false, Text = ".", Font = Th.FH, ForeColor = Th.Yel, AutoSize = true };
-            p.Controls.Add(h); p.Controls.Add(dot); int tw = TextRenderer.MeasureText(h.Text, Th.FH, new Size(2000, 60), TextFormatFlags.NoPadding).Width; dot.Location = new Point(tw - 2, 0);
-            p.Controls.Add(new Label { UseMnemonic = false, Text = sub, Font = new Font("Georgia", 9.75f), ForeColor = Th.Mut, AutoSize = false, Location = new Point(2, 40), Size = new Size(1100, 22), Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right });
+            p.Controls.Add(h); p.Controls.Add(dot);
+            int tw = TextRenderer.MeasureText(h.Text, Th.FH, new Size(2000, S(60)), TextFormatFlags.NoPadding).Width;
+            dot.Location = new Point(tw - 2, 0);
+            p.Controls.Add(new Label { UseMnemonic = false, Text = sub, Font = Th.FSub, ForeColor = Th.Mut, AutoSize = false, Location = new Point(S(2), S(40)), Size = new Size(S(1100), S(24)), Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right });
             return p;
         }
         public static Panel Stat(string value, string label, Color accent)
         {
-            var p = new Panel { Size = new Size(154, 78), BackColor = Th.Card, Margin = new Padding(0, 0, 12, 14) };
-            p.Controls.Add(new Panel { Dock = DockStyle.Left, Width = 8, BackColor = accent });
-            p.Controls.Add(new Label { UseMnemonic = false, Text = value, Font = Th.FBig, ForeColor = Th.Ink, AutoSize = false, Location = new Point(18, 6), Size = new Size(132, 38), AutoEllipsis = true });
-            p.Controls.Add(new Label { UseMnemonic = false, Text = label, Font = Th.FS, ForeColor = Th.Mut, AutoSize = false, Location = new Point(20, 46), Size = new Size(130, 22), AutoEllipsis = true });
+            var p = new Panel { Size = new Size(S(164), S(82)), BackColor = Th.Card, Margin = S(new Padding(0, 0, 12, 14)) };
+            p.Controls.Add(new Panel { Dock = DockStyle.Left, Width = S(8), BackColor = accent });
+            p.Controls.Add(new Label { UseMnemonic = false, Text = value, Font = Th.FBig, ForeColor = Th.Ink, AutoSize = false, Location = new Point(S(18), S(6)), Size = new Size(S(142), S(40)), AutoEllipsis = true });
+            p.Controls.Add(new Label { UseMnemonic = false, Text = label, Font = Th.FS, ForeColor = Th.Mut, AutoSize = false, Location = new Point(S(20), S(48)), Size = new Size(S(140), S(24)), AutoEllipsis = true });
             return p;
         }
 
@@ -112,24 +160,24 @@ namespace Errin
                 ReadOnly = true, AllowUserToAddRows = false, AllowUserToDeleteRows = false, AllowUserToResizeRows = false, RowHeadersVisible = false, MultiSelect = false,
                 SelectionMode = DataGridViewSelectionMode.FullRowSelect, BackgroundColor = Th.Card, BorderStyle = BorderStyle.None, EnableHeadersVisualStyles = false,
                 CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal, GridColor = Th.Dim, AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill, Dock = DockStyle.Fill,
-                ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing, ColumnHeadersHeight = 30, ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.Single,
+                ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing, ColumnHeadersHeight = S(32), ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.Single,
                 Font = Th.F, ShowCellToolTips = true, ScrollBars = ScrollBars.Vertical
             };
-            g.RowTemplate.Height = 28;
+            g.RowTemplate.Height = S(28);
             g.DefaultCellStyle.BackColor = Th.Card; g.DefaultCellStyle.ForeColor = Th.Ink; g.DefaultCellStyle.SelectionBackColor = Th.Blue; g.DefaultCellStyle.SelectionForeColor = Color.White;
-            g.DefaultCellStyle.Padding = new Padding(4, 0, 4, 0);
+            g.DefaultCellStyle.Padding = S(new Padding(4, 0, 4, 0));
             g.ColumnHeadersDefaultCellStyle.BackColor = Th.Card; g.ColumnHeadersDefaultCellStyle.ForeColor = Th.Mut; g.ColumnHeadersDefaultCellStyle.SelectionBackColor = Th.Card;
-            g.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 8f, FontStyle.Bold); g.ColumnHeadersDefaultCellStyle.Padding = new Padding(4, 0, 4, 0);
+            g.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 8.5f, FontStyle.Bold); g.ColumnHeadersDefaultCellStyle.Padding = S(new Padding(4, 0, 4, 0));
             try { typeof(DataGridView).GetProperty("DoubleBuffered", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).SetValue(g, true, null); } catch { }
             return g;
         }
         public static void Fill(DataGridView g, string[] headers, List<string[]> rows, List<object> tags, string empty)
         {
             g.SuspendLayout(); g.Rows.Clear(); g.Columns.Clear();
-            foreach (var h in headers) g.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = h, MinimumWidth = 30, SortMode = DataGridViewColumnSortMode.Automatic });
+            foreach (var h in headers) g.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = h, MinimumWidth = S(30), SortMode = DataGridViewColumnSortMode.Automatic });
             for (int k = 0; k < rows.Count; k++) { int ix = g.Rows.Add((object[])rows[k]); g.Rows[ix].Tag = tags != null ? tags[k] : null; }
             Label el = null; foreach (Control c in g.Controls) if (c is Label && c.Name == "emptyMsg") el = (Label)c;
-            if (el == null) { el = new Label { UseMnemonic = false, Name = "emptyMsg", AutoSize = true, ForeColor = Th.Mut, BackColor = Th.Card, Font = Th.F, Location = new Point(8, g.ColumnHeadersHeight + 8) }; g.Controls.Add(el); }
+            if (el == null) { el = new Label { UseMnemonic = false, Name = "emptyMsg", AutoSize = true, ForeColor = Th.Mut, BackColor = Th.Card, Font = Th.F, Location = new Point(S(8), g.ColumnHeadersHeight + S(8)) }; g.Controls.Add(el); }
             el.Text = empty ?? ""; el.Visible = rows.Count == 0;
             g.ResumeLayout();
             try { g.CurrentCell = null; g.ClearSelection(); } catch { }
@@ -143,7 +191,7 @@ namespace Errin
         /* ---------- dialogs ---------- */
         public static Form Dlg(string title, int w, int h)
         {
-            return new Form { Text = title, ClientSize = new Size(w, h), StartPosition = FormStartPosition.CenterParent, FormBorderStyle = FormBorderStyle.FixedDialog, MaximizeBox = false, MinimizeBox = false,
+            return new Form { Text = title, ClientSize = new Size(S(w), S(h)), StartPosition = FormStartPosition.CenterParent, FormBorderStyle = FormBorderStyle.FixedDialog, MaximizeBox = false, MinimizeBox = false,
                 ShowInTaskbar = false, BackColor = Th.Card, ForeColor = Th.Ink, Font = Th.F };
         }
         public static bool Confirm(IWin32Window o, string msg) { return MessageBox.Show(o, msg, "ErrinILS", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes; }
@@ -158,30 +206,33 @@ namespace Errin
         public BarChart() { SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.UserPaint | ControlStyles.ResizeRedraw, true); BackColor = Th.Card; }
         protected override void OnPaint(PaintEventArgs e)
         {
-            var g = e.Graphics; g.Clear(Th.Card); g.SmoothingMode = SmoothingMode.None;
-            if (Data.Count == 0) { TextRenderer.DrawText(g, "No data yet", Th.F, new Point(2, 4), Th.Mut); return; }
+            var g = e.Graphics; g.Clear(Th.Card);
+            g.SmoothingMode = SmoothingMode.HighSpeed;
+            g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
+            g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+            if (Data.Count == 0) { TextRenderer.DrawText(g, "No data yet", Th.F, new Point(Ui.S(2), Ui.S(4)), Th.Mut); return; }
             double mx = Math.Max(1, Data.Max(d => d.Value));
             if (Vertical)
             {
-                int n = Data.Count, gap = 10, w = Math.Max(10, (Width - gap * (n + 1)) / n), top = 4, bot = 38, hmax = Height - top - bot;
+                int n = Data.Count, gap = Ui.S(10), w = Math.Max(Ui.S(10), (Width - gap * (n + 1)) / n), top = Ui.S(4), bot = Ui.S(38), hmax = Height - top - bot;
                 for (int k = 0; k < n; k++)
                 {
                     int x = gap + k * (w + gap), h = (int)(Data[k].Value / mx * hmax);
                     using (var b = new SolidBrush(Th.Yel)) g.FillRectangle(b, x, top + hmax - h, w, h);
-                    var r = new Rectangle(x - 6, top + hmax + 2, w + 12, 34); var f = TextFormatFlags.HorizontalCenter | TextFormatFlags.WordBreak;
+                    var r = new Rectangle(x - Ui.S(6), top + hmax + Ui.S(2), w + Ui.S(12), Ui.S(34)); var f = TextFormatFlags.HorizontalCenter | TextFormatFlags.WordBreak;
                     TextRenderer.DrawText(g, Data[k].Value.ToString("0") + "\n" + Data[k].Key, Th.FS, r, Th.Mut, f);
                 }
             }
             else
             {
-                int rowH = 26, labW = Math.Min(170, Width / 3), valW = 40;
+                int rowH = Ui.S(26), labW = Math.Min(Ui.S(170), Width / 3), valW = Ui.S(40);
                 for (int k = 0; k < Data.Count; k++)
                 {
-                    int y = 4 + k * rowH; if (y + rowH > Height + rowH) break;
-                    TextRenderer.DrawText(g, Data[k].Key, Th.F, new Rectangle(0, y, labW - 6, rowH), Th.Ink, TextFormatFlags.EndEllipsis | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
-                    int bw = (int)(Data[k].Value / mx * Math.Max(10, Width - labW - valW - 10));
-                    using (var b = new SolidBrush(k % 2 == 0 ? Th.Blue : Th.Yel)) g.FillRectangle(b, labW, y + 5, Math.Max(3, bw), 16);
-                    TextRenderer.DrawText(g, Data[k].Value.ToString("0"), Th.F, new Point(labW + Math.Max(3, bw) + 6, y + 3), Th.Ink);
+                    int y = Ui.S(4) + k * rowH; if (y + rowH > Height + rowH) break;
+                    TextRenderer.DrawText(g, Data[k].Key, Th.F, new Rectangle(0, y, labW - Ui.S(6), rowH), Th.Ink, TextFormatFlags.EndEllipsis | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
+                    int bw = (int)(Data[k].Value / mx * Math.Max(Ui.S(10), Width - labW - valW - Ui.S(10)));
+                    using (var b = new SolidBrush(k % 2 == 0 ? Th.Blue : Th.Yel)) g.FillRectangle(b, labW, y + Ui.S(5), Math.Max(3, bw), Ui.S(16));
+                    TextRenderer.DrawText(g, Data[k].Value.ToString("0"), Th.F, new Point(labW + Math.Max(3, bw) + Ui.S(6), y + Ui.S(3)), Th.Ink);
                 }
             }
         }
@@ -206,6 +257,7 @@ namespace Errin
         static Font WF(float pt, FontStyle s) { return new Font("Arial", pt / 72f * 100f, s, GraphicsUnit.World); }
         public static void Draw(Graphics g, float x, float y, Item it)
         {
+            g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
             using (var pen = new Pen(Color.FromArgb(150, 150, 150)) { DashStyle = DashStyle.Dash }) g.DrawRectangle(pen, x, y, W, H);
             using (var fc = WF(15f, FontStyle.Bold)) using (var ft = WF(6.5f, FontStyle.Regular)) using (var fx = WF(8f, FontStyle.Regular))
             {
@@ -250,6 +302,7 @@ namespace Errin
         public static List<string> Lines(string call) { return (call ?? "").Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).ToList(); }
         public static void Draw(Graphics g, float x, float y, Item it)
         {
+            g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
             using (var pen = new Pen(Color.FromArgb(150, 150, 150)) { DashStyle = DashStyle.Dash }) g.DrawRectangle(pen, x, y, W, H);
             var lines = Lines(it.call); if (lines.Count == 0) return;
             var sf = new StringFormat(StringFormatFlags.NoWrap) { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center, Trimming = StringTrimming.None };
@@ -295,6 +348,7 @@ namespace Errin
         }
         public static void Draw(Graphics g, float x, float y, Patron p, string school)
         {
+            g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
             g.FillRectangle(Brushes.White, x, y, W, H);
             using (var pen = new Pen(Color.FromArgb(120, 120, 120))) g.DrawRectangle(pen, x, y, W, H);
             using (var blue = new SolidBrush(Th.Blue)) g.FillRectangle(blue, x, y, W, 50);
@@ -315,7 +369,6 @@ namespace Errin
             {
                 var left = new StringFormat { Trimming = StringTrimming.EllipsisCharacter };
                 string name = p.name ?? "";
-                // long names (common) shrink to fit one line, and only then wrap onto a second line
                 using (var f3 = Fit(g, name, 15f, 9f, W - 28, FontStyle.Bold)) g.DrawString(name, f3, Brushes.Black, new RectangleF(x + 14, y + 58, W - 28, 30), left);
                 g.DrawString(string.IsNullOrEmpty(p.cls) ? " " : p.cls, f4, Brushes.DimGray, new RectangleF(x + 14, y + 89, W - 28, 15), new StringFormat { Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap });
                 g.DrawString("IC: " + p.id, f4, Brushes.Black, new RectangleF(x + 14, y + 104, W - 28, 15), new StringFormat { Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap });

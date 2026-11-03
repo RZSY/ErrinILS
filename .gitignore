@@ -1,0 +1,6 @@
+# Build artifacts and temporary files
+dist/
+build/
+*.tmp
+*.bak
+selftest.exe

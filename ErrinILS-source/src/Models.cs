@@ -11,8 +11,9 @@ namespace Errin
     public class Item
     {
         public string id = "", ctl = "", acq = "", barcode = "", title = "", sub = "", author = "", isbn = "",
-            publisher = "", place = "", year = "", call = "", subject = "", pages = "";
-        public static readonly string[] Keys = { "ctl", "acq", "barcode", "title", "sub", "author", "isbn", "publisher", "place", "year", "pages", "subject", "call" };
+            publisher = "", place = "", year = "", call = "", subject = "", pages = "",
+            weeded = "", weed_reason = "";
+        public static readonly string[] Keys = { "ctl", "acq", "barcode", "title", "sub", "author", "isbn", "publisher", "place", "year", "pages", "subject", "call", "weeded", "weed_reason" };
         public string Get(string k)
         {
             switch (k)
@@ -20,6 +21,7 @@ namespace Errin
                 case "id": return id; case "ctl": return ctl; case "acq": return acq; case "barcode": return barcode; case "title": return title;
                 case "sub": return sub; case "author": return author; case "isbn": return isbn; case "publisher": return publisher;
                 case "place": return place; case "year": return year; case "call": return call; case "subject": return subject; case "pages": return pages;
+                case "weeded": return weeded; case "weed_reason": return weed_reason;
             }
             return "";
         }
@@ -31,6 +33,7 @@ namespace Errin
                 case "id": id = v; break; case "ctl": ctl = v; break; case "acq": acq = v; break; case "barcode": barcode = v; break; case "title": title = v; break;
                 case "sub": sub = v; break; case "author": author = v; break; case "isbn": isbn = v; break; case "publisher": publisher = v; break;
                 case "place": place = v; break; case "year": year = v; break; case "call": call = v; break; case "subject": subject = v; break; case "pages": pages = v; break;
+                case "weeded": weeded = v; break; case "weed_reason": weed_reason = v; break;
             }
         }
         public Item Clone() { var c = new Item(); c.id = id; foreach (var k in Keys) c.Set(k, Get(k)); return c; }
@@ -47,7 +50,7 @@ namespace Errin
             foreach (var k in Keys) i.Set(k, Json.Str(d, k));
             return i;
         }
-        public string All() { return string.Join(" ", new[] { id, ctl, acq, barcode, title, sub, author, isbn, publisher, place, year, call, subject, pages }); }
+        public string All() { return string.Join(" ", new[] { id, ctl, acq, barcode, title, sub, author, isbn, publisher, place, year, call, subject, pages, weeded, weed_reason }); }
     }
 
     public class Patron { public string id = "", name = "", cls = "", contact = "", reg = "", last = ""; }

@@ -6,7 +6,7 @@
  \___|_|  |_|  |_|_| |_|___|_____|____/
 ```
 
-  School library system  -  Version 1.2.2
+  School library system  -  Version 1.2.3
 
   GitHub:  https://github.com/RZSY/ErrinILS
   
@@ -37,7 +37,7 @@
   ```text
   INSTALLATION GUIDE
   ```
-  1. Download  ErrinILS-Setup-1.2.2.exe  and double-click it.
+  1. Download  ErrinILS-Setup-1.2.3.exe  and double-click it.
 
   2. Windows asks "Do you want to allow this app to make changes?"
      Click Yes.

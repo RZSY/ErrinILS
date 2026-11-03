@@ -1,7 +1,9 @@
-// ErrinILS dialogs: record editor, MARC view, labels, students, export/import, Z39.50 search.
+// ErrinILS dialogs: record editor, weeding, MARC view, labels, students, export/import, Z39.50 search.
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
+using System.Drawing.Text;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -23,6 +25,162 @@ namespace Errin
         }
         string lastBgError = "";
 
+        /* ---------- weeding dialog ---------- */
+        void WeedDialog(Item i)
+        {
+            if (lib.OpenLoan(i.id) != null)
+            {
+                Toast("Item is currently on loan. Please return it before weeding.");
+                return;
+            }
+
+            bool alreadyWeeded = !string.IsNullOrEmpty(i.weeded);
+            string title = (alreadyWeeded ? "Weeded record: " : "Weed record: ") + i.title;
+            using (var d = Ui.Dlg(title, 560, alreadyWeeded ? 390 : 440))
+            {
+                var fl = new FlowLayoutPanel
+                {
+                    Dock = DockStyle.Fill,
+                    FlowDirection = FlowDirection.TopDown,
+                    WrapContents = false,
+                    AutoScroll = true,
+                    Padding = Ui.S(new Padding(20, 16, 20, 16)),
+                    BackColor = Th.Card
+                };
+
+                fl.Controls.Add(new Label
+                {
+                    UseMnemonic = false,
+                    Text = alreadyWeeded ? "weeded record details" : "weed / withdraw item",
+                    Font = Th.FT,
+                    AutoSize = true,
+                    ForeColor = Th.Ink,
+                    Margin = Ui.S(new Padding(0, 0, 0, 4))
+                });
+
+                fl.Controls.Add(new Label
+                {
+                    UseMnemonic = false,
+                    Text = i.title + (string.IsNullOrEmpty(i.author) ? "" : " \u00B7 " + i.author) +
+                           "\nBarcode: " + (string.IsNullOrEmpty(i.barcode) ? "(none)" : i.barcode) +
+                           " \u00B7 Call no.: " + (string.IsNullOrEmpty(i.call) ? "(none)" : i.call) +
+                           " \u00B7 Control: " + (string.IsNullOrEmpty(i.ctl) ? "(none)" : i.ctl),
+                    Font = Th.FB,
+                    AutoSize = true,
+                    ForeColor = Th.Mut,
+                    Margin = Ui.S(new Padding(0, 0, 0, 10))
+                });
+
+                if (alreadyWeeded)
+                {
+                    fl.Controls.Add(new Label
+                    {
+                        UseMnemonic = false,
+                        Text = "This record has been weeded and withdrawn from active circulation.",
+                        Font = Th.F,
+                        ForeColor = Th.Yel,
+                        AutoSize = true,
+                        Margin = Ui.S(new Padding(0, 0, 0, 8))
+                    });
+
+                    var pInfo = new Panel
+                    {
+                        Width = Ui.S(500),
+                        Height = Ui.S(74),
+                        BackColor = Th.Bg,
+                        Padding = Ui.S(new Padding(12, 10, 12, 10)),
+                        Margin = Ui.S(new Padding(0, 0, 0, 14))
+                    };
+                    pInfo.Controls.Add(new Label
+                    {
+                        UseMnemonic = false,
+                        Dock = DockStyle.Fill,
+                        Text = "Weeded date: " + (string.IsNullOrEmpty(i.weeded) ? Lib.Today() : i.weeded) + "\nReason: " + (string.IsNullOrEmpty(i.weed_reason) ? "No reason specified" : i.weed_reason),
+                        Font = Th.F,
+                        ForeColor = Th.Ink
+                    });
+                    fl.Controls.Add(pInfo);
+
+                    var bRow = Ui.Flow(false);
+                    bRow.Margin = Ui.S(new Padding(0, 8, 0, 0));
+
+                    var btnRestore = Ui.Btn("Restore to active catalog", 0, (s, e) =>
+                    {
+                        lib.Unweed(i);
+                        d.Close();
+                        Commit("Restored to active catalog: " + i.title);
+                    });
+
+                    var btnDel = Ui.Btn("Delete permanently", 2, (s, e) =>
+                    {
+                        d.Close();
+                        DelItem(i);
+                    });
+
+                    var btnClose = Ui.Btn("Close", 1, (s, e) => d.Close());
+
+                    bRow.Controls.Add(btnRestore);
+                    bRow.Controls.Add(btnDel);
+                    bRow.Controls.Add(btnClose);
+                    fl.Controls.Add(bRow);
+                }
+                else
+                {
+                    fl.Controls.Add(new Label
+                    {
+                        UseMnemonic = false,
+                        Text = "Weeding marks this copy as withdrawn from the library while keeping its catalog history. Withdrawn copies cannot be borrowed.",
+                        Font = Th.FS,
+                        ForeColor = Th.Mut,
+                        AutoSize = false,
+                        Size = new Size(Ui.S(500), Ui.S(34)),
+                        Margin = Ui.S(new Padding(0, 0, 0, 8))
+                    });
+
+                    var cbReason = Ui.Combo(340,
+                        "Damaged / worn out (condition beyond repair)",
+                        "Outdated / inaccurate / superseded information",
+                        "Lost / missing copy",
+                        "Low circulation / duplicate copy",
+                        "Curriculum change / no longer relevant",
+                        "Other (specify below)");
+
+                    var tbNotes = Ui.Txt(340);
+                    var tbDate = Ui.Txt(160);
+                    tbDate.Text = Lib.Today();
+
+                    fl.Controls.Add(Ui.Field("Primary weeding reason", cbReason, 360));
+                    fl.Controls.Add(Ui.Field("Specific notes / condition details (optional)", tbNotes, 360));
+                    fl.Controls.Add(Ui.Field("Date weeded", tbDate, 180));
+
+                    var bRow = Ui.Flow(false);
+                    bRow.Margin = Ui.S(new Padding(0, 10, 0, 0));
+
+                    var btnWeed = Ui.Btn("Weed & withdraw copy", 0, (s, e) =>
+                    {
+                        string reason = cbReason.SelectedItem as string ?? "Weeded";
+                        string note = tbNotes.Text.Trim();
+                        if (note != "") reason += " (" + note + ")";
+                        string date = tbDate.Text.Trim();
+                        if (date == "") date = Lib.Today();
+
+                        i.weeded = date;
+                        i.weed_reason = reason;
+                        d.Close();
+                        Commit("Item weeded: " + i.title);
+                    });
+
+                    var btnCancel = Ui.Btn("Cancel", 1, (s, e) => d.Close());
+                    bRow.Controls.Add(btnWeed);
+                    bRow.Controls.Add(btnCancel);
+                    fl.Controls.Add(bRow);
+                }
+
+                d.Controls.Add(fl);
+                d.ShowDialog(this);
+            }
+        }
+
         /* ---------- record editor ---------- */
         static readonly string[][] IF = { new[] { "title", "245 $a Title" }, new[] { "sub", "245 $b Subtitle" }, new[] { "author", "100 $a Author" }, new[] { "isbn", "020 $a ISBN" }, new[] { "publisher", "260 $b Publisher" },
             new[] { "place", "260 $a Place" }, new[] { "year", "260 $c Year" }, new[] { "pages", "300 $a Pages" }, new[] { "subject", "650 $a Subject" }, new[] { "call", "082 $a Call number" },
@@ -30,13 +188,27 @@ namespace Errin
         void ItemForm(Item existing)
         {
             var src = existing ?? new Item { barcode = lib.NextBarcode(), ctl = lib.NextCtl(), acq = lib.NextAcq() };
-            using (var d = Ui.Dlg((existing != null ? "Edit" : "New") + " bibliographic record", 820, 700))
+            using (var d = Ui.Dlg((existing != null ? "Edit" : "New") + " bibliographic record", 840, 720))
             {
                 var boxes = new Dictionary<string, TextBox>();
-                var root = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true, Padding = new Padding(20, 14, 10, 10), BackColor = Th.Card };
-                root.Controls.Add(new Label { UseMnemonic = false, Text = (existing != null ? "edit" : "new") + " bibliographic record", Font = Th.FT, AutoSize = true, ForeColor = Th.Ink, Margin = new Padding(0, 0, 0, 8) });
-                var lk = Ui.Txt(420); var lks = Ui.Lbl("", true); lks.MaximumSize = new Size(740, 0);
-                var lkBtn = Ui.Btn("Look up", 1); lkBtn.Margin = new Padding(8, 18, 0, 0);
+                var root = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true, Padding = Ui.S(new Padding(20, 14, 10, 10)), BackColor = Th.Card };
+                root.Controls.Add(new Label { UseMnemonic = false, Text = (existing != null ? "edit" : "new") + " bibliographic record", Font = Th.FT, AutoSize = true, ForeColor = Th.Ink, Margin = Ui.S(new Padding(0, 0, 0, 8)) });
+
+                if (existing != null && !string.IsNullOrEmpty(existing.weeded))
+                {
+                    root.Controls.Add(new Label
+                    {
+                        UseMnemonic = false,
+                        Text = "\u26A0 This record is weeded (" + existing.weed_reason + " \u00B7 " + existing.weeded + ") and withdrawn from circulation.",
+                        Font = Th.FB,
+                        ForeColor = Th.Yel,
+                        AutoSize = true,
+                        Margin = Ui.S(new Padding(0, 0, 0, 6))
+                    });
+                }
+
+                var lk = Ui.Txt(420); var lks = Ui.Lbl("", true); lks.MaximumSize = new Size(Ui.S(740), 0);
+                var lkBtn = Ui.Btn("Look up", 1); lkBtn.Margin = Ui.S(new Padding(8, 18, 0, 0));
                 var lkSrc = Ui.Combo(250, new[] { "All sources (best match)" }.Concat(Lookup.SourceNames).ToArray());
                 var lrow = Ui.Flow(false); lrow.Controls.Add(Ui.Field("Copy cataloguing: scan or type an ISBN", lk, 330)); lrow.Controls.Add(Ui.Field("Search in", lkSrc, 270)); lrow.Controls.Add(lkBtn);
                 root.Controls.Add(lrow); root.Controls.Add(lks);
@@ -62,13 +234,13 @@ namespace Errin
                     new { t = "Local holdings", sub = "", keys = new[] { "call", "barcode" } } };
                 foreach (var sc in secs)
                 {
-                    root.Controls.Add(new Label { UseMnemonic = false, Text = sc.t.ToLowerInvariant(), Font = Th.FB, AutoSize = true, ForeColor = sc.t[0] == 'A' ? Th.Yel : Th.Ink, Margin = new Padding(0, 10, 0, 2) });
-                    if (sc.sub != "") root.Controls.Add(new Label { UseMnemonic = false, Text = sc.sub, AutoSize = true, MaximumSize = new Size(740, 0), ForeColor = Th.Mut, Font = Th.FS, Margin = new Padding(0, 0, 0, 4) });
-                    var fl = Ui.Flow(true); fl.MaximumSize = new Size(760, 0);
+                    root.Controls.Add(new Label { UseMnemonic = false, Text = sc.t.ToLowerInvariant(), Font = Th.FB, AutoSize = true, ForeColor = sc.t[0] == 'A' ? Th.Yel : Th.Ink, Margin = Ui.S(new Padding(0, 10, 0, 2)) });
+                    if (sc.sub != "") root.Controls.Add(new Label { UseMnemonic = false, Text = sc.sub, AutoSize = true, MaximumSize = new Size(Ui.S(740), 0), ForeColor = Th.Mut, Font = Th.FS, Margin = Ui.S(new Padding(0, 0, 0, 4)) });
+                    var fl = Ui.Flow(true); fl.MaximumSize = new Size(Ui.S(780), 0);
                     foreach (var k in sc.keys) { var tb = Ui.Txt(220); tb.Text = src.Get(k); boxes[k] = tb; fl.Controls.Add(Ui.Field(IF.First(x => x[0] == k)[1], tb, 236)); }
                     root.Controls.Add(fl);
                 }
-                var save = Ui.Btn("Save", 0); var cancel = Ui.Btn("Cancel", 1); var br = Ui.Flow(false); br.Margin = new Padding(0, 14, 0, 0); br.Controls.Add(save); br.Controls.Add(cancel); root.Controls.Add(br);
+                var save = Ui.Btn("Save", 0); var cancel = Ui.Btn("Cancel", 1); var br = Ui.Flow(false); br.Margin = Ui.S(new Padding(0, 14, 0, 0)); br.Controls.Add(save); br.Controls.Add(cancel); root.Controls.Add(br);
                 cancel.Click += (s, e) => d.Close();
                 save.Click += (s, e) =>
                 {
@@ -87,23 +259,29 @@ namespace Errin
 
         void MarcView(Item i)
         {
-            using (var d = Ui.Dlg("MARC 21 record", 760, 420))
+            using (var d = Ui.Dlg("MARC 21 record", 760, 450))
             {
-                d.Controls.Add(new TextBox { Multiline = true, ReadOnly = true, Font = new Font("Consolas", 10.5f), BackColor = Th.Bg, ForeColor = Th.Ink, BorderStyle = BorderStyle.None, Location = new Point(16, 16), Size = new Size(728, 340), ScrollBars = ScrollBars.Vertical, Text = Marc.ToText(i) });
-                var c = Ui.Btn("Close", 1); c.Location = new Point(16, 368); c.Click += (s, e) => d.Close(); d.Controls.Add(c); d.ShowDialog(this);
+                d.Controls.Add(new TextBox { Multiline = true, ReadOnly = true, Font = new Font("Consolas", 10.5f), BackColor = Th.Bg, ForeColor = Th.Ink, BorderStyle = BorderStyle.None, Location = new Point(Ui.S(16), Ui.S(16)), Size = new Size(Ui.S(728), Ui.S(360)), ScrollBars = ScrollBars.Vertical, Text = Marc.ToText(i) });
+                var c = Ui.Btn("Close", 1); c.Location = new Point(Ui.S(16), Ui.S(390)); c.Click += (s, e) => d.Close(); d.Controls.Add(c); d.ShowDialog(this);
             }
         }
 
         void LabelDialog(Item i)
         {
-            using (var d = Ui.Dlg("Print label", 440, 330))
+            using (var d = Ui.Dlg("Print label", 460, 350))
             {
-                d.Controls.Add(new Label { UseMnemonic = false, Text = "print label", Font = Th.FT, AutoSize = true, Location = new Point(20, 14) });
-                var pv = new Panel { BackColor = Color.White, Location = new Point(20, 46), Size = new Size(400, 190) };
-                pv.Paint += (s, e) => { e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias; float sc = 1.3f; e.Graphics.ScaleTransform(sc, sc); Labels.Draw(e.Graphics, 12, 12, i); };
+                d.Controls.Add(new Label { UseMnemonic = false, Text = "print label", Font = Th.FT, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(14)) });
+                var pv = new Panel { BackColor = Color.White, Location = new Point(Ui.S(20), Ui.S(46)), Size = new Size(Ui.S(415), Ui.S(190)) };
+                pv.Paint += (s, e) => {
+                    e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                    e.Graphics.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
+                    float sc = 1.3f * Ui.DpiScale;
+                    e.Graphics.ScaleTransform(sc, sc);
+                    Labels.Draw(e.Graphics, 12, 12, i);
+                };
                 d.Controls.Add(pv);
-                var n = Ui.Num(80, 1, 50, 1); var f = Ui.Field("Copies", n, 100); f.Location = new Point(20, 226); d.Controls.Add(f);
-                var pr = Ui.Btn("Print", 0); pr.Location = new Point(140, 246); var cl = Ui.Btn("Close", 1); cl.Location = new Point(222, 246);
+                var n = Ui.Num(80, 1, 50, 1); var f = Ui.Field("Copies", n, 100); f.Location = new Point(Ui.S(20), Ui.S(246)); d.Controls.Add(f);
+                var pr = Ui.Btn("Print", 0); pr.Location = new Point(Ui.S(140), Ui.S(266)); var cl = Ui.Btn("Close", 1); cl.Location = new Point(Ui.S(232), Ui.S(266));
                 pr.Click += (s, e) => { if (Labels.Print(d, new List<Item> { i }, (int)n.Value)) { d.Close(); Toast("Sent to printer"); } };
                 cl.Click += (s, e) => d.Close(); d.Controls.Add(pr); d.Controls.Add(cl); d.ShowDialog(this);
             }
@@ -112,16 +290,22 @@ namespace Errin
         void SpineDialog(Item i)
         {
             if (SpineArt.Lines(i.call).Count == 0) { Toast("This item has no call number yet"); return; }
-            using (var d = Ui.Dlg("Spine label", 460, 350))
+            using (var d = Ui.Dlg("Spine label", 480, 370))
             {
-                d.Controls.Add(new Label { UseMnemonic = false, Text = "spine label", Font = Th.FT, AutoSize = true, Location = new Point(20, 14) });
-                var pv = new Panel { BackColor = Color.White, Location = new Point(20, 46), Size = new Size(180, 262) };
-                pv.Paint += (s, e) => { e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias; float sc = 1.5f; e.Graphics.ScaleTransform(sc, sc); SpineArt.Draw(e.Graphics, 12, 12, i); };
+                d.Controls.Add(new Label { UseMnemonic = false, Text = "spine label", Font = Th.FT, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(14)) });
+                var pv = new Panel { BackColor = Color.White, Location = new Point(Ui.S(20), Ui.S(46)), Size = new Size(Ui.S(180), Ui.S(272)) };
+                pv.Paint += (s, e) => {
+                    e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                    e.Graphics.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
+                    float sc = 1.5f * Ui.DpiScale;
+                    e.Graphics.ScaleTransform(sc, sc);
+                    SpineArt.Draw(e.Graphics, 12, 12, i);
+                };
                 d.Controls.Add(pv);
-                d.Controls.Add(new Label { UseMnemonic = false, Text = i.title + "\nCall number: " + i.call, ForeColor = Th.Mut, AutoSize = false, Size = new Size(220, 80), Location = new Point(220, 46) });
-                d.Controls.Add(new Label { UseMnemonic = false, Text = "Label size 1 x 1.5 inch (25 x 38 mm). Stick it on the spine, about 2 cm from the bottom.", ForeColor = Th.Mut, Font = Th.FS, AutoSize = false, Size = new Size(220, 54), Location = new Point(220, 130) });
-                var n = Ui.Num(80, 1, 50, 1); var f = Ui.Field("Copies", n, 100); f.Location = new Point(220, 196); d.Controls.Add(f);
-                var pr = Ui.Btn("Print", 0); pr.Location = new Point(220, 262); var cl = Ui.Btn("Close", 1); cl.Location = new Point(300, 262);
+                d.Controls.Add(new Label { UseMnemonic = false, Text = i.title + "\nCall number: " + i.call, ForeColor = Th.Mut, AutoSize = false, Size = new Size(Ui.S(230), Ui.S(80)), Location = new Point(Ui.S(220), Ui.S(46)) });
+                d.Controls.Add(new Label { UseMnemonic = false, Text = "Label size 1 x 1.5 inch (25 x 38 mm). Stick it on the spine, about 2 cm from the bottom.", ForeColor = Th.Mut, Font = Th.FS, AutoSize = false, Size = new Size(Ui.S(230), Ui.S(54)), Location = new Point(Ui.S(220), Ui.S(134)) });
+                var n = Ui.Num(80, 1, 50, 1); var f = Ui.Field("Copies", n, 100); f.Location = new Point(Ui.S(220), Ui.S(200)); d.Controls.Add(f);
+                var pr = Ui.Btn("Print", 0); pr.Location = new Point(Ui.S(220), Ui.S(270)); var cl = Ui.Btn("Close", 1); cl.Location = new Point(Ui.S(305), Ui.S(270));
                 pr.Click += (s, e) => { if (SpineArt.Print(d, new List<Item> { i }, (int)n.Value)) { d.Close(); Toast("Sent to printer"); } };
                 cl.Click += (s, e) => d.Close(); d.Controls.Add(pr); d.Controls.Add(cl); d.ShowDialog(this);
             }
@@ -130,16 +314,16 @@ namespace Errin
         /* ---------- students ---------- */
         void PatForm()
         {
-            using (var d = Ui.Dlg("Register student", 540, 300))
+            using (var d = Ui.Dlg("Register student", 560, 310))
             {
                 var ic = Ui.Txt(240); var nm = Ui.Txt(240); var cl = Ui.Txt(240); var ct = Ui.Txt(240);
-                var f1 = Ui.Field("IC number", ic, 250); f1.Location = new Point(20, 20); var f2 = Ui.Field("Full name", nm, 250); f2.Location = new Point(276, 20);
-                var f3 = Ui.Field("Class / grade", cl, 250); f3.Location = new Point(20, 100); var f4 = Ui.Field("Guardian contact", ct, 250); f4.Location = new Point(276, 100);
+                var f1 = Ui.Field("IC number", ic, 250); f1.Location = new Point(Ui.S(20), Ui.S(20)); var f2 = Ui.Field("Full name", nm, 250); f2.Location = new Point(Ui.S(286), Ui.S(20));
+                var f3 = Ui.Field("Class / grade", cl, 250); f3.Location = new Point(Ui.S(20), Ui.S(102)); var f4 = Ui.Field("Guardian contact", ct, 250); f4.Location = new Point(Ui.S(286), Ui.S(102));
                 d.Controls.Add(f1); d.Controls.Add(f2); d.Controls.Add(f3); d.Controls.Add(f4);
                 d.Controls.Add(new Label { UseMnemonic = false, Text = "Type the 12 digits from the student's IC or MyKid. The dashes are added for you. The IC number is the student's library ID and is printed on the library card.",
-                    ForeColor = Th.Mut, Font = Th.FS, AutoSize = false, Size = new Size(500, 40), Location = new Point(20, 180) });
+                    ForeColor = Th.Mut, Font = Th.FS, AutoSize = false, Size = new Size(Ui.S(510), Ui.S(42)), Location = new Point(Ui.S(20), Ui.S(184)) });
                 ic.Leave += (s, e) => { var n = Lib.NormIc(ic.Text); if (n != null) ic.Text = n; };
-                var ok = Ui.Btn("Register", 0); ok.Location = new Point(20, 238); var ca = Ui.Btn("Cancel", 1); ca.Location = new Point(120, 238); ca.Click += (s, e) => d.Close();
+                var ok = Ui.Btn("Register", 0); ok.Location = new Point(Ui.S(20), Ui.S(246)); var ca = Ui.Btn("Cancel", 1); ca.Location = new Point(Ui.S(124), Ui.S(246)); ca.Click += (s, e) => d.Close();
                 ok.Click += (s, e) =>
                 {
                     string n = Lib.NormIc(ic.Text), name = nm.Text.Trim();
@@ -155,32 +339,38 @@ namespace Errin
         }
         void CardDialog(Patron p)
         {
-            using (var d = Ui.Dlg("Library card", 480, 440))
+            using (var d = Ui.Dlg("Library card", 500, 460))
             {
-                d.Controls.Add(new Label { UseMnemonic = false, Text = "library card", Font = Th.FT, AutoSize = true, Location = new Point(20, 14) });
-                var pv = new Panel { BackColor = Color.White, Location = new Point(20, 46), Size = new Size(440, 282) };
+                d.Controls.Add(new Label { UseMnemonic = false, Text = "library card", Font = Th.FT, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(14)) });
+                var pv = new Panel { BackColor = Color.White, Location = new Point(Ui.S(20), Ui.S(46)), Size = new Size(Ui.S(455), Ui.S(292)) };
                 string sch = db.Set.school;
-                pv.Paint += (s, e) => { e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias; float sc = 1.2f; e.Graphics.ScaleTransform(sc, sc); CardArt.Draw(e.Graphics, 15, 15, p, sch); };
+                pv.Paint += (s, e) => {
+                    e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                    e.Graphics.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
+                    float sc = 1.25f * Ui.DpiScale;
+                    e.Graphics.ScaleTransform(sc, sc);
+                    CardArt.Draw(e.Graphics, 15, 15, p, sch);
+                };
                 d.Controls.Add(pv);
-                d.Controls.Add(new Label { UseMnemonic = false, Text = "Card size 85.6 x 54 mm. Print on card stock or thick paper and cut out. The barcode holds the IC number so the student can scan the card to borrow.", ForeColor = Th.Mut, Font = Th.FS, AutoSize = false, Size = new Size(440, 34), Location = new Point(20, 336) });
-                var pr = Ui.Btn("Print card", 0); pr.Location = new Point(20, 384); var cl = Ui.Btn("Close", 1); cl.Location = new Point(130, 384);
+                d.Controls.Add(new Label { UseMnemonic = false, Text = "Card size 85.6 x 54 mm. Print on card stock or thick paper and cut out. The barcode holds the IC number so the student can scan the card to borrow.", ForeColor = Th.Mut, Font = Th.FS, AutoSize = false, Size = new Size(Ui.S(455), Ui.S(38)), Location = new Point(Ui.S(20), Ui.S(348)) });
+                var pr = Ui.Btn("Print card", 0); pr.Location = new Point(Ui.S(20), Ui.S(398)); var cl = Ui.Btn("Close", 1); cl.Location = new Point(Ui.S(134), Ui.S(398));
                 pr.Click += (s, e) => { if (PrintCardList(new List<Patron> { p })) { d.Close(); Toast("Sent to printer"); } };
                 cl.Click += (s, e) => d.Close(); d.Controls.Add(pr); d.Controls.Add(cl); d.ShowDialog(this);
             }
         }
         void PatView(Patron p)
         {
-            using (var d = Ui.Dlg(p.name + " \u00B7 " + p.id, 720, 490))
+            using (var d = Ui.Dlg(p.name + " \u00B7 " + p.id, 740, 510))
             {
                 var fs = db.Fines.Where(f => f.pid == p.id && f.paid == "").ToList(); string later = Lib.AddD(string.CompareOrdinal(p.reg, p.last) > 0 ? p.reg : p.last, 365 * Lib.RET_YEARS);
-                d.Controls.Add(new Label { UseMnemonic = false, Text = p.name.ToLowerInvariant(), Font = Th.FT, AutoSize = true, Location = new Point(20, 14) });
-                d.Controls.Add(new Label { UseMnemonic = false, Text = "IC " + p.id + " \u00B7 " + p.cls + " \u00B7 " + p.contact + " \u00B7 registered " + p.reg + "\nRecord scheduled for deletion after " + later + " if inactive", ForeColor = Th.Mut, AutoSize = true, Location = new Point(20, 42) });
-                d.Controls.Add(new Label { UseMnemonic = false, Text = "Unpaid fines: " + Lib.Money(fs.Sum(f => f.amt)), Font = Th.FB, AutoSize = true, Location = new Point(20, 84) });
+                d.Controls.Add(new Label { UseMnemonic = false, Text = p.name.ToLowerInvariant(), Font = Th.FT, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(14)) });
+                d.Controls.Add(new Label { UseMnemonic = false, Text = "IC " + p.id + " \u00B7 " + p.cls + " \u00B7 " + p.contact + " \u00B7 registered " + p.reg + "\nRecord scheduled for deletion after " + later + " if inactive", ForeColor = Th.Mut, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(42)) });
+                d.Controls.Add(new Label { UseMnemonic = false, Text = "Unpaid fines: " + Lib.Money(fs.Sum(f => f.amt)), Font = Th.FB, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(86)) });
                 var ls = db.Loans.Where(l => l.pid == p.id).Reverse().ToList();
                 var g = MakeGrid(new[] { "Title", "Out", "Due", "Returned" }, ls.Select(l => new[] { lib.Title(l.iid), l.@out, l.due, l.ret ?? "\u2014" }).ToList(), null, "No borrowing history");
-                g.Location = new Point(20, 112); g.Size = new Size(680, 320); g.Dock = DockStyle.None; d.Controls.Add(g);
-                var c = Ui.Btn("Close", 1); c.Location = new Point(20, 442); c.Click += (s, e) => d.Close(); d.Controls.Add(c);
-                var pc = Ui.Btn("Print library card", 0); pc.Location = new Point(110, 442); pc.Click += (s, e) => CardDialog(p); d.Controls.Add(pc);
+                g.Location = new Point(Ui.S(20), Ui.S(116)); g.Size = new Size(Ui.S(695), Ui.S(330)); g.Dock = DockStyle.None; d.Controls.Add(g);
+                var c = Ui.Btn("Close", 1); c.Location = new Point(Ui.S(20), Ui.S(458)); c.Click += (s, e) => d.Close(); d.Controls.Add(c);
+                var pc = Ui.Btn("Print library card", 0); pc.Location = new Point(Ui.S(114), Ui.S(458)); pc.Click += (s, e) => CardDialog(p); d.Controls.Add(pc);
                 d.ShowDialog(this);
             }
         }
@@ -188,12 +378,12 @@ namespace Errin
         /* ---------- export ---------- */
         void ExportDialog()
         {
-            using (var d = Ui.Dlg("Transfer catalog", 600, 330))
+            using (var d = Ui.Dlg("Transfer catalog", 620, 350))
             {
-                d.Controls.Add(new Label { UseMnemonic = false, Text = "transfer catalog to another system", Font = Th.FT, AutoSize = true, Location = new Point(20, 14) });
+                d.Controls.Add(new Label { UseMnemonic = false, Text = "transfer catalog to another system", Font = Th.FT, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(14)) });
                 d.Controls.Add(new Label { UseMnemonic = false, Text = "Exports all " + db.Items.Count + " bibliographic records (with control and acquisition numbers) so they can be imported into another ILS (Koha, Follett Destiny, Alma, etc.).\n\nFull export (.zip) contains: MARC 21 binary (.mrc), MARCXML, MarcEdit text (.mrk), MARC-in-JSON and a spreadsheet CSV. Most systems accept the .mrc file directly.",
-                    AutoSize = false, Size = new Size(560, 150), Location = new Point(20, 46), ForeColor = Th.Ink });
-                var z = Ui.Btn("Download full export (.zip)", 0); z.Location = new Point(20, 214); var c = Ui.Btn("Spreadsheet only (.csv)", 1); c.Location = new Point(250, 214); var x = Ui.Btn("Close", 1); x.Location = new Point(20, 268);
+                    AutoSize = false, Size = new Size(Ui.S(570), Ui.S(150)), Location = new Point(Ui.S(20), Ui.S(46)), ForeColor = Th.Ink });
+                var z = Ui.Btn("Download full export (.zip)", 0); z.Location = new Point(Ui.S(20), Ui.S(218)); var c = Ui.Btn("Spreadsheet only (.csv)", 1); c.Location = new Point(Ui.S(260), Ui.S(218)); var x = Ui.Btn("Close", 1); x.Location = new Point(Ui.S(20), Ui.S(276));
                 z.Click += (s, e) => DoExport(true); c.Click += (s, e) => DoExport(false); x.Click += (s, e) => d.Close();
                 d.Controls.Add(z); d.Controls.Add(c); d.Controls.Add(x); d.ShowDialog(this);
             }
@@ -235,20 +425,20 @@ namespace Errin
         void ImportPreview(List<Item> items, int bad, string src)
         {
             var ok = items.Where(i => i.title != "").ToList(); int skip = items.Count - ok.Count; var dup = lib.DupSet(ok);
-            using (var d = Ui.Dlg("Import MARC records", 720, 560))
+            using (var d = Ui.Dlg("Import MARC records", 740, 580))
             {
-                d.Controls.Add(new Label { UseMnemonic = false, Text = "import marc records", Font = Th.FT, AutoSize = true, Location = new Point(20, 14) });
-                d.Controls.Add(new Label { UseMnemonic = false, Text = src, ForeColor = Th.Mut, AutoSize = true, Location = new Point(20, 42) });
+                d.Controls.Add(new Label { UseMnemonic = false, Text = "import marc records", Font = Th.FT, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(14)) });
+                d.Controls.Add(new Label { UseMnemonic = false, Text = src, ForeColor = Th.Mut, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(42)) });
                 d.Controls.Add(new Label { UseMnemonic = false, Text = items.Count + " records read \u00B7 " + (ok.Count - dup.Count) + " new \u00B7 " + dup.Count + " already in the catalogue" + (skip > 0 ? " \u00B7 " + skip + " skipped (no title in 245 $a)" : "") + (bad > 0 ? " \u00B7 " + bad + " damaged and ignored" : ""),
-                    Font = Th.FB, AutoSize = false, Size = new Size(680, 22), Location = new Point(20, 68) });
-                int y = 100; ComboBox mode = null;
-                if (dup.Count > 0) { mode = Ui.Combo(340, "Skip them", "Add them as another copy (new barcode)"); var f = Ui.Field("Records already in the catalogue", mode, 360); f.Location = new Point(20, y); d.Controls.Add(f); y += 62; }
-                var acq = new CheckBox { Text = "Give records that have no acquisition number a new one (ACQ-nnnnnn)", Checked = true, AutoSize = true, Location = new Point(20, y), ForeColor = Th.Ink, BackColor = Color.Transparent }; d.Controls.Add(acq); y += 30;
-                d.Controls.Add(new Label { UseMnemonic = false, Text = "Control numbers and barcodes from the file are kept when they are free; otherwise new ones are assigned.", ForeColor = Th.Mut, Font = Th.FS, AutoSize = true, Location = new Point(20, y) }); y += 28;
+                    Font = Th.FB, AutoSize = false, Size = new Size(Ui.S(695), Ui.S(24)), Location = new Point(Ui.S(20), Ui.S(68)) });
+                int y = 98; ComboBox mode = null;
+                if (dup.Count > 0) { mode = Ui.Combo(340, "Skip them", "Add them as another copy (new barcode)"); var f = Ui.Field("Records already in the catalogue", mode, 360); f.Location = new Point(Ui.S(20), Ui.S(y)); d.Controls.Add(f); y += 62; }
+                var acq = new CheckBox { Text = "Give records that have no acquisition number a new one (ACQ-nnnnnn)", Checked = true, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(y)), ForeColor = Th.Ink, BackColor = Color.Transparent }; d.Controls.Add(acq); y += 30;
+                d.Controls.Add(new Label { UseMnemonic = false, Text = "Control numbers and barcodes from the file are kept when they are free; otherwise new ones are assigned.", ForeColor = Th.Mut, Font = Th.FS, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(y)) }); y += 28;
                 var g = MakeGrid(new[] { "Title", "Author", "ISBN" }, ok.Take(8).Select(i => new[] { i.title, i.author, i.isbn }).ToList(), null, "Nothing to import");
-                g.Dock = DockStyle.None; g.Location = new Point(20, y); g.Size = new Size(680, 560 - y - 90); d.Controls.Add(g);
-                if (ok.Count > 8) d.Controls.Add(new Label { UseMnemonic = false, Text = "\u2026and " + (ok.Count - 8) + " more", ForeColor = Th.Mut, AutoSize = true, Location = new Point(20, 560 - 82) });
-                var go = Ui.Btn("Import", 0); go.Location = new Point(20, 560 - 52); go.Enabled = ok.Count > 0; var ca = Ui.Btn("Cancel", 1); ca.Location = new Point(110, 560 - 52); ca.Click += (s, e) => d.Close();
+                g.Dock = DockStyle.None; g.Location = new Point(Ui.S(20), Ui.S(y)); g.Size = new Size(Ui.S(695), Ui.S(580 - y - 95)); d.Controls.Add(g);
+                if (ok.Count > 8) d.Controls.Add(new Label { UseMnemonic = false, Text = "\u2026and " + (ok.Count - 8) + " more", ForeColor = Th.Mut, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(580 - 84)) });
+                var go = Ui.Btn("Import", 0); go.Location = new Point(Ui.S(20), Ui.S(580 - 54)); go.Enabled = ok.Count > 0; var ca = Ui.Btn("Cancel", 1); ca.Location = new Point(Ui.S(115), Ui.S(580 - 54)); ca.Click += (s, e) => d.Close();
                 go.Click += (s, e) =>
                 {
                     int skipped; int added = lib.AddItems(ok, mode != null && mode.SelectedIndex == 1 ? "copy" : "skip", acq.Checked, dup, out skipped); d.Close();
@@ -262,25 +452,25 @@ namespace Errin
         void ZDialog()
         {
             var presets = new List<ZTarget> { new ZTarget { n = "Library of Congress", host = "lx2.loc.gov", port = 210, db = "LCDB" } }; int nPre = presets.Count;
-            using (var d = Ui.Dlg("Search Z39.50 libraries", 860, 640))
+            using (var d = Ui.Dlg("Search Z39.50 libraries", 880, 660))
             {
-                d.Controls.Add(new Label { UseMnemonic = false, Text = "search z39.50 libraries", Font = Th.FT, AutoSize = true, Location = new Point(20, 14) });
-                d.Controls.Add(new Label { UseMnemonic = false, Text = "Find a record in another library's catalogue and copy it into yours. Needs an internet connection.", ForeColor = Th.Mut, AutoSize = true, Location = new Point(20, 40) });
+                d.Controls.Add(new Label { UseMnemonic = false, Text = "search z39.50 libraries", Font = Th.FT, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(14)) });
+                d.Controls.Add(new Label { UseMnemonic = false, Text = "Find a record in another library's catalogue and copy it into yours. Needs an internet connection.", ForeColor = Th.Mut, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(40)) });
                 Func<List<ZTarget>> all = () => presets.Concat(db.Set.zt).ToList();
-                var cbT = new ComboBox { Width = 320, DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat, BackColor = Th.Bg, ForeColor = Th.Ink, Font = Th.F };
+                var cbT = new ComboBox { Width = Ui.S(320), DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat, BackColor = Th.Bg, ForeColor = Th.Ink, Font = Th.F };
                 var cbF = Ui.Combo(200, "ISBN", "Title", "Author", "Any word"); string[] fkeys = { "isbn", "title", "author", "any" };
                 var q = Ui.Txt(520); var go = Ui.Btn("Search", 0);
-                var fT = Ui.Field("Library", cbT, 336); fT.Location = new Point(20, 68); var fF = Ui.Field("Search by", cbF, 216); fF.Location = new Point(370, 68);
-                var fQ = Ui.Field("Search for", q, 540); fQ.Location = new Point(20, 130); go.Location = new Point(580, 148);
-                var gb = new GroupBox { Text = "Connection details", ForeColor = Th.Mut, Location = new Point(20, 190), Size = new Size(820, 128), BackColor = Color.Transparent };
+                var fT = Ui.Field("Library", cbT, 336); fT.Location = new Point(Ui.S(20), Ui.S(68)); var fF = Ui.Field("Search by", cbF, 216); fF.Location = new Point(Ui.S(380), Ui.S(68));
+                var fQ = Ui.Field("Search for", q, 540); fQ.Location = new Point(Ui.S(20), Ui.S(132)); go.Location = new Point(Ui.S(595), Ui.S(150));
+                var gb = new GroupBox { Text = "Connection details", ForeColor = Th.Mut, Location = new Point(Ui.S(20), Ui.S(196)), Size = new Size(Ui.S(835), Ui.S(132)), BackColor = Color.Transparent };
                 var h = Ui.Txt(180); var p = Ui.Num(80, 1, 65535, 210); var dbn = Ui.Txt(120); var us = Ui.Txt(110); var pw = Ui.Txt(110, true);
-                Action<Control, string, int> put = (c, cap, x) => { var f = Ui.Field(cap, c, c.Width + 14); f.Location = new Point(x, 18); gb.Controls.Add(f); };
-                us.Width = 150; pw.Width = 150; put(h, "Host", 10); put(p, "Port", 210); put(dbn, "Database", 310); put(us, "User name (optional)", 456); put(pw, "Password (optional)", 634);
-                var sv = Ui.Btn("Save this library", 1); sv.Location = new Point(10, 84); sv.MinimumSize = new Size(0, 28); var rm = Ui.Btn("Remove saved library", 1); rm.Location = new Point(170, 84); rm.MinimumSize = new Size(0, 28); gb.Controls.Add(sv); gb.Controls.Add(rm);
-                var st = new Label { UseMnemonic = false, Text = "", ForeColor = Th.Mut, AutoSize = false, Size = new Size(820, 22), Location = new Point(20, 326) };
-                var res = new List<Item>(); var grid = Ui.Grid(); grid.Location = new Point(20, 354); grid.Size = new Size(820, 208); grid.Dock = DockStyle.None;
+                Action<Control, string, int> put = (c, cap, x) => { var f = Ui.Field(cap, c, c.Width + 14); f.Location = new Point(Ui.S(x), Ui.S(18)); gb.Controls.Add(f); };
+                us.Width = Ui.S(150); pw.Width = Ui.S(150); put(h, "Host", 10); put(p, "Port", 210); put(dbn, "Database", 310); put(us, "User name (optional)", 456); put(pw, "Password (optional)", 634);
+                var sv = Ui.Btn("Save this library", 1); sv.Location = new Point(Ui.S(10), Ui.S(88)); sv.MinimumSize = new Size(0, Ui.S(28)); var rm = Ui.Btn("Remove saved library", 1); rm.Location = new Point(Ui.S(175), Ui.S(88)); rm.MinimumSize = new Size(0, Ui.S(28)); gb.Controls.Add(sv); gb.Controls.Add(rm);
+                var st = new Label { UseMnemonic = false, Text = "", ForeColor = Th.Mut, AutoSize = false, Size = new Size(Ui.S(835), Ui.S(22)), Location = new Point(Ui.S(20), Ui.S(336)) };
+                var res = new List<Item>(); var grid = Ui.Grid(); grid.Location = new Point(Ui.S(20), Ui.S(364)); grid.Size = new Size(Ui.S(835), Ui.S(218)); grid.Dock = DockStyle.None;
                 Ui.Fill(grid, new[] { "Title", "Author", "Publisher", "Year", "ISBN" }, new List<string[]>(), null, "No results yet");
-                var add = Ui.Btn("Add selected to catalogue", 0); add.Location = new Point(20, 576); var close = Ui.Btn("Close", 1); close.Location = new Point(272, 576); close.Click += (s, e) => d.Close();
+                var add = Ui.Btn("Add selected to catalogue", 0); add.Location = new Point(Ui.S(20), Ui.S(594)); var close = Ui.Btn("Close", 1); close.Location = new Point(Ui.S(280), Ui.S(594)); close.Click += (s, e) => d.Close();
                 Action reload = () => { cbT.Items.Clear(); foreach (var t in all()) cbT.Items.Add(t.n); cbT.Items.Add("Another library\u2026"); };
                 Action pick = () =>
                 {

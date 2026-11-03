@@ -70,7 +70,8 @@ static class SelfTest
         Ok(ldb.Items.Select(i => i.ctl).Distinct().Count() == ldb.Items.Count && ldb.Items.Select(i => i.barcode).Distinct().Count() == ldb.Items.Count, "control numbers and barcodes stay unique");
         ldb.Patrons.Add(new Patron { id = "OLD", name = "Old", reg = "2010-01-01", last = "2010-01-01" }); Ok(lib.Purge() == 1 && lib.PatronById("OLD") == null, "5-year retention purge");
         Ok(Lookup.NormalizeIsbn("0-547-92822-x") == "054792822X" && Lookup.NormalizeIsbn("0547928228") == null && Lookup.NormalizeIsbn("9780064400558") != null && Lookup.NormalizeIsbn("9780064400559") == null, "ISBN validation");
-        var zip = new ZipOut(); zip.Add("a.txt", Encoding.UTF8.GetBytes("hello hello hello hello")); zip.Add("b.mrc", Marc.ToMrcBytes(items)); System.IO.File.WriteAllBytes("/tmp/t.zip", zip.Finish());
+        var zip = new ZipOut(); zip.Add("a.txt", Encoding.UTF8.GetBytes("hello hello hello hello")); zip.Add("b.mrc", Marc.ToMrcBytes(items));
+        string tmpZip = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "t.zip"); System.IO.File.WriteAllBytes(tmpZip, zip.Finish()); try { System.IO.File.Delete(tmpZip); } catch { }
 
         // IC numbers, Simplified View wording, admin password
         Ok(Lib.NormIc("120315100001") == "120315-10-0001" && Lib.NormIc("120315-10-0001") == "120315-10-0001" && Lib.NormIc(" 120315 10 0001 ") == "120315-10-0001", "IC normalised with dashes");
@@ -84,6 +85,18 @@ static class SelfTest
         Ok(Auth.Verify("my new pass", salt, h1, Auth.Iterations) && !Auth.Verify("my new pasS", salt, h1, Auth.Iterations) && !Auth.Verify("", salt, h1, Auth.Iterations), "changed password verifies, wrong ones fail");
         Ok(Auth.Hash("x", salt, 10) != Auth.Hash("x", Auth.NewSalt(), 10), "salted");
         var sdb = Lib.Seed(); sdb.Set.school = "SK Errin"; Ok(Db.FromJson(sdb.ToJson()).Set.school == "SK Errin", "school name persists");
+
+        // Weeding checks
+        var weedItem = ldb.Items[1];
+        lib.Weed(weedItem, "Damaged cover");
+        Ok(lib.IsWeeded(weedItem), "item is weeded");
+        Ok(weedItem.weeded == Lib.Today() && weedItem.weed_reason == "Damaged cover", "weeding date and reason recorded");
+        Ok(lib.Checkout(S1, "B1002", out msg) == "Item has been weeded and withdrawn from circulation", "checkout blocked for weeded item");
+        Ok(lib.PlaceHold(S1, "B1002", out msg) == "Cannot place hold on a weeded item", "hold blocked for weeded item");
+        lib.Unweed(weedItem);
+        Ok(!lib.IsWeeded(weedItem), "item unweeded");
+        Ok(lib.Checkout(S1, "B1002", out msg) == null, "unweeded item can be checked out");
+        lib.Return("B1002", out msg);
 
         // Copy-cataloguing sources: response parsing (HathiTrust JSON with MARC-XML, SRU MARCXML)
         {

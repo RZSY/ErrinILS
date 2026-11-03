@@ -20,14 +20,20 @@ namespace Errin
         Panel host; Label sbar, toast; Timer toastT, debT; FlowLayoutPanel tabBar;
         string pwSalt = "", pwHash = ""; int pwIter = Auth.Iterations;
         readonly Dictionary<string, Button> tabs = new Dictionary<string, Button>();
-        string catQ = "", patQ = "";
+        string catQ = "", patQ = "", catFilter = "active";
         DataGridView catGrid, patGrid; Label catNote, patNote;
         static readonly string[][] NAV = { new[] { "dash", "Dashboard" }, new[] { "circ", "Circulation" }, new[] { "cat", "Catalog" }, new[] { "pat", "Students" }, new[] { "fine", "Fines" }, new[] { "rep", "Reports" }, new[] { "bak", "Backup" }, new[] { "set", "Settings" } };
 
         public MainForm()
         {
             store = new Store(null);
-            Text = "ErrinILS"; Font = Th.F; BackColor = Th.Bg; ForeColor = Th.Ink; ClientSize = new Size(1240, 800); MinimumSize = new Size(900, 600); StartPosition = FormStartPosition.CenterScreen; AllowDrop = true;
+            Text = "ErrinILS"; Font = Th.F; BackColor = Th.Bg; ForeColor = Th.Ink;
+            var screen = Screen.FromControl(this).WorkingArea;
+            int initW = Math.Min(Ui.S(1240), Math.Max(Ui.S(850), screen.Width - Ui.S(40)));
+            int initH = Math.Min(Ui.S(800), Math.Max(Ui.S(580), screen.Height - Ui.S(40)));
+            ClientSize = new Size(initW, initH);
+            MinimumSize = new Size(Math.Min(initW, Ui.S(900)), Math.Min(initH, Ui.S(600)));
+            StartPosition = FormStartPosition.CenterScreen; AllowDrop = true;
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
             db = store.Load(); bool fresh = db == null; if (fresh) db = Lib.Seed();
             lib = new Lib(db); lib.FixItems(); if (db.Set == null) db.Set = new Settings(); lib.Purge();
@@ -45,25 +51,27 @@ namespace Errin
         {
             var main = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, BackColor = Th.Bg, Margin = new Padding(0) };
             main.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-            main.RowStyles.Add(new RowStyle(SizeType.Absolute, 74)); main.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); main.RowStyles.Add(new RowStyle(SizeType.Absolute, 26));
+            main.RowStyles.Add(new RowStyle(SizeType.Absolute, Ui.S(74)));
+            main.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            main.RowStyles.Add(new RowStyle(SizeType.Absolute, Ui.S(26)));
             var head = new Panel { Dock = DockStyle.Fill, BackColor = Th.Bg, Margin = new Padding(0) };
-            var logo = new Panel { Dock = DockStyle.Left, Width = 250, BackColor = Th.Blue };
-            logo.Controls.Add(new Label { UseMnemonic = false, Text = "errin.", Font = new Font("Segoe UI", 24f, FontStyle.Bold), ForeColor = Color.White, AutoSize = true, Location = new Point(20, 2), BackColor = Color.Transparent });
-            logo.Controls.Add(new Label { UseMnemonic = false, Text = "A school library system.", Font = Th.FS, ForeColor = Color.White, AutoSize = true, Location = new Point(24, 50), BackColor = Color.Transparent });
+            var logo = new Panel { Dock = DockStyle.Left, Width = Ui.S(250), BackColor = Th.Blue };
+            logo.Controls.Add(new Label { UseMnemonic = false, Text = "errin.", Font = Th.FLogo, ForeColor = Color.White, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(2)), BackColor = Color.Transparent });
+            logo.Controls.Add(new Label { UseMnemonic = false, Text = "A school library system.", Font = Th.FS, ForeColor = Color.White, AutoSize = true, Location = new Point(Ui.S(24), Ui.S(50)), BackColor = Color.Transparent });
             var tb = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false, BackColor = Th.Bg, Padding = new Padding(0), AutoScroll = false };
             foreach (var n in NAV)
             {
                 string key = n[0];
-                var b = new Button { Text = n[1], FlatStyle = FlatStyle.Flat, Font = Th.FB, Height = 74, Width = 108, Margin = new Padding(0), Cursor = Cursors.Hand, BackColor = Th.Bg, ForeColor = Th.Ink, UseVisualStyleBackColor = false };
+                var b = new Button { Text = n[1], FlatStyle = FlatStyle.Flat, Font = Th.FB, Height = Ui.S(74), Width = Ui.S(108), Margin = new Padding(0), Cursor = Cursors.Hand, BackColor = Th.Bg, ForeColor = Th.Ink, UseVisualStyleBackColor = false };
                 b.FlatAppearance.BorderSize = 0; b.FlatAppearance.MouseOverBackColor = Th.Dim; b.Click += (s, e) => Go(key); tabs[key] = b;
-                tb.Controls.Add(new Panel { Width = 2, Height = 74, BackColor = Th.Ink, Margin = new Padding(0) }); tb.Controls.Add(b);
+                tb.Controls.Add(new Panel { Width = Math.Max(1, Ui.S(2)), Height = Ui.S(74), BackColor = Th.Ink, Margin = new Padding(0) }); tb.Controls.Add(b);
             }
             tabBar = tb; head.Controls.Add(tb); head.Controls.Add(logo);
-            host = new Panel { Dock = DockStyle.Fill, Padding = new Padding(28, 22, 28, 6), BackColor = Th.Bg, Margin = new Padding(0) };
-            sbar = new Label { UseMnemonic = false, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, Font = new Font("Segoe UI", 8.5f, FontStyle.Bold), Padding = new Padding(10, 0, 0, 0), Margin = new Padding(0) };
+            host = new Panel { Dock = DockStyle.Fill, Padding = Ui.S(new Padding(28, 22, 28, 6)), BackColor = Th.Bg, Margin = new Padding(0) };
+            sbar = new Label { UseMnemonic = false, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, Font = new Font("Segoe UI", 8.5f, FontStyle.Bold), Padding = Ui.S(new Padding(10, 0, 0, 0)), Margin = new Padding(0) };
             main.Controls.Add(head, 0, 0); main.Controls.Add(host, 0, 1); main.Controls.Add(sbar, 0, 2);
             Controls.Add(main);
-            toast = new Label { UseMnemonic = false, AutoSize = true, BackColor = Th.Yel, ForeColor = Th.Dark, Font = new Font("Segoe UI", 10.5f, FontStyle.Bold), Padding = new Padding(16, 10, 16, 10), Visible = false };
+            toast = new Label { UseMnemonic = false, AutoSize = true, BackColor = Th.Yel, ForeColor = Th.Dark, Font = new Font("Segoe UI", 10.5f, FontStyle.Bold), Padding = Ui.S(new Padding(16, 10, 16, 10)), Visible = false };
             Controls.Add(toast); toast.BringToFront();
             toastT = new Timer { Interval = 3300 }; toastT.Tick += (s, e) => { toastT.Stop(); toast.Visible = false; };
             debT = new Timer { Interval = 150 }; debT.Tick += (s, e) => { debT.Stop(); if (view == "cat") FilterCat(); else if (view == "pat") FilterPat(); };
@@ -79,7 +87,7 @@ namespace Errin
         void Toast(string m)
         {
             toast.Text = m; toast.Visible = true; toast.PerformLayout();
-            toast.Location = new Point(Math.Max(10, (ClientSize.Width - toast.Width) / 2), ClientSize.Height - 90); toast.BringToFront(); toastT.Stop(); toastT.Start();
+            toast.Location = new Point(Math.Max(10, (ClientSize.Width - toast.Width) / 2), ClientSize.Height - Ui.S(90)); toast.BringToFront(); toastT.Stop(); toastT.Start();
         }
         void Commit(string msg) { Save(); Render(); if (msg != null) Toast(msg); }
         void Go(string v)
@@ -106,25 +114,25 @@ namespace Errin
         static Control ScrollPage(params Control[] rows)
         {
             var p = new Panel { AutoScroll = true, BackColor = Th.Bg };
-            var t = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, ColumnCount = 1, BackColor = Th.Bg, Margin = new Padding(0), Padding = new Padding(0, 0, 18, 0) };
+            var t = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, ColumnCount = 1, BackColor = Th.Bg, Margin = new Padding(0), Padding = Ui.S(new Padding(0, 0, 18, 0)) };
             t.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             for (int k = 0; k < rows.Length; k++) { t.RowStyles.Add(new RowStyle(SizeType.AutoSize)); rows[k].Dock = DockStyle.Fill; t.Controls.Add(rows[k], 0, k); }
             p.Controls.Add(t); return p;
         }
         static Control Cols(int h, params Control[] cells)
         {
-            var t = new TableLayoutPanel { Height = h, ColumnCount = cells.Length, RowCount = 1, BackColor = Color.Transparent, Margin = new Padding(0) };
-            for (int k = 0; k < cells.Length; k++) { t.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f / cells.Length)); cells[k].Margin = new Padding(0, 0, k < cells.Length - 1 ? 14 : 0, 14); cells[k].Dock = DockStyle.Fill; t.Controls.Add(cells[k], k, 0); }
+            var t = new TableLayoutPanel { Height = Ui.S(h), ColumnCount = cells.Length, RowCount = 1, BackColor = Color.Transparent, Margin = new Padding(0) };
+            for (int k = 0; k < cells.Length; k++) { t.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f / cells.Length)); cells[k].Margin = Ui.S(new Padding(0, 0, k < cells.Length - 1 ? 14 : 0, 14)); cells[k].Dock = DockStyle.Fill; t.Controls.Add(cells[k], k, 0); }
             t.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); return t;
         }
-        static Control Spacer(int h) { return new Panel { Height = h, BackColor = Color.Transparent, Margin = new Padding(0) }; }
+        static Control Spacer(int h) { return new Panel { Height = Ui.S(h), BackColor = Color.Transparent, Margin = new Padding(0) }; }
         static DataGridView MakeGrid(string[] h, List<string[]> rows, List<object> tags, string empty) { var g = Ui.Grid(); Ui.Fill(g, h, rows, tags, empty); return g; }
         static Control WithButtons(Control grid, params Button[] btns)
         {
             var t = new TableLayoutPanel { ColumnCount = 1, RowCount = 2, BackColor = Color.Transparent, Margin = new Padding(0) };
-            t.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); t.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); t.RowStyles.Add(new RowStyle(SizeType.Absolute, 44));
+            t.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); t.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); t.RowStyles.Add(new RowStyle(SizeType.Absolute, Ui.S(44)));
             grid.Dock = DockStyle.Fill; t.Controls.Add(grid, 0, 0);
-            var f = Ui.Flow(false); f.Padding = new Padding(0, 8, 0, 0); f.Dock = DockStyle.Fill; foreach (var b in btns) f.Controls.Add(b); t.Controls.Add(f, 0, 1); return t;
+            var f = Ui.Flow(false); f.Padding = Ui.S(new Padding(0, 8, 0, 0)); f.Dock = DockStyle.Fill; foreach (var b in btns) f.Controls.Add(b); t.Controls.Add(f, 0, 1); return t;
         }
         static Control Vbox(params Control[] c) { var f = Ui.Flow(false, FlowDirection.TopDown); foreach (var x in c) f.Controls.Add(x); return f; }
         string Mn(double v) { return Lib.Money(v); }
@@ -134,7 +142,10 @@ namespace Errin
         {
             var o = db.Loans.Where(l => l.ret == null).ToList(); var od = o.Where(lib.Overdue).ToList(); double un = db.Fines.Where(f => f.paid == "").Sum(f => f.amt);
             var stats = Ui.Flow(); var cl = new[] { Th.Blue, Th.Yel, Th.Red };
-            var vals = new[] { new[] { db.Items.Count.ToString(), "Titles in catalog" }, new[] { db.Patrons.Count.ToString(), "Registered students" }, new[] { o.Count.ToString(), "Items on loan now" }, new[] { db.Loans.Count.ToString(), "Checkouts, all time" },
+            int act = db.Items.Count(i => string.IsNullOrEmpty(i.weeded));
+            int wdd = db.Items.Count(i => !string.IsNullOrEmpty(i.weeded));
+            string titStat = wdd > 0 ? act + " (" + wdd + " weeded)" : act.ToString();
+            var vals = new[] { new[] { titStat, "Active catalog titles" }, new[] { db.Patrons.Count.ToString(), "Registered students" }, new[] { o.Count.ToString(), "Items on loan now" }, new[] { db.Loans.Count.ToString(), "Checkouts, all time" },
                 new[] { od.Count.ToString(), "Overdue items" }, new[] { Mn(un), "Unpaid fines" }, new[] { db.Holds.Count(h => h.st != "done").ToString(), "Active holds" } };
             for (int k = 0; k < vals.Length; k++) stats.Controls.Add(Ui.Stat(vals[k][0], vals[k][1], cl[k % 3]));
             var rows = od.Select(l => new[] { lib.PName(l.pid), lib.PClass(l.pid), lib.Title(l.iid), l.due, Lib.Diff(Lib.Today(), l.due).ToString(), Mn(Lib.Diff(Lib.Today(), l.due) * db.Set.rate), Mn(lib.Owed(l.pid)) }).ToList();
@@ -146,8 +157,8 @@ namespace Errin
                 var g = MakeGrid(new[] { "#", "Student", "Class", "Books" }, r, null, "No borrowing yet"); g.Columns[0].FillWeight = 20; return g;
             };
             string t = Lib.Today();
-            var kt = new Label { UseMnemonic = false, Text = "A simpler circulation screen with just Check out and Return, for quick use at the library desk. The other tabs are hidden while it is open.", AutoSize = false, Size = new Size(760, 44), ForeColor = Th.Ink };
-            var kb = Ui.Btn("Open Simplified View", 0, (s, e) => Go("simple")); kb.Margin = new Padding(0, 6, 0, 0);
+            var kt = new Label { UseMnemonic = false, Text = "A simpler circulation screen with just Check out and Return, for quick use at the library desk. The other tabs are hidden while it is open.", AutoSize = false, Size = new Size(Ui.S(760), Ui.S(44)), ForeColor = Th.Ink };
+            var kb = Ui.Btn("Open Simplified View", 0, (s, e) => Go("simple")); kb.Margin = Ui.S(new Padding(0, 6, 0, 0));
             var kcard = Ui.Card("Simplified View", Vbox(kt, kb));
             return ScrollPage(Ui.Heading("Welcome to Errin", "Library overview for " + DateTime.Now.ToString("ddd MMM dd yyyy", CultureInfo.InvariantCulture)), kcard, stats,
                 Ui.Card("Overdue items", og, 230), Spacer(0),
@@ -183,31 +194,57 @@ namespace Errin
         /* ---------- Catalog ---------- */
         Control CatPage()
         {
-            var q = Ui.Txt(300); q.Text = catQ; q.Margin = new Padding(0, 0, 14, 0); q.TextChanged += (s, e) => { catQ = q.Text; debT.Stop(); debT.Start(); };
-            var bar = Ui.Flow(false); bar.Controls.Add(Ui.Field("Search", q, 330));
-            var bf = Ui.Flow(false); bf.Padding = new Padding(0, 18, 0, 0);
+            var q = Ui.Txt(280); q.Text = catQ; q.Margin = Ui.S(new Padding(0, 0, 14, 0)); q.TextChanged += (s, e) => { catQ = q.Text; debT.Stop(); debT.Start(); };
+            var bar = Ui.Flow(false); bar.Controls.Add(Ui.Field("Search", q, 300));
+            var cbFilt = Ui.Combo(160, "Active records", "Weeded records", "All records");
+            if (catFilter == "weeded") cbFilt.SelectedIndex = 1;
+            else if (catFilter == "all") cbFilt.SelectedIndex = 2;
+            else cbFilt.SelectedIndex = 0;
+            cbFilt.SelectedIndexChanged += (s, e) =>
+            {
+                catFilter = cbFilt.SelectedIndex == 1 ? "weeded" : cbFilt.SelectedIndex == 2 ? "all" : "active";
+                FilterCat();
+            };
+            bar.Controls.Add(Ui.Field("Status", cbFilt, 175));
+            var bf = Ui.Flow(false); bf.Padding = Ui.S(new Padding(0, 18, 0, 0));
             bf.Controls.Add(Ui.Btn("+ Add record", 0, (s, e) => ItemForm(null))); bf.Controls.Add(Ui.Btn("Import MARC", 1, (s, e) => PickImport()));
             bf.Controls.Add(Ui.Btn("Z39.50 search", 1, (s, e) => ZDialog())); bf.Controls.Add(Ui.Btn("Print labels", 1, (s, e) => PrintShown())); bf.Controls.Add(Ui.Btn("Print spine labels", 1, (s, e) => PrintSpines())); bar.Controls.Add(bf);
             var tool = Ui.Card(null, bar);
             catGrid = Ui.Grid(); catNote = Ui.Lbl("", true);
             catGrid.CellDoubleClick += (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i != null) ItemForm(i); };
-            var btns = new[] { Ui.Btn("Edit", 1, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i == null) Toast("Select a record first"); else ItemForm(i); }),
+            var btns = new[] {
+                Ui.Btn("Edit", 1, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i == null) Toast("Select a record first"); else ItemForm(i); }),
+                Ui.Btn("Weed", 1, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i == null) Toast("Select a record first"); else WeedDialog(i); }),
                 Ui.Btn("MARC", 1, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i == null) Toast("Select a record first"); else MarcView(i); }),
                 Ui.Btn("Label", 1, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i == null) Toast("Select a record first"); else LabelDialog(i); }),
                 Ui.Btn("Spine label", 1, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i == null) Toast("Select a record first"); else SpineDialog(i); }),
-                Ui.Btn("Delete", 2, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i == null) Toast("Select a record first"); else DelItem(i); }) };
+                Ui.Btn("Delete", 2, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i == null) Toast("Select a record first"); else DelItem(i); })
+            };
             var body = WithButtons(catGrid, btns);
             var card = Ui.Card("Records", body, 1);
-            return Ui.Stack(new Control[] { Ui.Heading("Catalog", "Bibliographic records with MARC 21 fields"), tool, catNote, card }, 3);
+            return Ui.Stack(new Control[] { Ui.Heading("Catalog", "Bibliographic records with MARC 21 fields and weeding control"), tool, catNote, card }, 3);
         }
         List<Item> shown = new List<Item>();
         void FilterCat()
         {
             if (catGrid == null || catGrid.IsDisposed) return; string q = (catQ ?? "").ToLowerInvariant();
-            shown = db.Items.Where(i => i.All().ToLowerInvariant().Contains(q)).ToList();
-            var rows = shown.Take(LIM).Select(i => { var l = lib.OpenLoan(i.id); return new[] { i.barcode, i.ctl, i.acq, i.title, i.author, i.call, l != null ? "Due " + l.due : "Available" }; }).ToList();
-            Ui.Fill(catGrid, new[] { "Barcode", "Control no.", "Acq. no.", "Title", "Author", "Call no.", "Status" }, rows, shown.Take(LIM).Cast<object>().ToList(), "No records");
-            catNote.Text = shown.Count > LIM ? "Showing the first " + LIM + " of " + shown.Count + ". Use the search box to narrow down." : shown.Count + " record(s)";
+            var all = db.Items.Where(i => i.All().ToLowerInvariant().Contains(q));
+            if (catFilter == "weeded") shown = all.Where(i => !string.IsNullOrEmpty(i.weeded)).ToList();
+            else if (catFilter == "all") shown = all.ToList();
+            else shown = all.Where(i => string.IsNullOrEmpty(i.weeded)).ToList();
+
+            var rows = shown.Take(LIM).Select(i => {
+                string status;
+                if (!string.IsNullOrEmpty(i.weeded)) status = "Weeded (" + (string.IsNullOrEmpty(i.weed_reason) ? i.weeded : i.weed_reason) + ")";
+                else { var l = lib.OpenLoan(i.id); status = l != null ? "Due " + l.due : "Available"; }
+                return new[] { i.barcode, i.ctl, i.acq, i.title, i.author, i.call, status };
+            }).ToList();
+            Ui.Fill(catGrid, new[] { "Barcode", "Control no.", "Acq. no.", "Title", "Author", "Call no.", "Status" }, rows, shown.Take(LIM).Cast<object>().ToList(), "No records found");
+            string countMsg = shown.Count > LIM ? "Showing the first " + LIM + " of " + shown.Count + ". Use the search box to narrow down." : shown.Count + " record(s)";
+            int weededTotal = db.Items.Count(i => !string.IsNullOrEmpty(i.weeded));
+            if (catFilter == "active" && weededTotal > 0) countMsg += " \u00B7 " + weededTotal + " weeded item(s) hidden";
+            else if (catFilter == "weeded") countMsg += " (weeded / withdrawn from circulation)";
+            catNote.Text = countMsg;
         }
         void DelItem(Item i)
         {
@@ -231,9 +268,9 @@ namespace Errin
         /* ---------- Students ---------- */
         Control PatPage()
         {
-            var q = Ui.Txt(300); q.Text = patQ; q.Margin = new Padding(0, 0, 14, 0); q.TextChanged += (s, e) => { patQ = q.Text; debT.Stop(); debT.Start(); };
+            var q = Ui.Txt(300); q.Text = patQ; q.Margin = Ui.S(new Padding(0, 0, 14, 0)); q.TextChanged += (s, e) => { patQ = q.Text; debT.Stop(); debT.Start(); };
             var bar = Ui.Flow(false); bar.Controls.Add(Ui.Field("Search", q, 330));
-            var bf = Ui.Flow(false); bf.Padding = new Padding(0, 18, 0, 0); bf.Controls.Add(Ui.Btn("+ Register student", 0, (s, e) => PatForm())); bar.Controls.Add(bf);
+            var bf = Ui.Flow(false); bf.Padding = Ui.S(new Padding(0, 18, 0, 0)); bf.Controls.Add(Ui.Btn("+ Register student", 0, (s, e) => PatForm())); bar.Controls.Add(bf);
             patGrid = Ui.Grid(); patNote = Ui.Lbl("", true);
             patGrid.CellDoubleClick += (s, e) => { var p = Ui.Sel<Patron>(patGrid); if (p != null) PatView(p); };
             var body = WithButtons(patGrid, Ui.Btn("Account", 1, (s, e) => { var p = Ui.Sel<Patron>(patGrid); if (p == null) Toast("Select a student first"); else PatView(p); }),
@@ -286,11 +323,12 @@ namespace Errin
             var cl = new Dictionary<string, int>(); foreach (var l in db.Loans) { var k = lib.PClass(l.pid); if (k == "") k = "?"; cl[k] = (cl.ContainsKey(k) ? cl[k] : 0) + 1; }
             double tot = db.Fines.Sum(f => f.amt), paid = db.Fines.Where(f => f.paid == "paid").Sum(f => f.amt);
             int late = db.Loans.Count(l => l.ret != null && string.CompareOrdinal(l.ret, l.due) > 0), rr = db.Loans.Count(l => l.ret != null);
+            int weedTot = db.Items.Count(i => !string.IsNullOrEmpty(i.weeded));
             var st = Ui.Flow(); st.Controls.Add(Ui.Stat(db.Loans.Count(l => l.ret == null).ToString(), "Books on loan now", Th.Blue)); st.Controls.Add(Ui.Stat(rr > 0 ? Math.Round(late * 100.0 / rr) + "%" : "0%", "Returned late", Th.Yel));
-            st.Controls.Add(Ui.Stat(Mn(tot), "Fines assessed", Th.Red)); st.Controls.Add(Ui.Stat(Mn(paid), "Fines collected", Th.Blue));
+            st.Controls.Add(Ui.Stat(Mn(tot), "Fines assessed", Th.Red)); st.Controls.Add(Ui.Stat(weedTot.ToString(), "Weeded items", Th.Blue));
             Func<List<KeyValuePair<string, double>>, bool, BarChart> chart = (d, v) => new BarChart { Data = d, Vertical = v };
             var unpaid = db.Patrons.Select(p => new { p.name, v = lib.Unpaid(p.id) }).Where(x => x.v > 0).Select(x => new[] { x.name, Mn(x.v) }).ToList();
-            return ScrollPage(Ui.Heading("Reports", "Circulation and fine analytics"), st,
+            return ScrollPage(Ui.Heading("Reports", "Circulation, collection and fine analytics"), st,
                 Cols(230, Ui.Card("Checkouts, last 6 months", chart(mo, true), 1), Ui.Card("Most borrowed titles", chart(top, false), 1)),
                 Cols(250, Ui.Card("Checkouts by class", chart(cl.OrderByDescending(x => x.Value).Take(8).Select(x => new KeyValuePair<string, double>(x.Key, x.Value)).ToList(), false), 1),
                     Ui.Card("Students with unpaid fines", MakeGrid(new[] { "Student", "Owed" }, unpaid, null, "None"), 1)));
@@ -299,7 +337,7 @@ namespace Errin
         /* ---------- Backup ---------- */
         Control BakPage()
         {
-            var info = new Label { UseMnemonic = false, Text = "Download a backup of everything (students, loans, holds, fines, catalog), or restore from one. Keep a copy on a USB drive or cloud storage.", AutoSize = false, Size = new Size(760, 44), ForeColor = Th.Ink };
+            var info = new Label { UseMnemonic = false, Text = "Download a backup of everything (students, loans, holds, fines, catalog), or restore from one. Keep a copy on a USB drive or cloud storage.", AutoSize = false, Size = new Size(Ui.S(760), Ui.S(44)), ForeColor = Th.Ink };
             var row = Ui.Flow(false); row.Controls.Add(Ui.Btn("Download backup", 0, (s, e) => Backup())); row.Controls.Add(Ui.Btn("Restore from backup (password)", 1, (s, e) => { if (AskPw()) Restore(); }));
             return ScrollPage(Ui.Heading("Backup", "Protect your data. Back up regularly and keep a copy on a USB drive or cloud storage."), Ui.Card("Backup & restore", Vbox(info, row)));
         }
@@ -330,10 +368,10 @@ namespace Errin
             var rate = Ui.Num(110, 0, 1000, (decimal)s.rate, 2, 0.05m); var mx = Ui.Num(110, 1, 100, s.maxLoans); var blk = Ui.Num(110, 0, 100000, (decimal)s.block, 2, 1);
             var sch = Ui.Txt(300); sch.Text = s.school; var pol = Ui.Flow(); pol.Controls.Add(Ui.Field("School / library name (printed on library cards)", sch, 400)); pol.Controls.Add(Ui.Field("Fine per day late", rate, 190)); pol.Controls.Add(Ui.Field("Max items per student", mx, 210)); pol.Controls.Add(Ui.Field("Block checkout at unpaid fines of", blk, 290));
             var polBody = Vbox(pol, Ui.Lbl("Loan period fixed at " + Lib.LOAN + " days \u00B7 max 2 renewals.", true), Spacer(6), Ui.Btn("Save", 0, (a, b) => { db.Set.school = sch.Text.Trim(); db.Set.rate = (double)rate.Value; db.Set.maxLoans = (int)mx.Value; db.Set.block = (double)blk.Value; Save(); Toast("Settings saved"); }));
-            Func<string, int, Control> para = (t, h) => new Label { UseMnemonic = false, Text = t, AutoSize = false, Size = new Size(820, h), ForeColor = Th.Ink };
+            Func<string, int, Control> para = (t, h) => new Label { UseMnemonic = false, Text = t, AutoSize = false, Size = new Size(Ui.S(820), Ui.S(h)), ForeColor = Th.Ink };
             var zE = Ui.Combo(150, "Off", "On"); var zP = Ui.Num(110, 1, 65535, zc.port); var zD = Ui.Txt(150); zD.Text = zc.db; var zB = Ui.Combo(170, "Other computers", "This computer only");
             zE.SelectedIndex = zc.enabled ? 1 : 0; zB.SelectedIndex = zc.bind == "local" ? 1 : 0;
-            var zs = new Label { UseMnemonic = false, AutoSize = false, Size = new Size(820, 70), ForeColor = Th.Mut, Margin = new Padding(0, 10, 0, 0) }; zStatusLabel = zs; ZShow();
+            var zs = new Label { UseMnemonic = false, AutoSize = false, Size = new Size(Ui.S(820), Ui.S(70)), ForeColor = Th.Mut, Margin = Ui.S(new Padding(0, 10, 0, 0)) }; zStatusLabel = zs; ZShow();
             var zf = Ui.Flow(); zf.Controls.Add(Ui.Field("Server", zE, 160)); zf.Controls.Add(Ui.Field("Port", zP, 120)); zf.Controls.Add(Ui.Field("Database name", zD, 160)); zf.Controls.Add(Ui.Field("Reachable from", zB, 190));
             var zBody = Vbox(para("Lets other library systems and Z39.50 clients search this catalogue over the network. It is read-only and shares bibliographic records only: never students, loans or fines. Off by default.", 44), zf,
                 Ui.Btn("Apply", 0, (a, b) => ZApply(zE.SelectedIndex == 1, (int)zP.Value, zD.Text.Trim(), zB.SelectedIndex == 1 ? "local" : "network")), zs);
@@ -420,11 +458,11 @@ namespace Errin
         {
             using (var d = Ui.Dlg("Enter password", 380, 190))
             {
-                var t = Ui.Txt(340, true); t.Location = new Point(20, 76);
-                d.Controls.Add(new Label { UseMnemonic = false, Text = "enter password", Font = Th.FT, AutoSize = true, Location = new Point(20, 16), ForeColor = Th.Ink });
-                d.Controls.Add(Ui.Lbl("This area is password protected.", true)); d.Controls[d.Controls.Count - 1].Location = new Point(20, 44);
+                var t = Ui.Txt(340, true); t.Location = new Point(Ui.S(20), Ui.S(76));
+                d.Controls.Add(new Label { UseMnemonic = false, Text = "enter password", Font = Th.FT, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(16)), ForeColor = Th.Ink });
+                d.Controls.Add(Ui.Lbl("This area is password protected.", true)); d.Controls[d.Controls.Count - 1].Location = new Point(Ui.S(20), Ui.S(44));
                 d.Controls.Add(t);
-                var ok = Ui.Btn("Unlock", 0); ok.Location = new Point(20, 124); var cancel = Ui.Btn("Cancel", 1); cancel.Location = new Point(110, 124);
+                var ok = Ui.Btn("Unlock", 0); ok.Location = new Point(Ui.S(20), Ui.S(124)); var cancel = Ui.Btn("Cancel", 1); cancel.Location = new Point(Ui.S(110), Ui.S(124));
                 bool good = false;
                 Action check = () =>
                 {

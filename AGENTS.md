@@ -1,4 +1,4 @@
-# AGENT.md - ErrinILS Developer & Agent Guide
+# AGENTS.md - ErrinILS Developer & Agent Guide
 
 Welcome to **ErrinILS** (School Integrated Library System). This guide provides AI agents and developers with essential context, architectural rules, build/test commands, and conventions for working effectively in this repository.
 
@@ -23,7 +23,7 @@ Welcome to **ErrinILS** (School Integrated Library System). This guide provides 
 
 ```text
 d:/errin/
-├── AGENT.md                      # This guide for agents and contributors
+├── AGENTS.md                     # This guide for agents and contributors
 ├── README.md                     # User-facing markdown readme
 ├── README.txt                    # Plain text user manual and installation guide
 ├── LICENSE                       # MIT License
@@ -75,6 +75,7 @@ d:/errin/
 - **Fines**: Calculated per overdue day based on `Set.rate` (default RM 0.10/day).
 - **Blocking**: Patrons are blocked from borrowing if overdue items exist or unpaid fines exceed `Set.block` (default RM 5.00).
 - **Holds**: Held items cannot be renewed or checked out to other patrons.
+- **Weeding / Collection Maintenance**: Items can be marked as weeded/withdrawn with reason (condition/damage, obsolete, lost, duplicate) and date. Weeded copies are blocked from checkout and hold requests, while preserving full bibliographic and circulation history. Can be restored to active status at any time or permanently deleted.
 - **Data Retention**: `Lib.Purge()` clears patron activity older than 5 years (`Lib.RET_YEARS`).
 - **Malaysian IC / MyKid Validation**:
   - `Lib.NormIc(string)`: Normalizes 12-digit strings into `YYMMDD-PB-###G`.
@@ -90,9 +91,10 @@ d:/errin/
   4. HathiTrust (HTTP JSON / MARCXML)
   5. K10plus German union catalogue (SRU MARCXML)
 
-### 3.4 User Interface (`MainForm.cs`, `Simple.cs`, `Ui.cs`, `Dialogs.cs`)
+### 3.4 User Interface & High-DPI Sharpness (`MainForm.cs`, `Simple.cs`, `Ui.cs`, `Dialogs.cs`)
 - Standard WinForms application with custom styling and flat controls in `Ui.cs`.
-- **Main View**: Tabbed librarian interface with Circulation, Catalog, Patrons, Overdue Notices, Inventory, Reports, and System Settings.
+- **High-DPI Sharpness**: Native PerMonitorV2 awareness via `Program.cs` and `app.manifest`. Prevents blurry DWM bitmap scaling on modern displays (125%, 150%, 200%), rendering razor-sharp ClearType text and proportional layouts without extra GPU/CPU consumption.
+- **Main View**: Tabbed librarian interface with Circulation, Catalog (with Active/Weeded filters and Weeding dialog), Patrons, Overdue Notices, Inventory, Reports, and System Settings.
 - **Simplified View (`Simple.cs`)**: Kiosk view tailored for young children with large touch/mouse targets, barcode scanner focus, and friendly error dialogs (`Lib.Friendly(...)`).
 
 ---
@@ -162,7 +164,7 @@ Requires `mono-mcs`, `mono-devel`, and `nsis`.
 
 ### 4.3 Building NSIS Installer
 ```cmd
-makensis -V2 -DVERSION=1.2.2 ErrinILS-source\installer.nsi
+makensis -V2 -DVERSION=1.2.3 ErrinILS-source\installer.nsi
 ```
 
 ---
