@@ -180,12 +180,21 @@ function initCodeCopyButtons() {
    4. User Guide Actions (Download MD, TXT & Print)
    ------------------------------------------------------------------- */
 function initGuideActions() {
+  var btnDownloadPdf = document.getElementById('btn-download-guide-pdf');
   var btnDownloadMd = document.getElementById('btn-download-guide-md');
   var btnDownloadTxt = document.getElementById('btn-download-guide-txt');
   var btnPrintGuide = document.getElementById('btn-print-guide');
 
-  // Path to the bundled markdown guide
+  // Paths to bundled guide artifacts
+  var pdfPath = 'assets/ErrinILS-User-Guide.pdf';
   var guidePath = 'assets/ErrinILS-User-Guide.md';
+
+  if (btnDownloadPdf) {
+    btnDownloadPdf.addEventListener('click', function (e) {
+      // Direct navigation to pre-prepared PDF file
+      window.location.href = pdfPath;
+    });
+  }
 
   function triggerBlobDownload(content, filename, mimeType) {
     var blob = new Blob([content], { type: mimeType });

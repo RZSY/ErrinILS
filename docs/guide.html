@@ -49,18 +49,21 @@
     <!-- Download / Print Action Bar -->
     <div class="guide-actions-bar">
       <div class="guide-actions-left">
-        <button id="btn-download-guide-md" class="btn btn-primary btn-sm">
-          📥 Download Detailed Guide (.md)
+        <a href="assets/ErrinILS-User-Guide.pdf" download="ErrinILS-User-Guide-v1.3.1.pdf" id="btn-download-guide-pdf" class="btn btn-primary btn-sm">
+          📥 Download Official PDF Manual
+        </a>
+        <button id="btn-download-guide-md" class="btn btn-secondary btn-sm">
+          📄 Download Markdown (.md)
         </button>
         <button id="btn-download-guide-txt" class="btn btn-secondary btn-sm">
-          📄 Download as Plain Text (.txt)
+          📝 Download Plain Text (.txt)
         </button>
         <button id="btn-print-guide" class="btn btn-secondary btn-sm">
-          🖨️ Print / Save as PDF
+          🖨️ Print Document
         </button>
       </div>
       <div>
-        <span class="badge badge-gold">Edition: v1.3.1 (Complete)</span>
+        <span class="badge badge-gold">Pre-Prepared PDF Available (646 KB)</span>
       </div>
     </div>
 
@@ -427,6 +430,10 @@
           <div class="chapter-number">Chapter 6</div>
           <h2 class="chapter-title">The Dashboard &amp; Daily Overview</h2>
           <div class="chapter-body">
+            <div class="figure-box">
+              <img src="assets/screenshot-dashboard.png" alt="ErrinILS Dashboard Screenshot" class="figure-img">
+              <div class="figure-caption">Figure 1: The ErrinILS Dashboard — Active collection counters, real-time overdue notices table, and top borrower rankings.</div>
+            </div>
             <p>
               The Dashboard is your morning command center. It requires no typing and provides an immediate view of active operations:
             </p>
@@ -445,6 +452,10 @@
           <div class="chapter-number">Chapter 7</div>
           <h2 class="chapter-title">Circulation: Check Out, Return, Renew and Holds</h2>
           <div class="chapter-body">
+            <div class="figure-box">
+              <img src="assets/screenshot-circulation.png" alt="ErrinILS Circulation Desk Screenshot" class="figure-img">
+              <div class="figure-caption">Figure 2: The Circulation Desk — Sub-second barcode scanner input, current active loans list, and reservation queue.</div>
+            </div>
             <h4 style="color: var(--accent-gold); margin: 16px 0 8px 0;">7.2 Checking out a book</h4>
             <ol class="step-list">
               <li>In the <strong>Check out</strong> card, scan the student's library card barcode (or type their 12-digit IC).</li>
@@ -481,6 +492,10 @@
           <div class="chapter-number">Chapter 8</div>
           <h2 class="chapter-title">The Simplified View (Student Self-Checkout Kiosk)</h2>
           <div class="chapter-body">
+            <div class="figure-box">
+              <img src="assets/screenshot-kiosk.png" alt="ErrinILS Kiosk Mode Screenshot" class="figure-img">
+              <div class="figure-caption">Figure 3: Simplified Student Kiosk — Child-friendly touch interface, large color banner, and audit transaction log.</div>
+            </div>
             <p>
               A locked-down, high-contrast, distraction-free screen designed for primary and secondary students to borrow and return books independently.
             </p>
@@ -505,6 +520,10 @@
           <div class="chapter-number">Chapter 9</div>
           <h2 class="chapter-title">The Catalog &amp; Copy-Cataloguing</h2>
           <div class="chapter-body">
+            <div class="figure-box">
+              <img src="assets/screenshot-catalog.png" alt="ErrinILS Catalog Screenshot" class="figure-img">
+              <div class="figure-caption">Figure 4: The Bibliographic Catalog — Multi-term searching, active vs weeded status filtering, and barcode generation.</div>
+            </div>
             <h4 style="color: var(--accent-gold); margin: 16px 0 8px 0;">9.4 5-Source ISBN Copy-Cataloguing</h4>
             <p>
               Eliminate manual typing. Scan the 10 or 13-digit ISBN barcode in <strong>+ Add record</strong> and click <strong>Look up</strong>. ErrinILS queries 5 international bibliographic archives in priority order:
@@ -533,6 +552,10 @@
           <div class="chapter-number">Chapter 10</div>
           <h2 class="chapter-title">Students &amp; Patron Management</h2>
           <div class="chapter-body">
+            <div class="figure-box">
+              <img src="assets/screenshot-students.png" alt="ErrinILS Students Screenshot" class="figure-img">
+              <div class="figure-caption">Figure 5: Student &amp; Patron Management — Malaysian IC verification, borrowing histories, and card printing.</div>
+            </div>
             <h4 style="color: var(--accent-gold); margin: 16px 0 8px 0;">10.2 Registering a student</h4>
             <ol class="step-list">
               <li>Click <strong>+ Register student</strong>.</li>
@@ -553,6 +576,10 @@
           <div class="chapter-number">Chapter 11</div>
           <h2 class="chapter-title">Fines Management</h2>
           <div class="chapter-body">
+            <div class="figure-box">
+              <img src="assets/screenshot-fines.png" alt="ErrinILS Fines Tracker Screenshot" class="figure-img">
+              <div class="figure-caption">Figure 6: The Fine Tracker — Real-time outstanding balances, payment recording, and fine waivers.</div>
+            </div>
             <p>
               Fines are created when an overdue book is returned: <code>Days Overdue × Daily Rate (RM 0.10)</code>.
             </p>
@@ -587,6 +614,10 @@
           <div class="chapter-number">Chapter 13</div>
           <h2 class="chapter-title">Remote Access, QR Code Pairing &amp; Mobile Web App</h2>
           <div class="chapter-body">
+            <div class="figure-box">
+              <img src="assets/screenshot-settings.png" alt="ErrinILS Settings Screenshot" class="figure-img">
+              <div class="figure-caption">Figure 7: Settings &amp; Remote Access — Policy parameters, admin password, and wireless QR code device pairing.</div>
+            </div>
             <p>
               ErrinILS features a built-in pure C# HTTP server (`TcpListener`) binding to all network interfaces (`0.0.0.0`), allowing smartphones and tablets on school Wi-Fi or hotspots to access the library wirelessly.
             </p>
@@ -606,6 +637,10 @@
           <div class="chapter-number">Chapter 14</div>
           <h2 class="chapter-title">Reports, Reading Champions &amp; Analytics</h2>
           <div class="chapter-body">
+            <div class="figure-box">
+              <img src="assets/screenshot-reports.png" alt="ErrinILS Reports Screenshot" class="figure-img">
+              <div class="figure-caption">Figure 8: Reports &amp; Reading Champions — Top 25 reader leaderboard, 6-month borrowing trajectory, and Dewey 100s breakdown.</div>
+            </div>
             <ul class="step-list">
               <li><strong>Reading Champions Leaderboard:</strong> Top 25 student readers ranked by total books borrowed (directly mapped to Nilam reading records).</li>
               <li><strong>Circulation Trajectory:</strong> Monthly borrowing volume trends over the past 6 calendar months.</li>
@@ -890,6 +925,7 @@
             <li><a href="download.html#requirements">System Requirements</a></li>
             <li><a href="guide.html#circ">Circulation Desk Guide</a></li>
             <li><a href="guide.html#kiosk">Student Kiosk Setup</a></li>
+            <li><a href="assets/ErrinILS-User-Guide.pdf" download="ErrinILS-User-Guide-v1.3.1.pdf">Official Manual (PDF)</a></li>
             <li><a href="assets/ErrinILS-User-Guide.md" download>Download Manual (.md)</a></li>
           </ul>
         </div>
