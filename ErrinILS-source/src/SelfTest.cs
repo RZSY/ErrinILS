@@ -244,9 +244,21 @@ static class SelfTest
             var retObj = Json.Parse(retJson) as Dictionary<string, object>;
             Ok(retObj != null && (bool)retObj["ok"], "Remote return completed");
             Ok(wlib.OpenLoan(wlib.ItemByBarcode("B1001").id) == null, "Loan closed in Db");
+            // 6. Test Reports API
+            string repJson = wc.DownloadString("http://127.0.0.1:" + wport + "/api/reports");
+            var repObj = Json.Parse(repJson) as Dictionary<string, object>;
+            Ok(repObj != null && (bool)repObj["ok"], "Reports API succeeded");
+            Ok(repObj.ContainsKey("monthlyCheckouts"), "Reports contains monthly checkouts");
+            Ok(repObj.ContainsKey("deweyBreakdown"), "Reports contains dewey breakdown");
+            Ok(repObj.ContainsKey("weedReasons"), "Reports contains weed reasons");
+            Ok(repObj.ContainsKey("activeLoans"), "Reports contains active loans");
+
+            // 7. Test QR endpoint
+            byte[] qrBytes = wc.DownloadData("http://127.0.0.1:" + wport + "/api/qr?text=http://127.0.0.1:" + wport);
+            Ok(qrBytes != null && qrBytes.Length > 8 && qrBytes[0] == 0x89 && qrBytes[1] == 0x50 && qrBytes[2] == 0x4E && qrBytes[3] == 0x47, "QR PNG endpoint returned valid PNG");
         }
 
-        // 7. Revoke token
+        // 8. Revoke token
         wdevs.Clear();
         using (var wc = new System.Net.WebClient())
         {
@@ -264,6 +276,29 @@ static class SelfTest
         }
 
         wsrv.Stop();
+
+        // QR Code Generator direct checks
+        bool[,] qr1 = Qr.GenerateMatrix("HELLO");
+        Ok(qr1.GetLength(0) == 21, "QR Version 1 matrix size is 21x21");
+        Ok(qr1[0, 0] && qr1[0, 6] && qr1[6, 0] && qr1[6, 6], "Top-left finder outer corners dark");
+        Ok(!qr1[1, 1] && !qr1[5, 5], "Top-left finder inner border light");
+        Ok(qr1[3, 3], "Top-left finder center dark");
+        Ok(qr1[6, 8] && !qr1[6, 9] && qr1[6, 10], "Timing pattern row 6 alternates");
+        Ok(qr1[13, 8], "Dark module at (13, 8) is true");
+
+        bool[,] qrUrl = Qr.GenerateMatrix("http://192.168.1.100:8585/?code=847291");
+        Ok(qrUrl.GetLength(0) == 29, "Pairing URL fits Version 3 (29x29)");
+        Ok(qrUrl[22, 22], "Version 3 alignment pattern center at (22, 22) is dark");
+
+        using (var qrBmp = Qr.ToBitmap("http://127.0.0.1:8585", 4, 3))
+        {
+            Ok(qrBmp != null && qrBmp.Width > 0, "QR Bitmap generated with valid dimensions");
+        }
+        byte[] qrPng = Qr.ToPng("http://127.0.0.1:8585", 4, 3);
+        Ok(qrPng != null && qrPng.Length > 8 && qrPng[0] == 0x89 && qrPng[1] == 0x50, "QR ToPng generated valid PNG bytes");
+
+        string qrSvg = Qr.ToSvg("http://127.0.0.1:8585", 4, 3);
+        Ok(qrSvg != null && qrSvg.Contains("<svg") && qrSvg.Contains("<path"), "QR ToSvg generated valid SVG xml");
         Console.WriteLine("\nall " + n + " checks passed");
         return 0;
     }

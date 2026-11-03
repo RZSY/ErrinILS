@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -319,19 +320,252 @@ namespace Errin
             var c = new Dictionary<string, int>(); foreach (var l in db.Loans) c[l.iid] = (c.ContainsKey(l.iid) ? c[l.iid] : 0) + 1;
             var top = c.OrderByDescending(x => x.Value).Take(8).Select(x => new KeyValuePair<string, double>(lib.Title(x.Key), x.Value)).ToList();
             var mo = new List<KeyValuePair<string, double>>();
-            for (int i = 5; i >= 0; i--) { var d = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddMonths(-i); string k = d.ToString("yyyy-MM", CultureInfo.InvariantCulture); mo.Add(new KeyValuePair<string, double>(d.ToString("MMM", CultureInfo.InvariantCulture), db.Loans.Count(l => l.@out.StartsWith(k)))); }
-            var cl = new Dictionary<string, int>(); foreach (var l in db.Loans) { var k = lib.PClass(l.pid); if (k == "") k = "?"; cl[k] = (cl.ContainsKey(k) ? cl[k] : 0) + 1; }
-            double tot = db.Fines.Sum(f => f.amt), paid = db.Fines.Where(f => f.paid == "paid").Sum(f => f.amt);
-            int late = db.Loans.Count(l => l.ret != null && string.CompareOrdinal(l.ret, l.due) > 0), rr = db.Loans.Count(l => l.ret != null);
+            for (int i = 5; i >= 0; i--) { var d = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddMonths(-i); string k = d.ToString("yyyy-MM", CultureInfo.InvariantCulture); mo.Add(new KeyValuePair<string, double>(d.ToString("MMM", CultureInfo.InvariantCulture), db.Loans.Count(l => l.@out != null && l.@out.StartsWith(k)))); }
+            var cl = new Dictionary<string, int>(); foreach (var l in db.Loans) { var k = lib.PClass(l.pid); if (k == "") k = "(No class)"; cl[k] = (cl.ContainsKey(k) ? cl[k] : 0) + 1; }
+
+            int activeLoans = db.Loans.Count(l => l.ret == null);
+            int overdueLoans = db.Loans.Count(lib.Overdue);
+            int activeCopies = db.Items.Count(i => !lib.IsWeeded(i));
             int weedTot = db.Items.Count(i => !string.IsNullOrEmpty(i.weeded));
-            var st = Ui.Flow(); st.Controls.Add(Ui.Stat(db.Loans.Count(l => l.ret == null).ToString(), "Books on loan now", Th.Blue)); st.Controls.Add(Ui.Stat(rr > 0 ? Math.Round(late * 100.0 / rr) + "%" : "0%", "Returned late", Th.Yel));
-            st.Controls.Add(Ui.Stat(Mn(tot), "Fines assessed", Th.Red)); st.Controls.Add(Ui.Stat(weedTot.ToString(), "Weeded items", Th.Blue));
+            var borrowedPids = new HashSet<string>(db.Loans.Select(l => l.pid));
+            int activeBorrowers = borrowedPids.Count;
+            int totStudents = db.Patrons.Count;
+            double totFines = db.Fines.Sum(f => f.amt);
+            double unpaidFines = db.Fines.Where(f => f.paid == "").Sum(f => f.amt);
+            int late = db.Loans.Count(l => l.ret != null && string.CompareOrdinal(l.ret, l.due) > 0), rr = db.Loans.Count(l => l.ret != null);
+
+            var st = Ui.Flow();
+            st.Controls.Add(Ui.Stat(activeCopies.ToString(), "Active collection", Th.Green));
+            st.Controls.Add(Ui.Stat(activeLoans.ToString(), "Books on loan", Th.Blue));
+            st.Controls.Add(Ui.Stat(overdueLoans + (activeLoans > 0 ? " (" + (overdueLoans * 100 / activeLoans) + "%)" : ""), "Overdue items", overdueLoans > 0 ? Th.Red : Th.Green));
+            st.Controls.Add(Ui.Stat(activeBorrowers + (totStudents > 0 ? " (" + (activeBorrowers * 100 / totStudents) + "%)" : ""), "Active readers", Th.Blue));
+            st.Controls.Add(Ui.Stat(rr > 0 ? Math.Round(late * 100.0 / rr) + "%" : "0%", "Returned late", Th.Yel));
+            st.Controls.Add(Ui.Stat(Mn(unpaidFines), "Unpaid fines", unpaidFines > 0 ? Th.Red : Th.Green));
+            st.Controls.Add(Ui.Stat(weedTot.ToString(), "Weeded items", Th.Mut));
+
             Func<List<KeyValuePair<string, double>>, bool, BarChart> chart = (d, v) => new BarChart { Data = d, Vertical = v };
-            var unpaid = db.Patrons.Select(p => new { p.name, v = lib.Unpaid(p.id) }).Where(x => x.v > 0).Select(x => new[] { x.name, Mn(x.v) }).ToList();
-            return ScrollPage(Ui.Heading("Reports", "Circulation, collection and fine analytics"), st,
+
+            // Reading champions (Top students)
+            var pLoans = new Dictionary<string, int>();
+            foreach (var l in db.Loans) pLoans[l.pid] = (pLoans.ContainsKey(l.pid) ? pLoans[l.pid] : 0) + 1;
+            int rank = 1;
+            var topReaders = pLoans.OrderByDescending(x => x.Value).Take(10).Select(x => {
+                var p = lib.PatronById(x.Key);
+                return new[] { (rank++).ToString(), p != null ? p.name : "(removed)", p != null ? p.cls : "", x.Value.ToString() };
+            }).ToList();
+            var readerGrid = MakeGrid(new[] { "Rank", "Student", "Class", "Books read" }, topReaders, null, "No borrowing records yet");
+            if (readerGrid.Columns.Count > 0) readerGrid.Columns[0].FillWeight = 25;
+
+            // Collection by Dewey Decimal classification
+            var deweyMap = new Dictionary<string, int>();
+            string[] deweyLabels = new[] { "000 Comp & Info", "100 Philosophy", "200 Religion", "300 Social Sci", "400 Languages", "500 Pure Sci", "600 Tech & Med", "700 Arts & Rec", "800 Literature", "900 History & Geo", "Fiction", "Other" };
+            foreach (var dl in deweyLabels) deweyMap[dl] = 0;
+            var loanedIids = new HashSet<string>(db.Loans.Select(l => l.iid));
+            int dormantCount = 0;
+            foreach (var it in db.Items)
+            {
+                if (!lib.IsWeeded(it))
+                {
+                    if (!loanedIids.Contains(it.id)) dormantCount++;
+                    string cat = ClassifyDewey(it);
+                    deweyMap[cat] = (deweyMap.ContainsKey(cat) ? deweyMap[cat] : 0) + 1;
+                }
+            }
+            var deweyData = deweyMap.Where(x => x.Value > 0).Select(x => new KeyValuePair<string, double>(x.Key, x.Value)).ToList();
+
+            // Students with unpaid fines
+            var unpaid = db.Patrons.Select(p => new { p.name, p.cls, v = lib.Unpaid(p.id) }).Where(x => x.v > 0).OrderByDescending(x => x.v).Select(x => new[] { x.name, x.cls, Mn(x.v) }).ToList();
+            var finesGrid = MakeGrid(new[] { "Student", "Class", "Owed" }, unpaid, null, "No unpaid fines \U0001F389");
+
+            // Weeding breakdown
+            int wDamaged = db.Items.Count(i => !string.IsNullOrEmpty(i.weeded) && (i.weed_reason ?? "").IndexOf("condition", StringComparison.OrdinalIgnoreCase) >= 0);
+            int wObsolete = db.Items.Count(i => !string.IsNullOrEmpty(i.weeded) && (i.weed_reason ?? "").IndexOf("obsolete", StringComparison.OrdinalIgnoreCase) >= 0);
+            int wLost = db.Items.Count(i => !string.IsNullOrEmpty(i.weeded) && (i.weed_reason ?? "").IndexOf("lost", StringComparison.OrdinalIgnoreCase) >= 0);
+            int wDup = db.Items.Count(i => !string.IsNullOrEmpty(i.weeded) && (i.weed_reason ?? "").IndexOf("duplicate", StringComparison.OrdinalIgnoreCase) >= 0);
+            int wOther = weedTot - (wDamaged + wObsolete + wLost + wDup);
+            if (wOther < 0) wOther = 0;
+
+            Func<string, int, Control> para = (t, h) => new Label { UseMnemonic = false, Text = t, AutoSize = false, Size = new Size(Ui.S(820), Ui.S(h)), ForeColor = Th.Ink };
+
+            var healthBox = Vbox(
+                para(string.Format("Dormant collection: {0} active items ({1}% of active catalog) have never been borrowed. Use this to identify candidates for reading displays or collection review.",
+                    dormantCount, activeCopies > 0 ? (dormantCount * 100 / activeCopies) : 0), 40),
+                para(string.Format("Weeded collection ({0} copies withdrawn): Condition / Damaged: {1} \u00B7 Obsolete / Outdated: {2} \u00B7 Lost / Missing: {3} \u00B7 Duplicate: {4}{5}",
+                    weedTot, wDamaged, wObsolete, wLost, wDup, wOther > 0 ? " \u00B7 Other: " + wOther : ""), 38));
+
+            var topRow = Ui.Flow(false);
+            topRow.Controls.Add(Ui.Btn("Export full report (CSV)", 0, (s, e) => ExportReportsCsv()));
+
+            return ScrollPage(
+                Ui.Heading("Reports", "Circulation, collection and fine analytics"),
+                topRow,
+                st,
                 Cols(230, Ui.Card("Checkouts, last 6 months", chart(mo, true), 1), Ui.Card("Most borrowed titles", chart(top, false), 1)),
-                Cols(250, Ui.Card("Checkouts by class", chart(cl.OrderByDescending(x => x.Value).Take(8).Select(x => new KeyValuePair<string, double>(x.Key, x.Value)).ToList(), false), 1),
-                    Ui.Card("Students with unpaid fines", MakeGrid(new[] { "Student", "Owed" }, unpaid, null, "None"), 1)));
+                Cols(250, Ui.Card("Reading champions (top readers)", readerGrid, 1), Ui.Card("Checkouts by class", chart(cl.OrderByDescending(x => x.Value).Take(8).Select(x => new KeyValuePair<string, double>(x.Key, x.Value)).ToList(), false), 1)),
+                Cols(250, Ui.Card("Collection by subject / Dewey range", chart(deweyData, false), 1), Ui.Card("Students with unpaid fines", finesGrid, 1)),
+                Ui.Card("Collection health & weeding maintenance", healthBox));
+        }
+
+        static string ClassifyDewey(Item it)
+        {
+            string call = (it.call ?? "").Trim();
+            if (call.Length > 0 && char.IsDigit(call[0]))
+            {
+                switch (call[0])
+                {
+                    case '0': return "000 Comp & Info";
+                    case '1': return "100 Philosophy";
+                    case '2': return "200 Religion";
+                    case '3': return "300 Social Sci";
+                    case '4': return "400 Languages";
+                    case '5': return "500 Pure Sci";
+                    case '6': return "600 Tech & Med";
+                    case '7': return "700 Arts & Rec";
+                    case '8': return "800 Literature";
+                    case '9': return "900 History & Geo";
+                }
+            }
+            if (call.IndexOf("fic", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                call.IndexOf("cerita", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                call.IndexOf("novel", StringComparison.OrdinalIgnoreCase) >= 0)
+                return "Fiction";
+            return "Other";
+        }
+
+        void ExportReportsCsv()
+        {
+            using (var d = new SaveFileDialog { FileName = "errin-report-" + Lib.Today() + ".csv", Filter = "CSV spreadsheet (*.csv)|*.csv" })
+            {
+                if (d.ShowDialog(this) != DialogResult.OK) return;
+                try
+                {
+                    var sb = new StringBuilder();
+                    sb.AppendLine("=== ERRINILS LIBRARY SYSTEM REPORT ===");
+                    sb.AppendLine("Generated on," + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"));
+                    sb.AppendLine("School," + EscapeCsv(db.Set.school));
+                    sb.AppendLine();
+
+                    int activeLoans = db.Loans.Count(l => l.ret == null);
+                    int overdueLoans = db.Loans.Count(lib.Overdue);
+                    int activeCopies = db.Items.Count(i => !lib.IsWeeded(i));
+                    int weedTot = db.Items.Count(i => !string.IsNullOrEmpty(i.weeded));
+                    var borrowedPids = new HashSet<string>(db.Loans.Select(l => l.pid));
+                    int activeBorrowers = borrowedPids.Count;
+                    int totStudents = db.Patrons.Count;
+                    double totFines = db.Fines.Sum(f => f.amt);
+                    double paidFines = db.Fines.Where(f => f.paid == "paid").Sum(f => f.amt);
+                    double unpaidFines = db.Fines.Where(f => f.paid == "").Sum(f => f.amt);
+
+                    sb.AppendLine("--- EXECUTIVE SUMMARY ---");
+                    sb.AppendLine("Active Collection Copies," + activeCopies);
+                    sb.AppendLine("Weeded / Withdrawn Copies," + weedTot);
+                    sb.AppendLine("Total Registered Students," + totStudents);
+                    sb.AppendLine("Active Student Readers," + activeBorrowers + (totStudents > 0 ? " (" + (activeBorrowers * 100 / totStudents) + "%)" : ""));
+                    sb.AppendLine("Books on Loan Now," + activeLoans);
+                    sb.AppendLine("Currently Overdue Items," + overdueLoans + (activeLoans > 0 ? " (" + (overdueLoans * 100 / activeLoans) + "%)" : ""));
+                    sb.AppendLine("Total Fines Assessed," + Lib.Money(totFines));
+                    sb.AppendLine("Total Fines Collected," + Lib.Money(paidFines));
+                    sb.AppendLine("Outstanding Unpaid Fines," + Lib.Money(unpaidFines));
+                    sb.AppendLine();
+
+                    // Checkouts by month
+                    sb.AppendLine("--- CHECKOUTS BY MONTH (LAST 6 MONTHS) ---");
+                    sb.AppendLine("Month,Checkouts");
+                    for (int i = 5; i >= 0; i--)
+                    {
+                        var dt = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddMonths(-i);
+                        string k = dt.ToString("yyyy-MM", CultureInfo.InvariantCulture);
+                        sb.AppendLine(dt.ToString("MMM yyyy", CultureInfo.InvariantCulture) + "," + db.Loans.Count(l => l.@out != null && l.@out.StartsWith(k)));
+                    }
+                    sb.AppendLine();
+
+                    // Top borrowed books
+                    sb.AppendLine("--- TOP BORROWED BOOKS ---");
+                    sb.AppendLine("Rank,Title,Author,Call Number,Barcode,Total Checkouts");
+                    var c = new Dictionary<string, int>();
+                    foreach (var l in db.Loans) c[l.iid] = (c.ContainsKey(l.iid) ? c[l.iid] : 0) + 1;
+                    int rnk = 1;
+                    foreach (var kv in c.OrderByDescending(x => x.Value).Take(25))
+                    {
+                        var it = db.Items.FirstOrDefault(i => i.id == kv.Key);
+                        sb.AppendLine(rnk++ + "," + EscapeCsv(it != null ? it.title : "(deleted)") + "," +
+                            EscapeCsv(it != null ? it.author : "") + "," +
+                            EscapeCsv(it != null ? it.call : "") + "," +
+                            EscapeCsv(it != null ? it.barcode : "") + "," +
+                            kv.Value);
+                    }
+                    sb.AppendLine();
+
+                    // Top student readers
+                    sb.AppendLine("--- READING CHAMPIONS (TOP STUDENTS) ---");
+                    sb.AppendLine("Rank,Student Name,IC / ID,Class,Total Books Borrowed");
+                    var pLoans = new Dictionary<string, int>();
+                    foreach (var l in db.Loans) pLoans[l.pid] = (pLoans.ContainsKey(l.pid) ? pLoans[l.pid] : 0) + 1;
+                    rnk = 1;
+                    foreach (var kv in pLoans.OrderByDescending(x => x.Value).Take(25))
+                    {
+                        var p = lib.PatronById(kv.Key);
+                        sb.AppendLine(rnk++ + "," + EscapeCsv(p != null ? p.name : "(removed)") + "," +
+                            EscapeCsv(kv.Key) + "," +
+                            EscapeCsv(p != null ? p.cls : "") + "," +
+                            kv.Value);
+                    }
+                    sb.AppendLine();
+
+                    // Circulation by class
+                    sb.AppendLine("--- CIRCULATION BY CLASS ---");
+                    sb.AppendLine("Class,Students,Total Loans,Active Loans");
+                    var classGroups = db.Patrons.GroupBy(p => string.IsNullOrEmpty(p.cls) ? "(No class)" : p.cls).OrderBy(g => g.Key);
+                    foreach (var g in classGroups)
+                    {
+                        var pids = new HashSet<string>(g.Select(p => p.id));
+                        int totL = db.Loans.Count(l => pids.Contains(l.pid));
+                        int actL = db.Loans.Count(l => l.ret == null && pids.Contains(l.pid));
+                        sb.AppendLine(EscapeCsv(g.Key) + "," + g.Count() + "," + totL + "," + actL);
+                    }
+                    sb.AppendLine();
+
+                    // Overdue loans
+                    sb.AppendLine("--- CURRENT OVERDUE ITEMS ---");
+                    sb.AppendLine("Student,Class,Contact,Title,Barcode,Due Date,Days Overdue,Fine Accrued");
+                    foreach (var l in db.Loans.Where(lib.Overdue).OrderBy(l => l.due))
+                    {
+                        var it = db.Items.FirstOrDefault(x => x.id == l.iid);
+                        var p = lib.PatronById(l.pid);
+                        int lateDays = Lib.Diff(Lib.Today(), l.due);
+                        double fineAmt = lateDays * db.Set.rate;
+                        sb.AppendLine(EscapeCsv(p != null ? p.name : "(removed)") + "," +
+                            EscapeCsv(p != null ? p.cls : "") + "," +
+                            EscapeCsv(p != null ? p.contact : "") + "," +
+                            EscapeCsv(it != null ? it.title : "") + "," +
+                            EscapeCsv(it != null ? it.barcode : "") + "," +
+                            l.due + "," + lateDays + "," + Lib.Money(fineAmt));
+                    }
+                    sb.AppendLine();
+
+                    // Unpaid fines
+                    sb.AppendLine("--- UNPAID FINES ---");
+                    sb.AppendLine("Student,Class,Contact,Unpaid Amount");
+                    foreach (var p in db.Patrons.Select(x => new { pat = x, owed = lib.Unpaid(x.id) }).Where(x => x.owed > 0).OrderByDescending(x => x.owed))
+                    {
+                        sb.AppendLine(EscapeCsv(p.pat.name) + "," + EscapeCsv(p.pat.cls) + "," + EscapeCsv(p.pat.contact) + "," + Lib.Money(p.owed));
+                    }
+
+                    File.WriteAllText(d.FileName, sb.ToString(), Encoding.UTF8);
+                    Toast("Report exported successfully");
+                }
+                catch (Exception ex)
+                {
+                    Toast("Export failed: " + ex.Message);
+                }
+            }
+        }
+
+        static string EscapeCsv(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return "";
+            if (s.IndexOfAny(new[] { ',', '"', '\n', '\r' }) >= 0) return "\"" + s.Replace("\"", "\"\"") + "\"";
+            return s;
         }
 
         /* ---------- Backup ---------- */
@@ -387,6 +621,7 @@ namespace Errin
             wGrid = Ui.Grid(); wGrid.Height = Ui.S(130); wGrid.Width = Ui.S(820); WebRefreshGrid();
             var wBtns = Ui.Flow(false);
             wBtns.Controls.Add(Ui.Btn("+ Pair new device", 0, (a, b) => PairNewDeviceDialog()));
+            wBtns.Controls.Add(Ui.Btn("Show QR Code", 1, (a, b) => ShowQrDialog()));
             wBtns.Controls.Add(Ui.Btn("Remove selected", 1, (a, b) => WebRemoveSelected()));
             var webBody = Vbox(
                 para("Allows phones, tablets, iPads, and other computers to access ErrinILS over the network using secure device pairing. Paired devices have full circulation, catalog, and student access.", 44),
@@ -505,9 +740,10 @@ namespace Errin
 
             var ips = NetHelper.GetReachableIpAddresses();
             var addrs = wc.bind == "local" ? new List<string> { "127.0.0.1" } : (ips.Count > 0 ? ips : new List<string> { "127.0.0.1" });
-            string primaryUrl = "http://" + (addrs.Count > 0 ? addrs[0] : "127.0.0.1") + ":" + wc.port;
+            string selectedIp = addrs.Count > 0 ? addrs[0] : "127.0.0.1";
+            Func<string, string> getPairUrl = ip => "http://" + ip + ":" + wc.port + "/?code=" + codeClean;
 
-            using (var d = Ui.Dlg("Pair a device", 420, 370))
+            using (var d = Ui.Dlg("Pair a device (QR Code)", 480, 590))
             {
                 var fl = new FlowLayoutPanel
                 {
@@ -515,33 +751,69 @@ namespace Errin
                     FlowDirection = FlowDirection.TopDown,
                     WrapContents = false,
                     AutoScroll = true,
-                    Padding = Ui.S(new Padding(24, 20, 24, 20)),
+                    Padding = Ui.S(new Padding(24, 16, 24, 16)),
                     BackColor = Th.Card
                 };
 
                 fl.Controls.Add(new Label
                 {
                     UseMnemonic = false,
-                    Text = "On the other device, open:",
+                    Text = "Scan with your phone or tablet camera to connect instantly:",
                     Font = Th.F,
                     ForeColor = Th.Mut,
-                    AutoSize = true
+                    AutoSize = true,
+                    Margin = Ui.S(new Padding(0, 0, 0, 8))
                 });
 
-                fl.Controls.Add(new Label
+                var qrBox = new PictureBox
+                {
+                    Size = new Size(Ui.S(160), Ui.S(160)),
+                    SizeMode = PictureBoxSizeMode.CenterImage,
+                    BackColor = Color.White,
+                    Margin = Ui.S(new Padding(125, 0, 0, 8))
+                };
+                qrBox.Image = Qr.ToBitmap(getPairUrl(selectedIp), 4, 3);
+                fl.Controls.Add(qrBox);
+
+                var urlLabel = new Label
                 {
                     UseMnemonic = false,
-                    Text = primaryUrl,
+                    Text = getPairUrl(selectedIp),
                     Font = Th.FT,
                     ForeColor = Th.Ink,
                     AutoSize = true,
-                    Margin = Ui.S(new Padding(0, 4, 0, 14))
-                });
+                    Margin = Ui.S(new Padding(0, 0, 0, 6))
+                };
+
+                if (addrs.Count > 1)
+                {
+                    var ipCombo = Ui.Combo(260, addrs.ToArray());
+                    ipCombo.SelectedIndex = 0;
+                    ipCombo.SelectedIndexChanged += (s, e) =>
+                    {
+                        selectedIp = addrs[ipCombo.SelectedIndex];
+                        string newUrl = getPairUrl(selectedIp);
+                        urlLabel.Text = newUrl;
+                        if (qrBox.Image != null) qrBox.Image.Dispose();
+                        qrBox.Image = Qr.ToBitmap(newUrl, 4, 3);
+                    };
+                    var ipField = Ui.Field("Network interface", ipCombo, 280);
+                    ipField.Margin = Ui.S(new Padding(0, 0, 0, 8));
+                    fl.Controls.Add(ipField);
+                }
+
+                fl.Controls.Add(urlLabel);
+
+                var linkBtns = Ui.Flow(false);
+                linkBtns.Margin = Ui.S(new Padding(0, 0, 0, 10));
+                linkBtns.Controls.Add(Ui.Btn("Copy Link", 1, (s, e) => { Clipboard.SetText(getPairUrl(selectedIp)); Toast("Pairing link copied to clipboard"); }));
+                linkBtns.Controls.Add(Ui.Btn("Save QR Image", 1, (s, e) => SaveQrImageDialog(getPairUrl(selectedIp), "errin-pairing-qr.png")));
+                fl.Controls.Add(linkBtns);
 
                 fl.Controls.Add(new Label
                 {
                     UseMnemonic = false,
-                    Text = "Then enter this code:",
+                    Text = "Or manually open browser and enter code:",
                     Font = Th.F,
                     ForeColor = Th.Mut,
                     AutoSize = true
@@ -555,8 +827,8 @@ namespace Errin
                     ForeColor = Th.Yel,
                     BackColor = Th.Bg,
                     TextAlign = ContentAlignment.MiddleCenter,
-                    Size = new Size(Ui.S(360), Ui.S(56)),
-                    Margin = Ui.S(new Padding(0, 6, 0, 12))
+                    Size = new Size(Ui.S(410), Ui.S(48)),
+                    Margin = Ui.S(new Padding(0, 4, 0, 8))
                 };
                 fl.Controls.Add(codeBox);
 
@@ -568,11 +840,11 @@ namespace Errin
                     Font = Th.FSub,
                     ForeColor = Th.Mut,
                     AutoSize = true,
-                    Margin = Ui.S(new Padding(0, 0, 0, 16))
+                    Margin = Ui.S(new Padding(0, 0, 0, 10))
                 };
                 fl.Controls.Add(expLbl);
 
-                var cancelBtn = Ui.Btn("Cancel", 1, (s, e) => d.Close());
+                var cancelBtn = Ui.Btn("Close", 1, (s, e) => d.Close());
                 fl.Controls.Add(cancelBtn);
 
                 d.Controls.Add(fl);
@@ -608,10 +880,132 @@ namespace Errin
                 {
                     timer.Stop();
                     timer.Dispose();
+                    if (qrBox.Image != null) { qrBox.Image.Dispose(); qrBox.Image = null; }
                     wsrv.CancelPairing();
                 };
 
                 d.ShowDialog(this);
+            }
+        }
+
+        void ShowQrDialog()
+        {
+            if (wsrv == null || !wc.enabled)
+            {
+                Toast("Please turn Remote Access ON and click Apply first.");
+                return;
+            }
+
+            var ips = NetHelper.GetReachableIpAddresses();
+            var addrs = wc.bind == "local" ? new List<string> { "127.0.0.1" } : (ips.Count > 0 ? ips : new List<string> { "127.0.0.1" });
+            string selectedIp = addrs.Count > 0 ? addrs[0] : "127.0.0.1";
+            Func<string, string> getUrl = ip => "http://" + ip + ":" + wc.port;
+
+            using (var d = Ui.Dlg("Remote Access QR Code", 460, 490))
+            {
+                var fl = new FlowLayoutPanel
+                {
+                    Dock = DockStyle.Fill,
+                    FlowDirection = FlowDirection.TopDown,
+                    WrapContents = false,
+                    AutoScroll = true,
+                    Padding = Ui.S(new Padding(24, 20, 24, 20)),
+                    BackColor = Th.Card
+                };
+
+                fl.Controls.Add(new Label
+                {
+                    UseMnemonic = false,
+                    Text = "Scan with any phone, tablet, or laptop on the school network:",
+                    Font = Th.F,
+                    ForeColor = Th.Mut,
+                    AutoSize = true,
+                    Margin = Ui.S(new Padding(0, 0, 0, 10))
+                });
+
+                var qrBox = new PictureBox
+                {
+                    Size = new Size(Ui.S(180), Ui.S(180)),
+                    SizeMode = PictureBoxSizeMode.CenterImage,
+                    BackColor = Color.White,
+                    Margin = Ui.S(new Padding(115, 0, 0, 10))
+                };
+                qrBox.Image = Qr.ToBitmap(getUrl(selectedIp), 5, 4);
+                fl.Controls.Add(qrBox);
+
+                var urlLabel = new Label
+                {
+                    UseMnemonic = false,
+                    Text = getUrl(selectedIp),
+                    Font = Th.FT,
+                    ForeColor = Th.Ink,
+                    AutoSize = true,
+                    Margin = Ui.S(new Padding(0, 0, 0, 8))
+                };
+
+                if (addrs.Count > 1)
+                {
+                    var ipCombo = Ui.Combo(260, addrs.ToArray());
+                    ipCombo.SelectedIndex = 0;
+                    ipCombo.SelectedIndexChanged += (s, e) =>
+                    {
+                        selectedIp = addrs[ipCombo.SelectedIndex];
+                        string newUrl = getUrl(selectedIp);
+                        urlLabel.Text = newUrl;
+                        if (qrBox.Image != null) qrBox.Image.Dispose();
+                        qrBox.Image = Qr.ToBitmap(newUrl, 5, 4);
+                    };
+                    var ipField = Ui.Field("Network interface", ipCombo, 280);
+                    ipField.Margin = Ui.S(new Padding(0, 0, 0, 8));
+                    fl.Controls.Add(ipField);
+                }
+
+                fl.Controls.Add(urlLabel);
+
+                var btns = Ui.Flow(false);
+                btns.Margin = Ui.S(new Padding(0, 6, 0, 0));
+                btns.Controls.Add(Ui.Btn("Copy Link", 0, (s, e) => { Clipboard.SetText(getUrl(selectedIp)); Toast("Link copied to clipboard"); }));
+                btns.Controls.Add(Ui.Btn("Save QR Image", 1, (s, e) => SaveQrImageDialog(getUrl(selectedIp), "errin-remote-qr.png")));
+                btns.Controls.Add(Ui.Btn("Close", 1, (s, e) => d.Close()));
+                fl.Controls.Add(btns);
+
+                d.Controls.Add(fl);
+                d.FormClosing += (s, e) =>
+                {
+                    if (qrBox.Image != null) { qrBox.Image.Dispose(); qrBox.Image = null; }
+                };
+                d.ShowDialog(this);
+            }
+        }
+
+        void SaveQrImageDialog(string url, string defaultFileName)
+        {
+            using (var sfd = new SaveFileDialog
+            {
+                FileName = defaultFileName,
+                Filter = "PNG Image (*.png)|*.png|SVG Vector (*.svg)|*.svg"
+            })
+            {
+                if (sfd.ShowDialog(this) != DialogResult.OK) return;
+                try
+                {
+                    if (sfd.FileName.EndsWith(".svg", StringComparison.OrdinalIgnoreCase))
+                    {
+                        File.WriteAllText(sfd.FileName, Qr.ToSvg(url, 8, 4), Encoding.UTF8);
+                    }
+                    else
+                    {
+                        using (var bmp = Qr.ToBitmap(url, 8, 4))
+                        {
+                            bmp.Save(sfd.FileName, ImageFormat.Png);
+                        }
+                    }
+                    Toast("QR code image saved");
+                }
+                catch (Exception ex)
+                {
+                    Toast("Save failed: " + ex.Message);
+                }
             }
         }
 

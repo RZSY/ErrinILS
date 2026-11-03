@@ -46,8 +46,9 @@ d:/errin/
     │   ├── Lookup.cs             # Multi-source ISBN copy-cataloguing (LOC, OpenLib, Google, Hathi, K10plus)
     │   ├── MainForm.cs           # Primary WinForms interface (Circulation, Catalog, Patrons, Reports)
     │   ├── Marc.cs               # MARC21 parser & generator (ISO 2709 .mrc, MARCXML, MRK, MARC-8)
-    │   ├── Models.cs
-    │   ├── NetHelper.cs          # Network interface discovery, hotspot IP filtering, firewall integration             # Data models (Item, Patron, Loan, Hold, Fine, Db, Settings)
+    │   ├── NetHelper.cs          # Network interface discovery, hotspot IP filtering, firewall integration
+    │   ├── Qr.cs                 # Zero-dependency QR code generator (ISO/IEC 18004, Levels 1-10, EC-M)
+    │   ├── Models.cs             # Data models (Item, Patron, Loan, Hold, Fine, Db, Settings)
     │   ├── Program.cs            # Single-instance mutex & application entry point
     │   ├── SelfTest.cs           # Automated self-tests (MARC, Z39.50, circulation rules, JSON)
     │   ├── Simple.cs             # Simplified student self-checkout / checkin kiosk mode
@@ -93,10 +94,18 @@ d:/errin/
   4. HathiTrust (HTTP JSON / MARCXML)
   5. K10plus German union catalogue (SRU MARCXML)
 
-### 3.5 Remote Access & Device Pairing (`Web.cs`)
+### 3.5 Remote Access, QR Code Pairing & Device Pairing (`Web.cs`, `Qr.cs`)
 - **Device Pairing Model**: Zero-password access control using temporary 6-digit pairing codes (5-minute expiry, 3-attempt lockout) and persistent 32-byte cryptographically secure device tokens (`X-Errin-Token`).
+- **QR Code Generation (`Qr.cs`)**: Pure C# zero-dependency ISO/IEC 18004 QR code generator supporting Versions 1 to 10 with Error Correction Level M, rendering sharp `Bitmap`, `ToPng()`, and `ToSvg()` representations. Used in `PairNewDeviceDialog` for instant mobile connection via camera scanning (auto-filling pairing code), in Settings for sharing remote access links, and exposed via HTTP at `/api/qr` and `/qr.png`.
 - **Multi-Network / Multi-Wi-Fi Support**: Pure C# HTTP server (`TcpListener`) binding to `0.0.0.0` (all interfaces: Ethernet, Wi-Fi 2.4/5GHz, VLANs, VPNs, and Tailscale mesh). Allows devices on different school Wi-Fi SSIDs/APs, subnets, or remote networks (via Tailscale or Cloudflare Tunnel) to connect seamlessly.
 - **Single Page App (SPA)**: Embedded mobile-friendly web replica covering Dashboard, Circulation, Catalog, Students, Fines, and Reports with instant barcode scanner support.
+
+### 3.6 Reports & Circulation Analytics (`MainForm.cs`, `Web.cs`)
+- **Executive Summary & Metrics**: Active copies, active loans, overdue items with percentages, registered students, active reader participation rate, fines assessed/collected/unpaid, and weeded items.
+- **Circulation Trends & Rankings**: Checkouts per month over the last 6 months, top 10/25 borrowed titles, and Reading Champions (Top student reader leaderboard by books read).
+- **Collection Classification**: Breakdown of cataloged books by Dewey Decimal Classification (DDC) 100s and fiction/subject categories.
+- **Dormant & Weeding Analysis**: Tracks titles with zero circulation (dormant collection) and categorizes weeded items by withdrawal reason (condition/damage, obsolete, lost, duplicate).
+- **Export Full Report (CSV)**: One-click export of an executive summary spreadsheet containing all analytics, overdue notices, unpaid fines, and reading champions.
 
 ### 3.4 User Interface & High-DPI Sharpness (`MainForm.cs`, `Simple.cs`, `Ui.cs`, `Dialogs.cs`)
 - Standard WinForms application with custom styling and flat controls in `Ui.cs`.
@@ -133,8 +142,9 @@ C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe
     ErrinILS-source\src\Lib.cs `
     ErrinILS-source\src\Lookup.cs `
     ErrinILS-source\src\Zip.cs `
-    ErrinILS-source\src\Auth.cs 
+    ErrinILS-source\src\Auth.cs `
     ErrinILS-source\src\NetHelper.cs `
+    ErrinILS-source\src\Qr.cs `
     ErrinILS-source\src\AssemblyInfo.cs `
     ErrinILS-source\src\Ui.cs `
     ErrinILS-source\src\Simple.cs `
@@ -148,6 +158,7 @@ C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe
 ```powershell
 & "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe" `
     /target:exe `
+    /r:System.Drawing.dll `
     /out:selftest.exe `
     ErrinILS-source\src\Json.cs `
     ErrinILS-source\src\Models.cs `
@@ -156,8 +167,9 @@ C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe
     ErrinILS-source\src\Lib.cs `
     ErrinILS-source\src\Lookup.cs `
     ErrinILS-source\src\Zip.cs `
-    ErrinILS-source\src\Auth.cs 
+    ErrinILS-source\src\Auth.cs `
     ErrinILS-source\src\NetHelper.cs `
+    ErrinILS-source\src\Qr.cs `
     ErrinILS-source\src\Web.cs `
     ErrinILS-source\src\SelfTest.cs
 

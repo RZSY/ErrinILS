@@ -246,6 +246,27 @@ namespace Errin
 
             void HandleApi(NetworkStream stream, string method, string path, Dictionary<string, string> query, Dictionary<string, string> headers, string body)
             {
+                // QR code image endpoint (no token required)
+                if (path == "/api/qr" || path == "/qr.png")
+                {
+                    string text = query.ContainsKey("text") ? query["text"] : "";
+                    if (string.IsNullOrEmpty(text))
+                    {
+                        string host = headers.ContainsKey("Host") ? headers["Host"] : ("127.0.0.1:" + Port);
+                        text = "http://" + host;
+                    }
+                    try
+                    {
+                        byte[] png = Qr.ToPng(text, 6, 4);
+                        SendResponse(stream, "200 OK", "image/png", png);
+                    }
+                    catch (Exception ex)
+                    {
+                        SendJson(stream, 400, new Dictionary<string, object> { { "ok", false }, { "error", ex.Message } });
+                    }
+                    return;
+                }
+
                 // Pairing endpoint (no token required)
                 if (path == "/api/pair" && method == "POST")
                 {
@@ -1135,10 +1156,32 @@ namespace Errin
                     int totalStudents = db.Patrons.Count;
                     int totalLoans = db.Loans.Count;
 
+                    int activeLoans = db.Loans.Count(l => l.ret == null);
+                    int overdueLoans = db.Loans.Count(lib.Overdue);
+                    var borrowedPids = new HashSet<string>(db.Loans.Select(l => l.pid));
+                    int activeBorrowers = borrowedPids.Count;
+                    double borrowerRate = totalStudents > 0 ? Math.Round((double)activeBorrowers * 100.0 / totalStudents, 1) : 0.0;
+                    double overdueRate = activeLoans > 0 ? Math.Round((double)overdueLoans * 100.0 / activeLoans, 1) : 0.0;
+
                     double finesAssessed = db.Fines.Sum(f => f.amt);
                     double finesCollected = db.Fines.Where(f => f.paid != "" && f.paid != "waived").Sum(f => f.amt);
                     double finesWaived = db.Fines.Where(f => f.paid == "waived").Sum(f => f.amt);
                     double finesUnpaid = db.Fines.Where(f => f.paid == "").Sum(f => f.amt);
+
+                    // Monthly checkouts for the last 6 months
+                    var monthlyCheckouts = new List<object>();
+                    for (int i = 5; i >= 0; i--)
+                    {
+                        var d = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddMonths(-i);
+                        string k = d.ToString("yyyy-MM", CultureInfo.InvariantCulture);
+                        string label = d.ToString("MMM yyyy", CultureInfo.InvariantCulture);
+                        int count = db.Loans.Count(l => l.@out != null && l.@out.StartsWith(k));
+                        monthlyCheckouts.Add(new Dictionary<string, object> {
+                            { "month", label },
+                            { "key", k },
+                            { "count", (double)count }
+                        });
+                    }
 
                     // Top borrowed books
                     var topBooks = db.Loans.GroupBy(l => l.iid)
@@ -1174,13 +1217,88 @@ namespace Errin
                         .Select(g =>
                         {
                             var pids = new HashSet<string>(g.Select(p => p.id));
-                            int activeLoans = db.Loans.Count(l => l.ret == null && pids.Contains(l.pid));
+                            int activeLoansInClass = db.Loans.Count(l => l.ret == null && pids.Contains(l.pid));
+                            int totalLoansInClass = db.Loans.Count(l => pids.Contains(l.pid));
                             return (object)new Dictionary<string, object> {
                                 { "cls", g.Key },
                                 { "students", (double)g.Count() },
-                                { "activeLoans", (double)activeLoans }
+                                { "activeLoans", (double)activeLoansInClass },
+                                { "totalLoans", (double)totalLoansInClass }
                             };
                         }).ToList();
+
+                    // Dewey Decimal / Subject Breakdown
+                    var deweyBuckets = new Dictionary<string, int>
+                    {
+                        { "000 Computers & Info", 0 },
+                        { "100 Philosophy & Psych", 0 },
+                        { "200 Religion", 0 },
+                        { "300 Social Sciences", 0 },
+                        { "400 Languages", 0 },
+                        { "500 Science & Math", 0 },
+                        { "600 Technology & Medicine", 0 },
+                        { "700 Arts & Recreation", 0 },
+                        { "800 Literature & Fiction", 0 },
+                        { "900 History & Geography", 0 },
+                        { "Fiction / Stories", 0 },
+                        { "Other / Unclassified", 0 }
+                    };
+
+                    var loanedIids = new HashSet<string>(db.Loans.Select(l => l.iid));
+                    int dormantCount = 0;
+
+                    foreach (var it in db.Items)
+                    {
+                        if (!lib.IsWeeded(it))
+                        {
+                            if (!loanedIids.Contains(it.id)) dormantCount++;
+
+                            string call = (it.call ?? "").Trim();
+                            if (call.Length > 0 && char.IsDigit(call[0]))
+                            {
+                                switch (call[0])
+                                {
+                                    case '0': deweyBuckets["000 Computers & Info"]++; break;
+                                    case '1': deweyBuckets["100 Philosophy & Psych"]++; break;
+                                    case '2': deweyBuckets["200 Religion"]++; break;
+                                    case '3': deweyBuckets["300 Social Sciences"]++; break;
+                                    case '4': deweyBuckets["400 Languages"]++; break;
+                                    case '5': deweyBuckets["500 Science & Math"]++; break;
+                                    case '6': deweyBuckets["600 Technology & Medicine"]++; break;
+                                    case '7': deweyBuckets["700 Arts & Recreation"]++; break;
+                                    case '8': deweyBuckets["800 Literature & Fiction"]++; break;
+                                    case '9': deweyBuckets["900 History & Geography"]++; break;
+                                    default: deweyBuckets["Other / Unclassified"]++; break;
+                                }
+                            }
+                            else if (call.IndexOf("fic", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                     call.IndexOf("cerita", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                     call.IndexOf("novel", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                                     call.IndexOf("story", StringComparison.OrdinalIgnoreCase) >= 0)
+                            {
+                                deweyBuckets["Fiction / Stories"]++;
+                            }
+                            else
+                            {
+                                deweyBuckets["Other / Unclassified"]++;
+                            }
+                        }
+                    }
+
+                    var deweyList = deweyBuckets
+                        .Where(kv => kv.Value > 0)
+                        .Select(kv => (object)new Dictionary<string, object> {
+                            { "category", kv.Key },
+                            { "count", (double)kv.Value }
+                        }).ToList();
+
+                    // Weeded reasons breakdown
+                    int weedDamaged = db.Items.Count(i => !string.IsNullOrEmpty(i.weeded) && (i.weed_reason ?? "").IndexOf("condition", StringComparison.OrdinalIgnoreCase) >= 0);
+                    int weedObsolete = db.Items.Count(i => !string.IsNullOrEmpty(i.weeded) && (i.weed_reason ?? "").IndexOf("obsolete", StringComparison.OrdinalIgnoreCase) >= 0);
+                    int weedLost = db.Items.Count(i => !string.IsNullOrEmpty(i.weeded) && (i.weed_reason ?? "").IndexOf("lost", StringComparison.OrdinalIgnoreCase) >= 0);
+                    int weedDuplicate = db.Items.Count(i => !string.IsNullOrEmpty(i.weeded) && (i.weed_reason ?? "").IndexOf("duplicate", StringComparison.OrdinalIgnoreCase) >= 0);
+                    int weedOther = weededItems - (weedDamaged + weedObsolete + weedLost + weedDuplicate);
+                    if (weedOther < 0) weedOther = 0;
 
                     res = new Dictionary<string, object> {
                         { "ok", true },
@@ -1189,13 +1307,28 @@ namespace Errin
                         { "weededItems", (double)weededItems },
                         { "totalStudents", (double)totalStudents },
                         { "totalLoans", (double)totalLoans },
+                        { "activeLoans", (double)activeLoans },
+                        { "overdueLoans", (double)overdueLoans },
+                        { "activeBorrowers", (double)activeBorrowers },
+                        { "borrowerRate", borrowerRate },
+                        { "overdueRate", overdueRate },
+                        { "dormantCount", (double)dormantCount },
                         { "finesAssessed", finesAssessed },
                         { "finesCollected", finesCollected },
                         { "finesWaived", finesWaived },
                         { "finesUnpaid", finesUnpaid },
+                        { "monthlyCheckouts", monthlyCheckouts },
                         { "topBooks", topBooks },
                         { "topBorrowers", topBorrowers },
-                        { "classBreakdown", classBreakdown }
+                        { "classBreakdown", classBreakdown },
+                        { "deweyBreakdown", deweyList },
+                        { "weedReasons", new Dictionary<string, object> {
+                            { "damaged", (double)weedDamaged },
+                            { "obsolete", (double)weedObsolete },
+                            { "lost", (double)weedLost },
+                            { "duplicate", (double)weedDuplicate },
+                            { "other", (double)weedOther }
+                        }}
                     };
                 });
 
@@ -1599,29 +1732,59 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     <!-- REPORTS VIEW -->
     <div id=""tab-rep"" class=""tab-pane"" style=""display: none;"">
       <div class=""card"">
-        <div class=""card-title"">Collection & Circulation Overview</div>
+        <div class=""card-title"">
+          <span>Collection &amp; Circulation Overview</span>
+          <button class=""btn btn-sec btn-sm"" onclick=""exportReportCsv()"">&#11015; Export Report (CSV)</button>
+        </div>
         <div class=""metrics-grid"">
-          <div class=""metric-box""><div id=""rTotalItems"" class=""metric-val"">0</div><div class=""metric-lbl"">Total Catalogued</div></div>
-          <div class=""metric-box""><div id=""rWeeded"" class=""metric-val"" style=""color:#9a9a94;"">0</div><div class=""metric-lbl"">Weeded / Retired</div></div>
-          <div class=""metric-box""><div id=""rStudents"" class=""metric-val"">0</div><div class=""metric-lbl"">Registered Students</div></div>
-          <div class=""metric-box""><div id=""rFinesColl"" class=""metric-val"" style=""font-size:20px; color:#2fb36b;"">RM 0.00</div><div class=""metric-lbl"">Fines Collected</div></div>
+          <div class=""metric-box""><div id=""rActiveItems"" class=""metric-val"">0</div><div class=""metric-lbl"">Active Copies</div></div>
+          <div class=""metric-box""><div id=""rActiveLoans"" class=""metric-val"" style=""color:#2f6bff;"">0</div><div class=""metric-lbl"">On Loan</div></div>
+          <div class=""metric-box""><div id=""rOverdue"" class=""metric-val"" style=""color:#e8392f;"">0</div><div class=""metric-lbl"">Overdue</div></div>
+          <div class=""metric-box""><div id=""rReaders"" class=""metric-val"">0</div><div class=""metric-lbl"">Active Readers</div></div>
+          <div class=""metric-box""><div id=""rFinesColl"" class=""metric-val"" style=""font-size:20px; color:#2fb36b;"">RM 0.00</div><div class=""metric-lbl"">Fines Paid</div></div>
+          <div class=""metric-box""><div id=""rFinesUnpaid"" class=""metric-val"" style=""font-size:20px; color:#e8392f;"">RM 0.00</div><div class=""metric-lbl"">Unpaid Fines</div></div>
         </div>
       </div>
 
-      <div style=""display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;"">
+      <div class=""card"" style=""margin-top: 16px;"">
+        <div class=""card-title"">Monthly Checkouts (Last 6 Months)</div>
+        <div id=""monthlyChart"" style=""display: flex; align-items: flex-end; justify-content: space-around; height: 130px; padding: 12px 8px 0; border-bottom: 2px solid #44454a;""></div>
+      </div>
+
+      <div style=""display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-top: 16px;"">
         <div class=""card"">
           <div class=""card-title"">Top 10 Borrowed Titles</div>
           <table id=""topBooksTable""><thead><tr><th>Title</th><th style=""text-align: right;"">Loans</th></tr></thead><tbody></tbody></table>
         </div>
         <div class=""card"">
-          <div class=""card-title"">Top 10 Student Borrowers</div>
+          <div class=""card-title"">Reading Champions (Top Students)</div>
           <table id=""topBorrowersTable""><thead><tr><th>Student</th><th>Class</th><th style=""text-align: right;"">Loans</th></tr></thead><tbody></tbody></table>
         </div>
       </div>
 
+      <div style=""display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-top: 16px;"">
+        <div class=""card"">
+          <div class=""card-title"">Collection by Subject / Dewey Range</div>
+          <table id=""deweyTable""><thead><tr><th>Category</th><th style=""text-align: right;"">Titles</th></tr></thead><tbody></tbody></table>
+        </div>
+        <div class=""card"">
+          <div class=""card-title"">Circulation by Class</div>
+          <table id=""classTable""><thead><tr><th>Class</th><th>Students</th><th>Total Loans</th><th style=""text-align: right;"">Active</th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+
       <div class=""card"" style=""margin-top: 16px;"">
-        <div class=""card-title"">Circulation by Class</div>
-        <table id=""classTable""><thead><tr><th>Class</th><th>Students</th><th style=""text-align: right;"">Active Loans</th></tr></thead><tbody></tbody></table>
+        <div class=""card-title"">Collection Health &amp; Weeding</div>
+        <div style=""display: flex; flex-wrap: wrap; gap: 20px; font-size: 14px; line-height: 1.6;"">
+          <div style=""flex: 1; min-width: 240px;"">
+            <p><strong>Dormant collection:</strong> <span id=""rDormant"" style=""color:#f6c61b; font-weight:700;"">0</span> active items have never been borrowed.</p>
+            <p style=""color: #9a9a94; font-size: 12px; margin-top: 4px;"">Promote these titles in library reading challenges or evaluate them for weeding.</p>
+          </div>
+          <div style=""flex: 1; min-width: 240px;"">
+            <p><strong>Weeded / Withdrawn copies:</strong> <span id=""rWeeded"" style=""font-weight:700;"">0</span></p>
+            <div id=""weedBreakdown"" style=""color: #9a9a94; font-size: 13px; margin-top: 4px;""></div>
+          </div>
+        </div>
       </div>
     </div>
   </main>
@@ -2176,15 +2339,43 @@ async function waiveFine(id) {
   }
 }
 
+let lastReportData = null;
+
 // Reports
 async function loadReports() {
   const res = await api('/api/reports');
   if (!res.ok) return;
+  lastReportData = res;
 
-  document.getElementById('rTotalItems').textContent = res.totalItems;
-  document.getElementById('rWeeded').textContent = res.weededItems;
-  document.getElementById('rStudents').textContent = res.totalStudents;
+  document.getElementById('rActiveItems').textContent = res.activeItems;
+  document.getElementById('rActiveLoans').textContent = res.activeLoans;
+  document.getElementById('rOverdue').textContent = res.overdueLoans + (res.activeLoans > 0 ? ' (' + res.overdueRate + '%)' : '');
+  document.getElementById('rReaders').textContent = res.activeBorrowers + (res.totalStudents > 0 ? ' (' + res.borrowerRate + '%)' : '');
   document.getElementById('rFinesColl').textContent = 'RM ' + Number(res.finesCollected).toFixed(2);
+  document.getElementById('rFinesUnpaid').textContent = 'RM ' + Number(res.finesUnpaid).toFixed(2);
+  document.getElementById('rDormant').textContent = res.dormantCount;
+  document.getElementById('rWeeded').textContent = res.weededItems;
+
+  const w = res.weedReasons || {};
+  document.getElementById('weedBreakdown').textContent =
+    'Damaged: ' + (w.damaged||0) + ' \u00B7 Obsolete: ' + (w.obsolete||0) + ' \u00B7 Lost: ' + (w.lost||0) + ' \u00B7 Duplicate: ' + (w.duplicate||0) + ((w.other||0) > 0 ? ' \u00B7 Other: ' + w.other : '');
+
+  // Monthly checkouts visualization
+  const mc = document.getElementById('monthlyChart');
+  mc.innerHTML = '';
+  const months = res.monthlyCheckouts || [];
+  const maxM = Math.max(1, ...months.map(m => m.count));
+  months.forEach(m => {
+    const barWrap = document.createElement('div');
+    barWrap.style.cssText = 'flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%;';
+    const h = Math.round((m.count / maxM) * 85);
+    barWrap.innerHTML = `
+      <div style=""font-size: 11px; font-weight: 700; color: #f6c61b; margin-bottom: 4px;"">${m.count}</div>
+      <div style=""width: 80%; max-width: 42px; height: ${Math.max(4, h)}px; background: #2f6bff; border-radius: 4px 4px 0 0;""></div>
+      <div style=""font-size: 11px; color: #9a9a94; margin-top: 6px; white-space: nowrap;"">${escape(m.month.split(' ')[0])}</div>
+    `;
+    mc.appendChild(barWrap);
+  });
 
   const tb = document.querySelector('#topBooksTable tbody');
   tb.innerHTML = '';
@@ -2202,13 +2393,81 @@ async function loadReports() {
     tp.appendChild(tr);
   });
 
+  const td = document.querySelector('#deweyTable tbody');
+  td.innerHTML = '';
+  (res.deweyBreakdown || []).forEach(d => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><strong>${escape(d.category)}</strong></td><td style=""text-align:right;""><strong>${d.count}</strong></td>`;
+    td.appendChild(tr);
+  });
+
   const tc = document.querySelector('#classTable tbody');
   tc.innerHTML = '';
   res.classBreakdown.forEach(c => {
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td><strong>${escape(c.cls)}</strong></td><td>${c.students}</td><td style=""text-align:right;"">${c.activeLoans}</td>`;
+    tr.innerHTML = `<td><strong>${escape(c.cls)}</strong></td><td>${c.students}</td><td>${c.totalLoans || 0}</td><td style=""text-align:right;""><strong>${c.activeLoans}</strong></td>`;
     tc.appendChild(tr);
   });
+}
+
+function exportReportCsv() {
+  if (!lastReportData) return;
+  const d = lastReportData;
+  const q = String.fromCharCode(34);
+  let csv = '=== ERRINILS SUMMARY REPORT ===\r\n';
+  csv += 'Generated,' + new Date().toLocaleString() + '\r\n\r\n';
+  csv += '--- METRICS ---\r\n';
+  csv += 'Active Collection,' + d.activeItems + '\r\n';
+  csv += 'Weeded Copies,' + d.weededItems + '\r\n';
+  csv += 'Total Students,' + d.totalStudents + '\r\n';
+  csv += 'Active Borrowers,' + d.activeBorrowers + ' (' + d.borrowerRate + '%)\r\n';
+  csv += 'Books on Loan Now,' + d.activeLoans + '\r\n';
+  csv += 'Overdue Items,' + d.overdueLoans + ' (' + d.overdueRate + '%)\r\n';
+  csv += 'Total Fines Assessed,RM ' + Number(d.finesAssessed).toFixed(2) + '\r\n';
+  csv += 'Total Fines Collected,RM ' + Number(d.finesCollected).toFixed(2) + '\r\n';
+  csv += 'Unpaid Fines Outstanding,RM ' + Number(d.finesUnpaid).toFixed(2) + '\r\n\r\n';
+
+  csv += '--- CHECKOUTS (LAST 6 MONTHS) ---\r\nMonth,Count\r\n';
+  (d.monthlyCheckouts || []).forEach(m => { csv += q + m.month + q + ',' + m.count + '\r\n'; });
+  csv += '\r\n';
+
+  csv += '--- TOP BORROWED BOOKS ---\r\nTitle,Author,Loans\r\n';
+  (d.topBooks || []).forEach(b => {
+    const t = (b.title || '').split(q).join(q + q);
+    const a = (b.author || '').split(q).join(q + q);
+    csv += q + t + q + ',' + q + a + q + ',' + b.count + '\r\n';
+  });
+  csv += '\r\n';
+
+  csv += '--- READING CHAMPIONS (TOP STUDENTS) ---\r\nStudent Name,Class,Loans\r\n';
+  (d.topBorrowers || []).forEach(p => {
+    const n = (p.name || '').split(q).join(q + q);
+    const c = (p.cls || '').split(q).join(q + q);
+    csv += q + n + q + ',' + q + c + q + ',' + p.count + '\r\n';
+  });
+  csv += '\r\n';
+
+  csv += '--- CIRCULATION BY CLASS ---\r\nClass,Students,Total Loans,Active Loans\r\n';
+  (d.classBreakdown || []).forEach(c => {
+    const cl = (c.cls || '').split(q).join(q + q);
+    csv += q + cl + q + ',' + c.students + ',' + (c.totalLoans || 0) + ',' + c.activeLoans + '\r\n';
+  });
+  csv += '\r\n';
+
+  csv += '--- COLLECTION BY DEWEY / CATEGORY ---\r\nCategory,Books\r\n';
+  (d.deweyBreakdown || []).forEach(w => {
+    const cat = (w.category || '').split(q).join(q + q);
+    csv += q + cat + q + ',' + w.count + '\r\n';
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'errinils-report-' + new Date().toISOString().substring(0, 10) + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 
 // Security: escape HTML entities
@@ -2235,6 +2494,22 @@ document.getElementById('pairCode').addEventListener('input', function(e) {
   else if (/Windows/i.test(ua)) def = 'Staff PC';
   const nameIn = document.getElementById('pairName');
   if (nameIn && !nameIn.value) nameIn.value = def;
+})();
+
+// Auto-fill pairing code from URL parameter (e.g. scanned from QR code)
+(function() {
+  try {
+    const urlParams = new URLSearchParams(window.location.search);
+    const code = urlParams.get('code');
+    if (code) {
+      const input = document.getElementById('pairCode');
+      if (input) {
+        let clean = code.replace(/[^0-9A-Za-z]/g, '');
+        if (clean.length > 3) clean = clean.substring(0, 3) + ' ' + clean.substring(3, 6);
+        input.value = clean;
+      }
+    }
+  } catch (e) { }
 })();
 
 // Start app
