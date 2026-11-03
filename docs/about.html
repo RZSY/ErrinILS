@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>About ErrinILS - Architecture, Features &amp; Specifications</title>
+  <meta name="description" content="In-depth overview of ErrinILS architecture: zero-dependency C# design, 5-source copy cataloguing, MARC21/Z39.50 protocols, kiosk mode, and single JSON persistence.">
+  <link rel="icon" type="image/png" href="assets/icon.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Site Header -->
+  <header class="site-header">
+    <div class="header-container">
+      <a href="index.html" class="brand-link">
+        <img src="assets/icon.png" alt="ErrinILS Logo" class="brand-icon">
+        <span>ErrinILS</span>
+        <span class="brand-badge">v1.3.1</span>
+      </a>
+
+      <button class="mobile-menu-btn" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+
+      <nav class="main-nav">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="about.html" class="nav-link active">About</a>
+        <a href="download.html" class="nav-link">Download &amp; Install</a>
+        <a href="guide.html" class="nav-link">User Guide</a>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="download.html" class="btn btn-primary btn-sm">Download v1.3.1</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="page-container">
+
+    <!-- Page Title Header -->
+    <div style="border-bottom: 1px solid var(--border-subtle); padding-bottom: 32px; margin-bottom: 48px;">
+      <span class="section-eyebrow">System Architecture &amp; Features</span>
+      <h1 class="section-title" style="font-size: 2.6rem;">About ErrinILS</h1>
+      <p class="section-subtitle">
+        ErrinILS is an open-source, zero-dependency Integrated Library System (ILS) built specifically to solve the real-world operational challenges of school libraries.
+      </p>
+    </div>
+
+    <!-- Section 1: The Zero-Dependency Philosophy -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-eyebrow">Engineering Philosophy</span>
+        <h2 class="section-title">Zero Dependencies. Maximum Reliability.</h2>
+        <p class="section-subtitle">
+          Most enterprise library systems require heavy stacks: Apache, PHP, Python, MySQL/MariaDB, Node.js runtimes, or cloud subscriptions. When a school PC has no internet or is managed by a teacher without IT background, those stacks fail.
+        </p>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <div class="card-icon">📦</div>
+          <h3 class="card-title">Pure Base .NET 4.0</h3>
+          <p class="card-text">
+            Written entirely in pure C# using only the base assemblies shipped with Windows (<code>mscorlib</code>, <code>System</code>, <code>System.Drawing</code>, <code>System.Windows.Forms</code>). No NuGet packages, no third-party DLLs, and no registry pollution.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">⚡</div>
+          <h3 class="card-title">Runs on Legacy School Hardware</h3>
+          <p class="card-text">
+            School computers are often 8 to 15 years old with limited RAM. ErrinILS runs comfortably on 1 GB RAM and consumes less than 15 MB of memory under heavy circulation load.
+          </p>
+        </div>
+
+        <div class="card">
+          <div class="card-icon">💾</div>
+          <h3 class="card-title">Single JSON Database</h3>
+          <p class="card-text">
+            All bibliographic records, patrons, loans, and settings reside in a single human-readable file (<code>errin-data.json</code>). Backing up or migrating your entire school library takes two seconds: copy one file or use built-in ZIP export.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2: Comprehensive Features Breakdown -->
+    <section class="section" id="catalog">
+      <div class="section-header">
+        <span class="section-eyebrow">Complete Feature Matrix</span>
+        <h2 class="section-title">Engineered for School Librarians</h2>
+      </div>
+
+      <div class="grid-2" style="margin-bottom: 32px;">
+        <!-- Feature 1 -->
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+            <h3 class="card-title" style="margin-bottom: 0;">5-Source ISBN Copy-Cataloguing</h3>
+            <span class="badge badge-gold">AUTOMATED</span>
+          </div>
+          <p class="card-text">
+            Adding new books takes seconds instead of minutes. Scan an ISBN-10 or ISBN-13 barcode, and ErrinILS queries 5 international bibliographic sources in priority sequence:
+          </p>
+          <ul class="step-list" style="margin-left: 16px;">
+            <li><strong>1. Library of Congress:</strong> Native ASN.1 BER over Z39.50 v3 (<code>lx2.loc.gov:210</code>).</li>
+            <li><strong>2. Open Library:</strong> Modern REST API with full bibliographic JSON parsing.</li>
+            <li><strong>3. Google Books API:</strong> Global ISBN database with publisher descriptions and dates.</li>
+            <li><strong>4. HathiTrust:</strong> Academic union catalogue via MARCXML retrieval.</li>
+            <li><strong>5. K10plus German Union:</strong> SRU MARCXML service for international acquisitions.</li>
+          </ul>
+        </div>
+
+        <!-- Feature 2 -->
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+            <h3 class="card-title" style="margin-bottom: 0;">MARC21 Standard Interoperability</h3>
+            <span class="badge badge-blue">ISO 2709</span>
+          </div>
+          <p class="card-text">
+            ErrinILS is built on international cataloguing standards. You can import or export records without vendor lock-in:
+          </p>
+          <ul class="step-list" style="margin-left: 16px;">
+            <li><strong>ISO 2709 Binary MARC:</strong> Raw binary <code>.mrc</code> record parser and generator.</li>
+            <li><strong>MARCXML:</strong> W3C standard XML format with schema validation.</li>
+            <li><strong>MRK (Mnemonic Text):</strong> Human-readable MARC records compatible with MarcEdit.</li>
+            <li><strong>MARC-8 &amp; UTF-8:</strong> Built-in converter for MARC-8 combining diacritics and character tables.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom: 32px;" id="remote">
+        <!-- Feature 3 -->
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+            <h3 class="card-title" style="margin-bottom: 0;">QR Code Remote Access &amp; Multi-Wi-Fi</h3>
+            <span class="badge badge-green">NEW v1.3.1</span>
+          </div>
+          <p class="card-text">
+            Teachers, student librarians, and stock audit assistants can access the library system wirelessly from smartphones and tablets without installing any app:
+          </p>
+          <ul class="step-list" style="margin-left: 16px;">
+            <li><strong>Zero-Dependency QR Engine:</strong> Pure C# ISO/IEC 18004 QR generator (EC-Level M) rendering sharp SVG and PNG codes.</li>
+            <li><strong>Password-Free 6-Digit PIN:</strong> Secure pairing model with 5-minute expiry and 3-attempt lockout.</li>
+            <li><strong>Cryptographic Device Token:</strong> Generates a persistent 32-byte <code>X-Errin-Token</code> stored in browser localStorage.</li>
+            <li><strong>Multi-Network Binding:</strong> Pure C# HTTP server (`TcpListener`) binds to <code>0.0.0.0</code>, working across 2.4/5GHz SSIDs, hotspots, and Tailscale meshes.</li>
+          </ul>
+        </div>
+
+        <!-- Feature 4 -->
+        <div class="card" id="kiosk">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+            <h3 class="card-title" style="margin-bottom: 0;">Simplified Student Self-Checkout Kiosk</h3>
+            <span class="badge badge-gold">KIOSK MODE</span>
+          </div>
+          <p class="card-text">
+            Primary and secondary students can independently manage their book borrowings without librarian supervision:
+          </p>
+          <ul class="step-list" style="margin-left: 16px;">
+            <li><strong>Child-Friendly UI:</strong> Oversized high-contrast touch targets, cheerful colors, and friendly wording (<code>Lib.Friendly</code>).</li>
+            <li><strong>Audio-Visual Feedback:</strong> Distinct pleasant chime on success; warning buzz on overdue or hold restrictions.</li>
+            <li><strong>Restricted Librarian Exit:</strong> Protected by admin password to prevent students from exiting into administrative settings.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="grid-2" id="reports">
+        <!-- Feature 5 -->
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+            <h3 class="card-title" style="margin-bottom: 0;">Circulation Rules &amp; School Localization</h3>
+            <span class="badge badge-blue">CIRCULATION</span>
+          </div>
+          <p class="card-text">
+            Tailored specifically for school operations and regional student identification:
+          </p>
+          <ul class="step-list" style="margin-left: 16px;">
+            <li><strong>Malaysian IC / MyKid:</strong> Validates format (<code>YYMMDD-PB-###G</code>), birth month (01–12), and valid calendar day.</li>
+            <li><strong>Fines &amp; Limits:</strong> Configurable daily fine rate (default RM 0.10/day) and borrowing block threshold (default RM 5.00).</li>
+            <li><strong>Hold Queue:</strong> Prevents other patrons from borrowing titles reserved by fellow students.</li>
+            <li><strong>GDPR / Data Retention:</strong> Built-in 5-year activity purge for graduated student privacy.</li>
+          </ul>
+        </div>
+
+        <!-- Feature 6 -->
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+            <h3 class="card-title" style="margin-bottom: 0;">Executive Reports &amp; Collection Analytics</h3>
+            <span class="badge badge-green">ANALYTICS</span>
+          </div>
+          <p class="card-text">
+            Gives school principals and library coordinators deep visibility into reading participation:
+          </p>
+          <ul class="step-list" style="margin-left: 16px;">
+            <li><strong>Reading Champions:</strong> Top student reader leaderboard tracking total books read (ideal for Nilam / reading awards).</li>
+            <li><strong>Circulation Trajectory:</strong> Monthly checkout volume trends over the last 6 months.</li>
+            <li><strong>Collection Classification:</strong> Dewey Decimal 100s distribution breakdown and dormant zero-circulation audits.</li>
+            <li><strong>1-Click CSV Export:</strong> Instant spreadsheet generation for school board presentations.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3: High-DPI Sharpness & Native Windows UI -->
+    <section class="section">
+      <div class="callout callout-tip">
+        <div class="callout-header">
+          <span>🖥️</span>
+          <span>Native Per-Monitor V2 High-DPI Sharpness</span>
+        </div>
+        <p>
+          Many older Windows desktop applications become blurry when running on modern 1080p, 2K, or 4K laptops set to 125%, 150%, or 200% display scaling. ErrinILS embeds native Windows PerMonitorV2 awareness directly in its executable manifest. All UI elements, fonts, tables, and buttons render with crisp ClearType vectors without GPU overhead.
+        </p>
+      </div>
+    </section>
+
+    <!-- Section 4: Architecture & Data Persistence -->
+    <section class="section" id="persistence">
+      <div class="section-header">
+        <span class="section-eyebrow">Storage Architecture</span>
+        <h2 class="section-title">Transparent, Open Data Persistence</h2>
+        <p class="section-subtitle">
+          Your data is never locked behind proprietary database binaries or encrypted silos.
+        </p>
+      </div>
+
+      <div class="code-box">
+        <div class="code-box-header">
+          <span>%APPDATA%\Errin\errin-data.json — Schema Structure</span>
+          <button class="code-box-copy" aria-label="Copy JSON schema">Copy Schema</button>
+        </div>
+        <pre><code>{
+  "settings": {
+    "libraryName": "SK Taman Ceria Library",
+    "loanDays": 7,
+    "finePerDay": 0.10,
+    "maxFine": 10.00,
+    "blockFine": 5.00,
+    "maxLoans": 3
+  },
+  "items": [
+    {
+      "id": "item-1001",
+      "barcode": "9780141325286",
+      "title": "Charlie and the Chocolate Factory",
+      "author": "Dahl, Roald",
+      "ddc": "823.914",
+      "copies": 2,
+      "available": 1,
+      "weeded": false
+    }
+  ],
+  "patrons": [
+    {
+      "id": "patron-2001",
+      "ic": "080415-10-5421",
+      "name": "Adam Tan",
+      "grade": "Standard 4 Melur",
+      "email": "adam@school.edu.my",
+      "active": true
+    }
+  ],
+  "loans": [...],
+  "holds": [...],
+  "fines": [...]
+}</code></pre>
+      </div>
+      <p style="color: var(--text-muted); font-size: 0.92rem;">
+        Because the format is standard JSON, you can inspect it in Notepad, parse it with custom Python scripts, or export to spreadsheets at any time.
+      </p>
+    </section>
+
+    <!-- Section 5: Comparison Table -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-eyebrow">Comparison Matrix</span>
+        <h2 class="section-title">How ErrinILS Compares</h2>
+        <p class="section-subtitle">
+          Comparing ErrinILS with heavy enterprise ILS solutions and manual spreadsheets:
+        </p>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Feature / Metric</th>
+              <th class="highlight">ErrinILS Standalone</th>
+              <th>Koha ILS</th>
+              <th>SLiMS (Senayan)</th>
+              <th>Excel / Spreadsheet</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Installation Complexity</strong></td>
+              <td class="highlight">Double-click EXE or NSIS setup</td>
+              <td>Complex Linux server &amp; Perl</td>
+              <td>Requires Apache &amp; MySQL stack</td>
+              <td>Simple file, no automation</td>
+            </tr>
+            <tr>
+              <td><strong>Hardware Requirements</strong></td>
+              <td class="highlight">1 GB RAM, 10 MB Disk</td>
+              <td>4–8 GB RAM, Dedicated Server</td>
+              <td>2–4 GB RAM, Web Server</td>
+              <td>Standard PC</td>
+            </tr>
+            <tr>
+              <td><strong>External Dependencies</strong></td>
+              <td class="highlight">0 (Pure .NET 4.0 Framework)</td>
+              <td>Hundreds (Perl, CPAN, MariaDB)</td>
+              <td>PHP, MySQL, Web server</td>
+              <td>Microsoft Office / Excel</td>
+            </tr>
+            <tr>
+              <td><strong>ISBN Copy-Cataloguing</strong></td>
+              <td class="highlight">Built-in 5-source automated lookup</td>
+              <td>Z39.50 (requires config)</td>
+              <td>P2P service or plugins</td>
+              <td>None (Manual data entry)</td>
+            </tr>
+            <tr>
+              <td><strong>Student Kiosk Mode</strong></td>
+              <td class="highlight">Built-in simplified touch mode</td>
+              <td>Plugin / Third-party module</td>
+              <td>Self-checkout module</td>
+              <td>None</td>
+            </tr>
+            <tr>
+              <td><strong>Remote Smartphone Access</strong></td>
+              <td class="highlight">Zero-password QR Code pairing</td>
+              <td>Full web OPAC</td>
+              <td>Web OPAC</td>
+              <td>None / Cloud file sharing</td>
+            </tr>
+            <tr>
+              <td><strong>Malaysian IC / MyKid Validation</strong></td>
+              <td class="highlight">Native regex &amp; calendar verification</td>
+              <td>Manual custom regex</td>
+              <td>Manual custom regex</td>
+              <td>Complex formula</td>
+            </tr>
+            <tr>
+              <td><strong>Backup &amp; Migration</strong></td>
+              <td class="highlight">Copy 1 JSON file or 1-click ZIP</td>
+              <td>mysqldump &amp; zebra re-indexing</td>
+              <td>MySQL database export</td>
+              <td>File copy</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Technical Specifications Table -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-eyebrow">Technical Specifications</span>
+        <h2 class="section-title">System Specifications &amp; Standards</h2>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <tbody>
+            <tr>
+              <td style="width: 250px;"><strong>Application Name</strong></td>
+              <td>ErrinILS (School Integrated Library System)</td>
+            </tr>
+            <tr>
+              <td><strong>Current Release</strong></td>
+              <td><span class="badge badge-gold">v1.3.1</span> (Production Stable)</td>
+            </tr>
+            <tr>
+              <td><strong>Programming Language</strong></td>
+              <td>Pure C# 5.0 (Strictly zero C# 6+ syntax for maximum backwards compatibility)</td>
+            </tr>
+            <tr>
+              <td><strong>Target Framework</strong></td>
+              <td>Microsoft .NET Framework 4.0 or newer</td>
+            </tr>
+            <tr>
+              <td><strong>Supported Operating Systems</strong></td>
+              <td>Windows 11, Windows 10, Windows 8.1, Windows 8, Windows 7 SP1 (32-bit &amp; 64-bit)</td>
+            </tr>
+            <tr>
+              <td><strong>Binary Footprint</strong></td>
+              <td>~200 KB (Single executable <code>ErrinILS.exe</code>)</td>
+            </tr>
+            <tr>
+              <td><strong>Cataloguing Protocols</strong></td>
+              <td>Z39.50 v3 (ASN.1 BER), SRU MARCXML, MARC21 ISO 2709, MarcEdit MRK, MARC-8 / UTF-8</td>
+            </tr>
+            <tr>
+              <td><strong>External Data Providers</strong></td>
+              <td>Library of Congress, Open Library, Google Books, HathiTrust, K10plus Union Catalogue</td>
+            </tr>
+            <tr>
+              <td><strong>Remote Server Protocol</strong></td>
+              <td>Pure C# HTTP/1.1 Web Server (`TcpListener`), WebSocket-ready, Token Authentication</td>
+            </tr>
+            <tr>
+              <td><strong>License</strong></td>
+              <td>MIT License (Free for all educational and commercial use)</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div style="text-align: center; margin-top: 40px;">
+        <a href="download.html" class="btn btn-primary btn-lg">Download ErrinILS v1.3.1</a>
+        <a href="guide.html" class="btn btn-secondary btn-lg" style="margin-left: 12px;">Read the User Guide</a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Site Footer -->
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-top">
+        <div>
+          <div class="footer-brand-title">
+            <img src="assets/icon.png" alt="ErrinILS Icon" style="width: 28px; height: 28px;">
+            <span>ErrinILS</span>
+          </div>
+          <p class="footer-brand-desc">
+            Lightweight, zero-dependency school integrated library system built for modern and low-resource Windows PCs.
+          </p>
+          <div class="footer-badges">
+            <span class="badge badge-gold">C# 5.0 / .NET 4.0</span>
+            <span class="badge badge-blue">Zero Dependencies</span>
+          </div>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Pages</div>
+          <ul class="footer-links">
+            <li><a href="index.html">Home</a></li>
+            <li><a href="about.html">About &amp; Architecture</a></li>
+            <li><a href="download.html">Download &amp; Installation</a></li>
+            <li><a href="guide.html">User Guide &amp; Manual</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Resources</div>
+          <ul class="footer-links">
+            <li><a href="download.html#requirements">System Requirements</a></li>
+            <li><a href="guide.html#circ">Circulation Desk Guide</a></li>
+            <li><a href="guide.html#kiosk">Student Kiosk Setup</a></li>
+            <li><a href="assets/ErrinILS-User-Guide.md" download>Download Manual (.md)</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Releases</div>
+          <ul class="footer-links">
+            <li><a href="https://github.com/RZSY/ErrinILS/releases/tag/v1.3.1" target="_blank" rel="noopener">ErrinILS v1.3.1 on GitHub</a></li>
+            <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.3.1/ErrinILS-Setup-1.3.1.exe">Setup Installer (.exe)</a></li>
+            <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.3.1/ErrinILS-Windows.zip">Portable Package (.zip)</a></li>
+            <li><a href="https://github.com/RZSY/ErrinILS" target="_blank" rel="noopener">GitHub Repository</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>&copy; 2026 ErrinILS Project. Released under the MIT License.</div>
+        <div style="font-family: var(--font-mono); font-size: 0.78rem;">
+          Designed with sharp corners • Pure C# Standalone
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
