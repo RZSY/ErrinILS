@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ErrinILS User Guide - Step-by-Step Manual</title>
-  <meta name="description" content="Step-by-step user guide and operator manual for ErrinILS. Learn how to manage students, catalog books with ISBN lookup, process loans, operate student kiosks, and export reports.">
+  <title>ErrinILS User Manual - Comprehensive Operating Guidelines</title>
+  <meta name="description" content="Official, exhaustive user manual and operating handbook for ErrinILS version 1.3.1. Covers installation, circulation, cataloguing, student management, fines, weeding, QR remote pairing, analytics, and administration.">
   <link rel="icon" type="image/png" href="assets/icon.png">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -39,10 +39,10 @@
 
     <!-- Header & Action Bar -->
     <div style="border-bottom: 1px solid var(--border-subtle); padding-bottom: 24px; margin-bottom: 32px;">
-      <span class="section-eyebrow">Documentation &amp; Handbook</span>
-      <h1 class="section-title" style="font-size: 2.6rem;">ErrinILS User Guide</h1>
+      <span class="section-eyebrow">Official Master Manual</span>
+      <h1 class="section-title" style="font-size: 2.5rem;">ErrinILS User Manual &amp; Guidelines</h1>
       <p class="section-subtitle">
-        A step-by-step walkthrough covering every aspect of operating ErrinILS in your school library. You can follow along below or download the complete manual for offline reading and printing.
+        Exhaustive step-by-step operating guidelines for school librarians, administrators, IT staff, and student helpers. Covers daily circulation, automated copy-cataloguing, Malaysian IC student management, kiosk self-checkout, weeding, remote QR access, and disaster recovery.
       </p>
     </div>
 
@@ -60,7 +60,7 @@
         </button>
       </div>
       <div>
-        <span class="badge badge-gold">Manual Version: 1.3.1</span>
+        <span class="badge badge-gold">Edition: v1.3.1 (Complete)</span>
       </div>
     </div>
 
@@ -71,16 +71,28 @@
       <aside class="guide-sidebar">
         <div class="guide-sidebar-title">Table of Contents</div>
         <ul class="guide-nav-list">
-          <li><a href="#ch1" class="guide-nav-link active">1. First-Time Setup</a></li>
-          <li><a href="#ch2" class="guide-nav-link">2. Student Management</a></li>
-          <li><a href="#ch3" class="guide-nav-link">3. Adding &amp; Cataloguing Books</a></li>
-          <li><a href="#ch4" class="guide-nav-link">4. Circulation &amp; Barcode Desk</a></li>
-          <li><a href="#ch5" class="guide-nav-link">5. Fines &amp; Lost Books</a></li>
-          <li><a href="#ch6" class="guide-nav-link">6. Holds &amp; Reserve Queue</a></li>
-          <li><a href="#ch7" class="guide-nav-link">7. Weeding &amp; Maintenance</a></li>
-          <li><a href="#ch8" class="guide-nav-link">8. Student Kiosk Mode</a></li>
-          <li><a href="#ch9" class="guide-nav-link">9. Remote QR Access</a></li>
-          <li><a href="#ch10" class="guide-nav-link">10. Reports &amp; Backups</a></li>
+          <li><a href="#ch1" class="guide-nav-link active">1. About ErrinILS</a></li>
+          <li><a href="#ch2" class="guide-nav-link">2. System Requirements</a></li>
+          <li><a href="#ch3" class="guide-nav-link">3. Installing &amp; Starting</a></li>
+          <li><a href="#ch4" class="guide-nav-link">4. Getting Started</a></li>
+          <li><a href="#ch5" class="guide-nav-link">5. Rules &amp; Numbering</a></li>
+          <li><a href="#ch6" class="guide-nav-link">6. The Dashboard</a></li>
+          <li><a href="#ch7" class="guide-nav-link">7. Daily Circulation</a></li>
+          <li><a href="#ch8" class="guide-nav-link">8. Simplified Kiosk View</a></li>
+          <li><a href="#ch9" class="guide-nav-link">9. The Catalog &amp; Lookup</a></li>
+          <li><a href="#ch10" class="guide-nav-link">10. Students &amp; Patrons</a></li>
+          <li><a href="#ch11" class="guide-nav-link">11. Fines Management</a></li>
+          <li><a href="#ch12" class="guide-nav-link">12. Collection Weeding</a></li>
+          <li><a href="#ch13" class="guide-nav-link">13. Remote QR Access</a></li>
+          <li><a href="#ch14" class="guide-nav-link">14. Reports &amp; Analytics</a></li>
+          <li><a href="#ch15" class="guide-nav-link">15. Backup &amp; Recovery</a></li>
+          <li><a href="#ch16" class="guide-nav-link">16. Settings &amp; Admin</a></li>
+          <li><a href="#ch17" class="guide-nav-link">17. Operational Routines</a></li>
+          <li><a href="#ch18" class="guide-nav-link">18. Troubleshooting</a></li>
+          <li><a href="#ch19" class="guide-nav-link">19. Frequently Asked Questions</a></li>
+          <li><a href="#appA" class="guide-nav-link">App A. Quick Task Guide</a></li>
+          <li><a href="#appB" class="guide-nav-link">App B. Glossary</a></li>
+          <li><a href="#appC" class="guide-nav-link">App C. File Directory</a></li>
         </ul>
       </aside>
 
@@ -90,81 +102,157 @@
         <!-- Chapter 1 -->
         <article class="guide-chapter" id="ch1">
           <div class="chapter-number">Chapter 1</div>
-          <h2 class="chapter-title">First-Time Setup &amp; Configuration</h2>
+          <h2 class="chapter-title">About ErrinILS</h2>
           <div class="chapter-body">
+            <h4 style="color: var(--accent-gold); margin: 16px 0 8px 0;">1.1 What ErrinILS is</h4>
             <p>
-              When you launch ErrinILS for the first time, it initializes an empty library database in your local application directory at <code>%APPDATA%\Errin\errin-data.json</code>. Follow these steps to configure your school identity and loan rules:
+              <strong>ErrinILS</strong> is an integrated library system (ILS) engineered specifically for primary, secondary, and vernacular school libraries. It is a lightweight Windows desktop program that tracks three core operational pillars:
+            </p>
+            <ul class="step-list">
+              <li>The <strong>books and learning items</strong> in the library collection.</li>
+              <li>The <strong>students, teachers, and patrons</strong> registered to borrow them.</li>
+              <li>The <strong>loans, reservations (holds), and fines</strong> connecting patrons and items.</li>
+            </ul>
+            <p>
+              Everyday circulation does not require an internet connection. All records live locally on the library computer and are saved automatically each time you make a change. The internet is used only for two optional tasks: looking up book bibliographic details by ISBN, and searching remote library catalogues via Z39.50.
             </p>
 
-            <div class="step-card">
-              <div class="step-card-num">STEP 1.1</div>
-              <h4 class="step-card-title">Access Library Settings</h4>
-              <p>
-                In the main window, click the <strong>Settings</strong> tab located on the far right of the navigation toolbar.
-              </p>
-            </div>
+            <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">1.2 Core Philosophy &amp; Zero-Dependency Architecture</h4>
+            <p>
+              Unlike traditional enterprise software (such as Koha, SLiMS, or commercial cloud systems) that demand Linux servers, Apache/MySQL configurations, or costly recurring subscriptions, ErrinILS is built on a <strong>strict zero-external-dependency rule</strong>. Written in pure C# using only the base assemblies included with Microsoft .NET Framework 4.0, it requires zero database setup, zero runtime dependencies, and stores everything in a human-readable, portable JSON database (<code>%APPDATA%\Errin\errin-data.json</code>).
+            </p>
 
-            <div class="step-card">
-              <div class="step-card-num">STEP 1.2</div>
-              <h4 class="step-card-title">Set School Name &amp; Circulation Parameters</h4>
-              <p>Fill in the configuration fields according to your school policy:</p>
-              <ul class="step-list">
-                <li><strong>Library Name:</strong> Enter your official school name (e.g. <code>SK Taman Melati Library</code>). This appears on printed notices and report headers.</li>
-                <li><strong>Default Loan Duration:</strong> Number of days a book can be borrowed before becoming overdue (Default: <code>7</code> days).</li>
-                <li><strong>Fine Rate per Day:</strong> Overdue fine charged per day per late book (Default: <code>RM 0.10</code>). Set to <code>0.00</code> if your school does not charge monetary fines.</li>
-                <li><strong>Borrowing Block Threshold:</strong> Maximum accumulated fine before a student is blocked from borrowing new books (Default: <code>RM 5.00</code>).</li>
-                <li><strong>Max Books Allowed:</strong> Maximum concurrent loans per student (Default: <code>3</code> books).</li>
-              </ul>
-            </div>
-
-            <div class="callout callout-tip">
-              <div class="callout-header">
-                <span>💡</span>
-                <span>Pro-Tip: Barcode Scanner Mode</span>
+            <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">1.3 What you can do with it</h4>
+            <div class="grid-2" style="margin: 16px 0;">
+              <div class="card" style="padding: 16px;">
+                <strong style="color: var(--text-main);">Circulation Desk</strong>
+                <p style="font-size: 0.88rem; color: var(--text-muted); margin-top: 4px;">Sub-second checkouts, returns, renewals, and hold management with automated loan rule enforcement.</p>
               </div>
-              <p>
-                Plug in any standard USB barcode scanner. ErrinILS is optimized for scanner wedge input (devices sending standard keystrokes followed by an Enter return key). No special drivers or configuration are required.
-              </p>
+              <div class="card" style="padding: 16px;">
+                <strong style="color: var(--text-main);">5-Source ISBN Lookup</strong>
+                <p style="font-size: 0.88rem; color: var(--text-muted); margin-top: 4px;">Scan an ISBN to auto-fill title, author, publisher, and Dewey call number from LOC, OpenLib, Google, Hathi, and K10plus.</p>
+              </div>
+              <div class="card" style="padding: 16px;">
+                <strong style="color: var(--text-main);">Malaysian Student ID</strong>
+                <p style="font-size: 0.88rem; color: var(--text-muted); margin-top: 4px;">Full validation for 12-digit Malaysian IC and MyKid cards (<code>YYMMDD-PB-###G</code>) with scannable card printing.</p>
+              </div>
+              <div class="card" style="padding: 16px;">
+                <strong style="color: var(--text-main);">Student Kiosk Mode</strong>
+                <p style="font-size: 0.88rem; color: var(--text-muted); margin-top: 4px;">Simplified touch/scanner desk with cheerful sound cues, oversized buttons, and child-friendly wording.</p>
+              </div>
+              <div class="card" style="padding: 16px;">
+                <strong style="color: var(--text-main);">Weeding &amp; Maintenance</strong>
+                <p style="font-size: 0.88rem; color: var(--text-muted); margin-top: 4px;">Track damaged, obsolete, or lost copies while permanently preserving historical borrowing statistics.</p>
+              </div>
+              <div class="card" style="padding: 16px;">
+                <strong style="color: var(--text-main);">Wireless QR Remote Access</strong>
+                <p style="font-size: 0.88rem; color: var(--text-muted); margin-top: 4px;">Connect smartphones and tablets over Wi-Fi using zero-password QR pairing and mobile camera scanning.</p>
+              </div>
             </div>
+
+            <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">1.4 Which chapters you need</h4>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>If you are…</th>
+                    <th>Read…</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>The Teacher-Librarian or Administrator</strong></td>
+                    <td>Everything. Start with Chapters 3, 4, and 5, then proceed through Chapters 6 to 18.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>A Student Helper or Library Prefect</strong></td>
+                    <td>Chapter 4.4 (barcode scanners), Chapter 7 (Circulation), and Chapter 8 (Simplified Kiosk View).</td>
+                  </tr>
+                  <tr>
+                    <td><strong>The School IT Coordinator / Technician</strong></td>
+                    <td>Chapter 2 (Requirements), Chapter 3 (Setup), Chapter 13 (Remote QR), Chapter 15 (Backups), and Chapter 18.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">1.5 Conventions used in this manual</h4>
+            <p>
+              Names of buttons, tabs, and fields appear in <strong>bold</strong> (e.g. <strong>Check out</strong>, <strong>Save</strong>). Money is denominated in Malaysian Ringgit (<strong>RM</strong>). Dates follow the standard <code>YYYY-MM-DD</code> format (e.g. <code>2026-10-09</code>), except in Simplified View where friendly dates appear (e.g. <code>9 Oct 2026</code>).
+            </p>
           </div>
         </article>
 
         <!-- Chapter 2 -->
         <article class="guide-chapter" id="ch2">
           <div class="chapter-number">Chapter 2</div>
-          <h2 class="chapter-title">Student &amp; Patron Management</h2>
+          <h2 class="chapter-title">System Requirements &amp; Hardware Guidelines</h2>
           <div class="chapter-body">
             <p>
-              Before students can borrow books, register their details in the <strong>Patrons</strong> tab. ErrinILS supports Malaysian IC / MyKid verification with automatic formatting.
+              ErrinILS is deliberately lightweight. It runs smoothly on budget classroom computers without a dedicated server or third-party database engines.
             </p>
 
-            <div class="step-card">
-              <div class="step-card-num">STEP 2.1</div>
-              <h4 class="step-card-title">Add a Single Student</h4>
-              <p>Click the <strong>Add Patron</strong> button and enter the student profile:</p>
-              <ul class="step-list">
-                <li><strong>Identification / IC:</strong> Enter 12 digits (e.g. <code>080415105421</code>). ErrinILS will automatically format it into <code>080415-10-5421</code> and validate that the birth month and day are mathematically valid.</li>
-                <li><strong>Full Name:</strong> Student's registered legal name (e.g. <code>Adam Tan Wei Jie</code>).</li>
-                <li><strong>Grade / Class:</strong> Current class or division (e.g. <code>Standard 4 Melur</code>).</li>
-                <li><strong>Role:</strong> Select <code>Student</code>, <code>Teacher</code>, or <code>Staff</code>.</li>
-              </ul>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Component</th>
+                    <th>Minimum Requirement</th>
+                    <th>Recommended Specification</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Operating System</strong></td>
+                    <td>Windows 7 SP1 (32-bit or 64-bit)</td>
+                    <td>Windows 10 or Windows 11 (64-bit)</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Runtime</strong></td>
+                    <td>Microsoft .NET Framework 4.0</td>
+                    <td>Microsoft .NET Framework 4.8 (built-in on Win 10/11)</td>
+                  </tr>
+                  <tr>
+                    <td><strong>RAM Memory</strong></td>
+                    <td>1 GB RAM</td>
+                    <td>2 GB RAM or more</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Hard Disk Space</strong></td>
+                    <td>10 MB for binary; ~50 MB for database &amp; backups</td>
+                    <td>100 MB free storage</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Screen Resolution</strong></td>
+                    <td>1024 × 600 (min window: 900 × 600)</td>
+                    <td>1366 × 768 or 1920 × 1080 (Crisp High-DPI PerMonitorV2)</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Internet Access</strong></td>
+                    <td>None required (100% offline circulation)</td>
+                    <td>Optional for ISBN copy-cataloguing &amp; Z39.50 search</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Barcode Scanner</strong></td>
+                    <td>Keyboard wedge scanner (USB)</td>
+                    <td>Standard USB laser or 2D image scanner</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Printer</strong></td>
+                    <td>Optional</td>
+                    <td>A4 laser/inkjet or thermal sticker label printer</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
 
-            <div class="step-card">
-              <div class="step-card-num">STEP 2.2</div>
-              <h4 class="step-card-title">Bulk Student Import via CSV</h4>
-              <p>
-                To onboard an entire school, prepare a standard CSV spreadsheet with columns: <code>IC, Name, Class, Role</code>. Click <strong>Import CSV</strong> in the Patrons tab. ErrinILS will validate all records and import hundreds of students in seconds.
-              </p>
-            </div>
-
-            <div class="callout callout-note">
+            <div class="callout callout-tip">
               <div class="callout-header">
-                <span>📋</span>
-                <span>Data Privacy &amp; 5-Year Purge</span>
+                <span>🖥️</span>
+                <span>Native High-DPI Sharpness</span>
               </div>
               <p>
-                To maintain student privacy compliance, use <strong>Tools → Purge Old Data</strong> at the end of each school year. This automatically cleans loan logs older than 5 years while keeping active patron records.
+                Modern Windows 10 and 11 laptops often use 125%, 150%, or 200% display scaling. Older software looks blurry due to bitmap stretching. ErrinILS embeds native Windows PerMonitorV2 awareness, rendering razor-sharp ClearType text and proportional controls with zero performance penalty.
               </p>
             </div>
           </div>
@@ -173,202 +261,217 @@
         <!-- Chapter 3 -->
         <article class="guide-chapter" id="ch3">
           <div class="chapter-number">Chapter 3</div>
-          <h2 class="chapter-title">Adding &amp; Cataloguing Books (ISBN Auto-Lookup)</h2>
+          <h2 class="chapter-title">Installing, Updating and Starting ErrinILS</h2>
           <div class="chapter-body">
+            <h4 style="color: var(--accent-gold); margin: 16px 0 8px 0;">3.1 Installing with the Setup program</h4>
+            <ol class="step-list">
+              <li>Download <code>ErrinILS-Setup-1.3.1.exe</code> from the official website or GitHub release.</li>
+              <li>Double-click the installer. If Windows UAC prompts *"Do you want to allow this app to make changes?"*, click <strong>Yes</strong>.</li>
+              <li>If a blue *"Windows protected your PC"* box appears, click <strong>More info</strong> and then <strong>Run anyway</strong>. This occurs because open-source educational software is released without costly commercial certificates.</li>
+              <li>Follow the setup wizard, keep the default directory (<code>C:\Program Files (x86)\ErrinILS</code>), click <strong>Install</strong>, and click <strong>Finish</strong>.</li>
+              <li>Launch ErrinILS from your Desktop shortcut or Start Menu.</li>
+            </ol>
+
+            <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">3.2 Running without installing (portable copy &amp; USB drives)</h4>
             <p>
-              ErrinILS eliminates manual typing through its automated 5-source copy-cataloguing engine.
+              If you do not have administrator permissions, extract <code>ErrinILS-Windows.zip</code> to any folder or USB flash drive (e.g. <code>E:\ErrinILS\</code>) and double-click <code>ErrinILS.exe</code>. The portable version works identically and stores data in the same location.
             </p>
 
-            <div class="step-card">
-              <div class="step-card-num">STEP 3.1</div>
-              <h4 class="step-card-title">Open Book Cataloguing</h4>
-              <p>
-                Navigate to the <strong>Catalog</strong> tab and click <strong>Add Item</strong> (or press <kbd>Ctrl+N</kbd>).
-              </p>
+            <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">3.3 Upgrading to a newer version</h4>
+            <p>
+              Run the newer setup installer over your existing installation. Your catalogue, patron list, and loan records are preserved intact. <em>(It is always good practice to export a backup ZIP before upgrading).</em>
+            </p>
+
+            <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">3.4 Where your data is stored</h4>
+            <p>
+              All library information lives in your Windows user profile at: <code>%APPDATA%\Errin\</code>
+            </p>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>File</th>
+                    <th>What it holds</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>errin-data.json</code></td>
+                    <td>Main database: entire catalogue, students, loans, holds, fines, and policy settings.</td>
+                  </tr>
+                  <tr>
+                    <td><code>errin-data.bak</code></td>
+                    <td>Automatic rollback copy: saved before every write. Automatically recovers if a power loss occurs.</td>
+                  </tr>
+                  <tr>
+                    <td><code>errin-config.json</code></td>
+                    <td>Administrator password hash (PBKDF2/SHA-256), Z39.50 settings, and paired device tokens.</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
 
-            <div class="step-card">
-              <div class="step-card-num">STEP 3.2</div>
-              <h4 class="step-card-title">Scan the ISBN Barcode</h4>
-              <p>
-                Aim your barcode scanner at the ISBN barcode on the back cover of the book (or manually type the 10 or 13-digit number into the <strong>ISBN / Barcode</strong> field) and press <strong>Lookup</strong>.
-              </p>
-              <ul class="step-list">
-                <li>ErrinILS queries the <strong>Library of Congress</strong> (Z39.50) first.</li>
-                <li>If not found, it seamlessly checks <strong>Open Library</strong>, <strong>Google Books</strong>, <strong>HathiTrust</strong>, and <strong>K10plus</strong>.</li>
-                <li>The Title, Author, Dewey Decimal (DDC) classification, Publisher, and Publication Year are automatically filled in.</li>
-              </ul>
-            </div>
-
-            <div class="step-card">
-              <div class="step-card-num">STEP 3.3</div>
-              <h4 class="step-card-title">Assign Local Copy Information</h4>
-              <p>
-                Set the number of physical copies in your library and specify the shelf location (e.g. <code>Fiction / Yellow Shelf 2</code>). Click <strong>Save Item</strong>.
-              </p>
-            </div>
-
-            <div class="callout callout-tip">
-              <div class="callout-header">
-                <span>🏷️</span>
-                <span>Printing Spine &amp; Barcode Labels</span>
-              </div>
-              <p>
-                Select any book from the catalog list and click <strong>Print Barcode</strong>. ErrinILS will open the label printing dialog where you can print 1D Code 39 or Code 128 barcode stickers sized for standard sticky label sheets.
-              </p>
-            </div>
+            <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">3.5 Single-instance execution mutex</h4>
+            <p>
+              Only one instance of ErrinILS can run at a time. Launching a second copy brings the active window to the front, preventing conflicting database locks.
+            </p>
           </div>
         </article>
 
         <!-- Chapter 4 -->
         <article class="guide-chapter" id="ch4">
-          <span id="circ"></span>
           <div class="chapter-number">Chapter 4</div>
-          <h2 class="chapter-title">Daily Circulation (Checkouts &amp; Returns)</h2>
+          <h2 class="chapter-title">Getting Started &amp; Initial Configuration</h2>
           <div class="chapter-body">
+            <h4 style="color: var(--accent-gold); margin: 16px 0 8px 0;">4.1 The first time you run it</h4>
             <p>
-              The <strong>Circulation</strong> tab is your primary desk for checking books in and out during busy recess periods.
+              When ErrinILS starts without an existing database, it populates a starter database with 5 sample books (<em>Charlotte's Web</em> `B1001`, <em>A Brief History of Time</em> `B1002`, <em>Hatchet</em> `B1003`, <em>The Hobbit</em> `B1004`, <em>Atlas of the World</em> `B1005`) and one student (Aisha Rahman, `120315-10-0001`, Class 7A). Practise checkouts, then delete the samples when ready for real circulation.
             </p>
 
-            <div class="step-card">
-              <div class="step-card-num">STEP 4.1</div>
-              <h4 class="step-card-title">Check-Out Workflow</h4>
-              <ol class="step-list">
-                <li>Scan the student's <strong>School ID Card</strong> or type their IC number.</li>
-                <li>ErrinILS verifies the patron's status. If the student has zero overdue books and fines under RM 5.00, the desk illuminates in green.</li>
-                <li>Scan the <strong>Book Barcode</strong>.</li>
-                <li>The book is instantly checked out with the due date calculated (e.g. today + 7 days) and added to the student's active loans table.</li>
-                <li>Press <kbd>Enter</kbd> or click <strong>Complete Checkout</strong>.</li>
-              </ol>
-            </div>
+            <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">4.2 A tour of the window</h4>
+            <ul class="step-list">
+              <li><strong>Top Navigation:</strong> 8 main tabs: Dashboard, Circulation, Catalog, Students, Fines, Reports, Backup, Settings.</li>
+              <li><strong>Status Bar:</strong> Displays *"Saved to this computer (timestamp)"*. If the bar turns red and says *"NOT saving"*, the disk is full or read-only.</li>
+              <li><strong>Notification Toast:</strong> Yellow transient toast near the bottom confirming results (e.g. *"Checked out. Due 2026-10-16"*).</li>
+            </ul>
 
-            <div class="step-card">
-              <div class="step-card-num">STEP 4.2</div>
-              <h4 class="step-card-title">Check-In (Return) Workflow</h4>
+            <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">4.3 Password-protected actions</h4>
+            <p>The administrator password guards:</p>
+            <ol class="step-list">
+              <li>Opening the <strong>Settings</strong> tab.</li>
+              <li>Deleting catalogue records or student accounts.</li>
+              <li>Restoring from a backup.</li>
+              <li>Exiting from the Simplified Kiosk View.</li>
+            </ol>
+            <div class="callout callout-warning">
+              <div class="callout-header">
+                <span>⚠️</span>
+                <span>Change Default Password</span>
+              </div>
               <p>
-                You do not need the student card to return a book:
-              </p>
-              <ol class="step-list">
-                <li>Switch to the <strong>Returns</strong> sub-tab (or simply scan any book barcode at the quick desk).</li>
-                <li>Scan the book's barcode.</li>
-                <li>ErrinILS immediately closes the loan, marks the copy available for borrowing, and checks if another student has a pending hold on it.</li>
-                <li>If the book is overdue, the overdue fine is automatically assessed and recorded.</li>
-              </ol>
-            </div>
-
-            <div class="step-card">
-              <div class="step-card-num">STEP 4.3</div>
-              <h4 class="step-card-title">Renewing Loans</h4>
-              <p>
-                To grant extra time to a student, select their active loan in the list and click <strong>Renew</strong>. This extends the due date by another loan period (e.g. +7 days) unless the title has an active hold reserved by another reader.
+                ErrinILS ships with a built-in default password (<code>admin</code> or <code>errin</code>). Change it immediately upon first launch in <strong>Settings → Admin Password</strong>.
               </p>
             </div>
+
+            <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">4.4 Using a barcode scanner</h4>
+            <p>
+              USB barcode scanners operate as keyboard wedge devices. When opening Circulation or Kiosk view, ErrinILS focuses the cursor in the scan box automatically. Scan the barcode, and the scanner transmits the digits followed by an Enter key to submit immediately.
+            </p>
           </div>
         </article>
 
         <!-- Chapter 5 -->
         <article class="guide-chapter" id="ch5">
           <div class="chapter-number">Chapter 5</div>
-          <h2 class="chapter-title">Fines &amp; Lost Book Settlement</h2>
+          <h2 class="chapter-title">Library Rules and Numbering at a Glance</h2>
           <div class="chapter-body">
-            <p>
-              ErrinILS provides a dedicated <strong>Fines</strong> register to track unpaid balances, lost book penalties, and payment receipts.
-            </p>
-
-            <div class="step-card">
-              <div class="step-card-num">STEP 5.1</div>
-              <h4 class="step-card-title">Collecting a Fine Payment</h4>
-              <ol class="step-list">
-                <li>Scan the student's IC card in the Fines tab to view their unpaid balance.</li>
-                <li>Select the overdue fine item.</li>
-                <li>Click <strong>Pay Fine</strong>. Enter the cash amount received from the student (supports partial and full settlement).</li>
-                <li>Click <strong>Confirm Payment</strong>. ErrinILS updates the balance and logs the transaction.</li>
-              </ol>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Rule</th>
+                    <th>Default Value</th>
+                    <th>Can it be changed?</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Loan Period</strong></td>
+                    <td class="highlight">7 calendar days</td>
+                    <td>Fixed in core circulation engine</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Renewals per Loan</strong></td>
+                    <td class="highlight">Up to 2 renewals (+14 days max)</td>
+                    <td>Fixed in core circulation engine</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Max Items per Student</strong></td>
+                    <td class="highlight">3 books</td>
+                    <td>Yes: Settings → Max items per student</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Fine per Day Late</strong></td>
+                    <td class="highlight">RM 0.10 / day</td>
+                    <td>Yes: Settings → Fine per day late</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Block Checkout at Unpaid Fines</strong></td>
+                    <td class="highlight">RM 5.00</td>
+                    <td>Yes: Settings → Block checkout at unpaid fines</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Student ID Standard</strong></td>
+                    <td class="highlight">Malaysian 12-digit IC / MyKid</td>
+                    <td>Enforced with calendar validation</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
 
-            <div class="step-card">
-              <div class="step-card-num">STEP 5.2</div>
-              <h4 class="step-card-title">Waiving Fines</h4>
-              <p>
-                If a student has a legitimate excuse (e.g. verified medical leave), librarians can click <strong>Waive Fine</strong> to clear the amount with an audit note.
-              </p>
-            </div>
-
-            <div class="step-card">
-              <div class="step-card-num">STEP 5.3</div>
-              <h4 class="step-card-title">Marking a Book as Lost</h4>
-              <p>
-                If a student lost a library book, select the loan and click <strong>Mark Lost</strong>. ErrinILS will remove the copy from active circulation and assess the replacement cost according to the book's catalog value.
-              </p>
-            </div>
+            <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">5.3 When a student cannot borrow</h4>
+            <p>Checkouts are refused if any of the following 6 rules fail (checked in order):</p>
+            <ol class="step-list">
+              <li>Student or book barcode not found in database.</li>
+              <li>Book is already on loan to someone else.</li>
+              <li>Student's unpaid fines equal or exceed RM 5.00.</li>
+              <li>Student holds one or more overdue books.</li>
+              <li>Student already has 3 books checked out.</li>
+              <li>Another student is waiting first in the hold queue for this title.</li>
+            </ol>
           </div>
         </article>
 
         <!-- Chapter 6 -->
         <article class="guide-chapter" id="ch6">
           <div class="chapter-number">Chapter 6</div>
-          <h2 class="chapter-title">Holds Queue &amp; Reservations</h2>
+          <h2 class="chapter-title">The Dashboard &amp; Daily Overview</h2>
           <div class="chapter-body">
             <p>
-              When all copies of a popular book are on loan, students can place a hold to reserve the next available copy.
+              The Dashboard is your morning command center. It requires no typing and provides an immediate view of active operations:
             </p>
-
-            <div class="step-card">
-              <div class="step-card-num">STEP 6.1</div>
-              <h4 class="step-card-title">Placing a Hold</h4>
-              <ol class="step-list">
-                <li>Locate the title in the <strong>Catalog</strong> tab.</li>
-                <li>Click <strong>Place Hold</strong> and scan the reserving student's card.</li>
-                <li>The hold is registered with a timestamp. When multiple students hold the same book, they are queued strictly on a first-come, first-served basis.</li>
-              </ol>
-            </div>
-
-            <div class="step-card">
-              <div class="step-card-num">STEP 6.2</div>
-              <h4 class="step-card-title">Automatic Notification on Check-In</h4>
-              <p>
-                When a held book is scanned at the return desk, ErrinILS immediately triggers an alert banner: <em>"Reserved for Adam Tan (4 Melur)"</em>. The book cannot be checked out by any other patron.
-              </p>
-            </div>
+            <ul class="step-list">
+              <li><strong>Open Simplified View:</strong> One-click launch button for the student self-checkout kiosk.</li>
+              <li><strong>Executive Metric Counters:</strong> Total catalogued titles, registered students, active loans, all-time checkout tally, overdue book count, total unpaid fines balance, and active holds.</li>
+              <li><strong>Overdue Items Table:</strong> Lists every student with late books, showing class, title, due date, days late, and total monetary amount owed. Use this list to print class reminder slips.</li>
+              <li><strong>Top 10 Borrowers:</strong> Leaderboard showing top readers this month, this year, and all-time.</li>
+            </ul>
           </div>
         </article>
 
         <!-- Chapter 7 -->
         <article class="guide-chapter" id="ch7">
+          <span id="circ"></span>
           <div class="chapter-number">Chapter 7</div>
-          <h2 class="chapter-title">Weeding &amp; Collection Maintenance</h2>
+          <h2 class="chapter-title">Circulation: Check Out, Return, Renew and Holds</h2>
           <div class="chapter-body">
+            <h4 style="color: var(--accent-gold); margin: 16px 0 8px 0;">7.2 Checking out a book</h4>
+            <ol class="step-list">
+              <li>In the <strong>Check out</strong> card, scan the student's library card barcode (or type their 12-digit IC).</li>
+              <li>The cursor automatically advances to the <strong>Item barcode</strong> box. Scan the book barcode.</li>
+              <li>The transaction completes immediately. Toast confirms: *"Checked out. Due [YYYY-MM-DD]"*.</li>
+              <li>The new loan appears at the top of the <strong>Current loans</strong> list.</li>
+            </ol>
+
+            <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">7.3 Returning a book</h4>
             <p>
-              Maintaining a relevant, healthy school collection requires periodic weeding (withdrawing old, damaged, or obsolete books). ErrinILS handles weeding without destroying historical borrowing statistics.
+              Scan the book barcode into the <strong>Return / Renew</strong> box and press Enter (or click Return). The student does not need to be identified: the book barcode identifies whose loan to close.
+            </p>
+            <ul class="step-list">
+              <li>If on time: Toast confirms *"Returned. Thank you!"*.</li>
+              <li>If overdue: Toast confirms *"Returned. Late [N] days: fine RM [X.XX]"*.</li>
+              <li>If held by a classmate: Alert banner notifies *"Hold ready for [Student Name] ([Class])"*. Put the book aside on the hold shelf.</li>
+            </ul>
+
+            <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">7.4 Renewing a book</h4>
+            <p>
+              Scan the book into the <strong>Return / Renew</strong> box and click <strong>Renew</strong> (or select the loan from the list and click <strong>Renew selected</strong>). Extends the loan for 7 days from today. Renewals are blocked if the book is overdue, renewed twice already, or on hold for another student.
             </p>
 
-            <div class="step-card">
-              <div class="step-card-num">STEP 7.1</div>
-              <h4 class="step-card-title">Weeding an Item</h4>
-              <ol class="step-list">
-                <li>Select the book in the <strong>Catalog</strong> tab.</li>
-                <li>Click the <strong>Weed Copy</strong> button.</li>
-                <li>Select the withdrawal reason from the dropdown:
-                  <ul>
-                    <li><code>Condition / Damaged:</code> Torn pages, water damage, or binding failure.</li>
-                    <li><code>Obsolete / Outdated:</code> Superseded syllabus or outdated technical content.</li>
-                    <li><code>Lost / Unreturned:</code> Missing inventory.</li>
-                    <li><code>Duplicate Excess:</code> Surplus copies being donated.</li>
-                  </ul>
-                </li>
-                <li>Click <strong>Confirm Weeding</strong>. The copy is marked weeded and blocked from future checkouts.</li>
-              </ol>
-            </div>
-
-            <div class="callout callout-tip">
-              <div class="callout-header">
-                <span>🔄</span>
-                <span>Restoring Weeded Books</span>
-              </div>
-              <p>
-                In the Catalog tab, switch the filter from <em>"Active Only"</em> to <em>"Weeded Items"</em>. You can restore any weeded book back into active borrowing with one click if a lost book is subsequently found.
-              </p>
-            </div>
+            <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">7.5 Placing a hold</h4>
+            <p>
+              In the <strong>Place hold</strong> card, scan the student's IC and the book barcode. Holds can only be placed on books currently on loan. When returned, the first waiting hold converts to <em>Ready for pickup</em>.
+            </p>
           </div>
         </article>
 
@@ -376,123 +479,374 @@
         <article class="guide-chapter" id="ch8">
           <span id="kiosk"></span>
           <div class="chapter-number">Chapter 8</div>
-          <h2 class="chapter-title">Student Self-Checkout Kiosk Mode</h2>
+          <h2 class="chapter-title">The Simplified View (Student Self-Checkout Kiosk)</h2>
           <div class="chapter-body">
             <p>
-              Turn any library computer into an unattended student self-service checkout terminal.
+              A locked-down, high-contrast, distraction-free screen designed for primary and secondary students to borrow and return books independently.
             </p>
+            <h4 style="color: var(--accent-gold); margin: 16px 0 8px 0;">8.2 Opening and leaving Kiosk mode</h4>
+            <ul class="step-list">
+              <li><strong>Open:</strong> On the Dashboard, click <strong>Open Simplified View</strong> (or press <kbd>F11</kbd>).</li>
+              <li><strong>Exit:</strong> Click <strong>Exit Simplified View</strong> in the bottom right corner and enter the administrator password.</li>
+            </ul>
 
-            <div class="step-card">
-              <div class="step-card-num">STEP 8.1</div>
-              <h4 class="step-card-title">Launching Kiosk Mode</h4>
-              <p>
-                Click <strong>View → Kiosk Mode (F11)</strong> from the top menu bar. ErrinILS expands into a simplified, high-contrast, distraction-free interface designed for children.
-              </p>
-            </div>
-
-            <div class="step-card">
-              <div class="step-card-num">STEP 8.2</div>
-              <h4 class="step-card-title">How Students Use the Kiosk</h4>
-              <ol class="step-list">
-                <li>The screen prompts: <em>"Scan Your School Card"</em>. The student scans their barcode.</li>
-                <li>Friendly greeting displays student name and loan eligibility.</li>
-                <li>The student scans the book barcode. ErrinILS plays a cheerful success chime.</li>
-                <li>The screen displays the return date in clear, friendly words (e.g. <em>"Please return before Tuesday, 10 Nov!"</em>).</li>
-                <li>After 5 seconds of inactivity, the session resets automatically for the next reader.</li>
-              </ol>
-            </div>
-
-            <div class="callout callout-important">
-              <div class="callout-header">
-                <span>🔒</span>
-                <span>Exiting Kiosk Mode</span>
-              </div>
-              <p>
-                Press <kbd>Esc</kbd> or <kbd>Ctrl+Q</kbd>. ErrinILS prompts for the librarian administrator password before returning to the full administrative desk. This prevents curious students from tampering with catalog data.
-              </p>
-            </div>
+            <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">8.3 Kiosk checkout workflow</h4>
+            <ol class="step-list">
+              <li>Screen prompts: *"Ready. Scan a library card."*</li>
+              <li>Student scans card. Top banner turns green: *"Hello, [Student Name]!"*</li>
+              <li>Student scans book barcode. Kiosk plays a cheerful chime: *"Checked out: [Title]. Due back [Date]!"*</li>
+              <li>Click **Next student** to reset session.</li>
+            </ol>
           </div>
         </article>
 
         <!-- Chapter 9 -->
         <article class="guide-chapter" id="ch9">
           <div class="chapter-number">Chapter 9</div>
-          <h2 class="chapter-title">Remote Access &amp; QR Code Wireless Pairing</h2>
+          <h2 class="chapter-title">The Catalog &amp; Copy-Cataloguing</h2>
           <div class="chapter-body">
+            <h4 style="color: var(--accent-gold); margin: 16px 0 8px 0;">9.4 5-Source ISBN Copy-Cataloguing</h4>
             <p>
-              Librarians and stocktaking teams can manage the library wirelessly from smartphones, tablets, or laptops over your local school network.
+              Eliminate manual typing. Scan the 10 or 13-digit ISBN barcode in <strong>+ Add record</strong> and click <strong>Look up</strong>. ErrinILS queries 5 international bibliographic archives in priority order:
+            </p>
+            <ol class="step-list">
+              <li><strong>Library of Congress (Z39.50)</strong>: Direct ASN.1 BER connection (`lx2.loc.gov:210`).</li>
+              <li><strong>Open Library</strong>: REST API bibliographic records.</li>
+              <li><strong>Google Books API</strong>: Commercial book metadata, summaries, and dates.</li>
+              <li><strong>HathiTrust</strong>: Academic union catalogue MARCXML records.</li>
+              <li><strong>K10plus German Union</strong>: SRU MARCXML service.</li>
+            </ol>
+            <p>
+              Title, Author, Publisher, Year, Subjects, and Dewey Decimal Classification (DDC) are populated automatically.
             </p>
 
-            <div class="step-card">
-              <div class="step-card-num">STEP 9.1</div>
-              <h4 class="step-card-title">Enable Web Server &amp; Open QR Pairing</h4>
-              <ol class="step-list">
-                <li>Open <strong>Settings → Remote Access</strong>.</li>
-                <li>Check the box <strong>Enable Remote Web Server</strong> (Default Port: <code>8080</code>).</li>
-                <li>Click <strong>Pair New Device</strong>. A popup dialog displays an instant sharp QR code and a temporary 6-digit PIN.</li>
-              </ol>
-            </div>
-
-            <div class="step-card">
-              <div class="step-card-num">STEP 9.2</div>
-              <h4 class="step-card-title">Connect with Smartphone or Tablet</h4>
-              <ol class="step-list">
-                <li>Connect your phone to the same school Wi-Fi or classroom hotspot.</li>
-                <li>Open your smartphone camera and scan the QR code displayed on the PC screen.</li>
-                <li>Tap the prompt link to open the ErrinILS Web App in your mobile browser. The 6-digit pairing code is auto-filled.</li>
-                <li>Tap <strong>Verify &amp; Pair</strong>. Your phone is authenticated with a 32-byte cryptographic token and saved in your phone's browser storage.</li>
-              </ol>
-            </div>
-
-            <div class="callout callout-tip">
-              <div class="callout-header">
-                <span>📱</span>
-                <span>Using Phone Camera as a Barcode Scanner</span>
-              </div>
-              <p>
-                In the mobile web app, tap the barcode icon next to the search input. Your phone's back camera acts as a high-speed barcode reader for shelf stocktaking and book circulation.
-              </p>
-            </div>
+            <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">9.11 Printing barcode and spine labels</h4>
+            <ul class="step-list">
+              <li><strong>Barcode Labels (70 × 30 mm):</strong> Shows call number on the left; title, Code 128 barcode, and digits on the right.</li>
+              <li><strong>Spine Labels (25 × 38 mm):</strong> Shows bold Dewey call numbers split across lines for book spines.</li>
+            </ul>
           </div>
         </article>
 
         <!-- Chapter 10 -->
         <article class="guide-chapter" id="ch10">
           <div class="chapter-number">Chapter 10</div>
-          <h2 class="chapter-title">Reports, Nilam &amp; Data Backup</h2>
+          <h2 class="chapter-title">Students &amp; Patron Management</h2>
+          <div class="chapter-body">
+            <h4 style="color: var(--accent-gold); margin: 16px 0 8px 0;">10.2 Registering a student</h4>
+            <ol class="step-list">
+              <li>Click <strong>+ Register student</strong>.</li>
+              <li>Type the 12-digit Malaysian IC or MyKid number. Dashes are added automatically (`YYMMDD-PB-###G`).</li>
+              <li>Enter **Full Name**, **Class / Grade** (e.g. `4 Melur`), and optional **Guardian Phone**.</li>
+              <li>Click **Register** and print their scannable credit-card-sized library card.</li>
+            </ol>
+
+            <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">10.9 Automated 5-year data retention rule</h4>
+            <p>
+              To maintain student privacy compliance, ErrinILS automatically purges student accounts 5 years after their last recorded activity. A student is never purged if they have unreturned books or unpaid fines.
+            </p>
+          </div>
+        </article>
+
+        <!-- Chapter 11 -->
+        <article class="guide-chapter" id="ch11">
+          <div class="chapter-number">Chapter 11</div>
+          <h2 class="chapter-title">Fines Management</h2>
           <div class="chapter-body">
             <p>
-              Generate executive analytics for school administrators and safeguard your records with one-click backups.
+              Fines are created when an overdue book is returned: <code>Days Overdue × Daily Rate (RM 0.10)</code>.
             </p>
+            <ul class="step-list">
+              <li><strong>Pay:</strong> Select the fine row in the **Fines** tab and click **Pay** when cash is received.</li>
+              <li><strong>Waive:</strong> Click **Waive** if the library excuses the fine (e.g. documented sick leave).</li>
+              <li>Once all fines are settled, the borrowing block is lifted immediately.</li>
+            </ul>
+          </div>
+        </article>
 
-            <div class="step-card">
-              <div class="step-card-num">STEP 10.1</div>
-              <h4 class="step-card-title">View Reading Champions &amp; Loan Trends</h4>
-              <p>
-                Open the <strong>Reports</strong> tab to access:
-              </p>
-              <ul class="step-list">
-                <li><strong>Reading Champions Leaderboard:</strong> Top 25 most active student readers ranked by total books borrowed (directly mapped to Nilam reading records).</li>
-                <li><strong>Most Popular Titles:</strong> Top 10 borrowed books in the school.</li>
-                <li><strong>Dewey Decimal Breakdown:</strong> Distribution of collection across DDC 100s classes.</li>
-                <li><strong>Dormant Collection:</strong> Titles with zero borrowings to help librarians identify books needing promotion or relocation.</li>
-              </ul>
+        <!-- Chapter 12 -->
+        <article class="guide-chapter" id="ch12">
+          <div class="chapter-number">Chapter 12</div>
+          <h2 class="chapter-title">Collection Weeding &amp; Maintenance</h2>
+          <div class="chapter-body">
+            <p>
+              Weeding allows you to withdraw damaged, obsolete, or lost books without destroying historical circulation records or distorting Nilam reading awards.
+            </p>
+            <h4 style="color: var(--accent-gold); margin: 16px 0 8px 0;">12.3 Weeding workflow</h4>
+            <ol class="step-list">
+              <li>In the **Catalog** tab, select the book copy and click **Weed Copy**.</li>
+              <li>Select reason: <em>Condition / Damaged</em>, <em>Obsolete / Outdated</em>, <em>Lost / Unreturned</em>, or <em>Duplicate Excess</em>.</li>
+              <li>Confirm weeding. The copy is withdrawn and blocked from checkout.</li>
+              <li>Filter the Catalog by <em>"Weeded Items"</em> at any time to inspect withdrawn stock or restore a found book.</li>
+            </ol>
+          </div>
+        </article>
+
+        <!-- Chapter 13 -->
+        <article class="guide-chapter" id="ch13">
+          <div class="chapter-number">Chapter 13</div>
+          <h2 class="chapter-title">Remote Access, QR Code Pairing &amp; Mobile Web App</h2>
+          <div class="chapter-body">
+            <p>
+              ErrinILS features a built-in pure C# HTTP server (`TcpListener`) binding to all network interfaces (`0.0.0.0`), allowing smartphones and tablets on school Wi-Fi or hotspots to access the library wirelessly.
+            </p>
+            <h4 style="color: var(--accent-gold); margin: 16px 0 8px 0;">13.3 Instant QR Code &amp; 6-digit PIN pairing</h4>
+            <ol class="step-list">
+              <li>In **Settings → Remote Access**, click **Pair New Device**.</li>
+              <li>Scan the displayed sharp QR code with your smartphone camera.</li>
+              <li>The web browser opens with the 6-digit pairing code pre-filled. Tap **Verify &amp; Pair**.</li>
+              <li>A persistent 32-byte cryptographic token (`X-Errin-Token`) authenticates the device. You never need to enter passwords again.</li>
+              <li>Use your phone camera as a wireless barcode scanner for stock audits.</li>
+            </ol>
+          </div>
+        </article>
+
+        <!-- Chapter 14 -->
+        <article class="guide-chapter" id="ch14">
+          <div class="chapter-number">Chapter 14</div>
+          <h2 class="chapter-title">Reports, Reading Champions &amp; Analytics</h2>
+          <div class="chapter-body">
+            <ul class="step-list">
+              <li><strong>Reading Champions Leaderboard:</strong> Top 25 student readers ranked by total books borrowed (directly mapped to Nilam reading records).</li>
+              <li><strong>Circulation Trajectory:</strong> Monthly borrowing volume trends over the past 6 calendar months.</li>
+              <li><strong>Dewey Decimal 100s Breakdown:</strong> Distribution of collection across the 10 DDC classes.</li>
+              <li><strong>Dormant Collection Audit:</strong> Identifies books with zero borrowings over the past 12 months.</li>
+              <li><strong>1-Click CSV Full Report:</strong> Exports an executive spreadsheet ready for school leadership meetings.</li>
+            </ul>
+          </div>
+        </article>
+
+        <!-- Chapter 15 -->
+        <article class="guide-chapter" id="ch15">
+          <div class="chapter-number">Chapter 15</div>
+          <h2 class="chapter-title">Backup, Restore and Disaster Recovery</h2>
+          <div class="chapter-body">
+            <h4 style="color: var(--accent-gold); margin: 16px 0 8px 0;">15.2 Making a backup</h4>
+            <p>
+              In the **Backup** tab, click **Export Backup (ZIP)**. Choose a destination on an external USB flash drive. Keep at least three weekly backup copies.
+            </p>
+            <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">15.3 Restoring from backup</h4>
+            <p>
+              Click **Restore from backup (password)**, enter the administrator password, and select your backup file.
+            </p>
+          </div>
+        </article>
+
+        <!-- Chapter 16 -->
+        <article class="guide-chapter" id="ch16">
+          <div class="chapter-number">Chapter 16</div>
+          <h2 class="chapter-title">Settings and Administration</h2>
+          <div class="chapter-body">
+            <p>
+              Configure school name, daily fine rate (default: `RM 0.10`), max loan limits (default: `3`), and fine block threshold (default: `RM 5.00`). Change administrator password and manage the optional Z39.50 server.
+            </p>
+          </div>
+        </article>
+
+        <!-- Chapter 17 -->
+        <article class="guide-chapter" id="ch17">
+          <div class="chapter-number">Chapter 17</div>
+          <h2 class="chapter-title">Recommended Operational Routines</h2>
+          <div class="chapter-body">
+            <ul class="step-list">
+              <li><strong>Daily:</strong> Review Dashboard overdue items table; settle fines; shelve returned books flagged for holds.</li>
+              <li><strong>Weekly:</strong> Export a `.zip` backup to an external USB flash drive every Friday; audit uncollected holds.</li>
+              <li><strong>Termly:</strong> Onboard new student classes; catalog new acquisitions; award Nilam certificates from Reading Champions.</li>
+              <li><strong>Annual:</strong> Perform shelf stocktaking using paired mobile scanner; run 5-year inactive patron purge.</li>
+            </ul>
+          </div>
+        </article>
+
+        <!-- Chapter 18 -->
+        <article class="guide-chapter" id="ch18">
+          <div class="chapter-number">Chapter 18</div>
+          <h2 class="chapter-title">Troubleshooting Guide</h2>
+          <div class="chapter-body">
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Problem Encountered</th>
+                    <th>Likely Cause</th>
+                    <th>Exact Solution</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>"Windows protected your PC"</strong></td>
+                    <td>Unsigned open-source release.</td>
+                    <td>Click <em>More info</em>, then click <em>Run anyway</em>.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Setup reports missing .NET</strong></td>
+                    <td>Windows 7 without runtime.</td>
+                    <td>Install free Microsoft .NET Framework 4.8.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Status bar is red: NOT saving</strong></td>
+                    <td>Hard disk full or write-protected.</td>
+                    <td>Free disk space; export emergency backup to USB drive.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Scanner does not submit</strong></td>
+                    <td>Scanner not sending Enter key.</td>
+                    <td>Program scanner in USB HID Keyboard mode with CR/LF suffix.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Phone cannot connect to QR Web App</strong></td>
+                    <td>Phone on different Wi-Fi network.</td>
+                    <td>Connect phone to the same Wi-Fi SSID as the PC.</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
 
-            <div class="step-card">
-              <div class="step-card-num">STEP 10.2</div>
-              <h4 class="step-card-title">Export Full Report (CSV)</h4>
+            <div class="callout callout-important">
+              <div class="callout-header">
+                <span>🔑</span>
+                <span>Forgot Administrator Password?</span>
+              </div>
               <p>
-                Click <strong>Export Full Report (CSV)</strong> to generate a complete spreadsheet containing executive summaries, overdue balances, and reading leaderboards ready for print or email.
+                Close ErrinILS, press <code>Win + R</code>, enter <code>%APPDATA%\Errin</code>, and rename or delete <code>errin-config.json</code>. Launch ErrinILS; the password resets to default (<code>admin</code> or <code>errin</code>). Set a new password immediately in Settings.
               </p>
             </div>
+          </div>
+        </article>
 
-            <div class="step-card">
-              <div class="step-card-num">STEP 10.3</div>
-              <h4 class="step-card-title">One-Click Backup (Pure C# ZIP)</h4>
-              <p>
-                In the Settings tab, click <strong>Export Backup (ZIP)</strong>. ErrinILS creates a compressed ZIP file with timestamped metadata and copies your database safely to your chosen folder or USB flash drive.
-              </p>
+        <!-- Chapter 19 -->
+        <article class="guide-chapter" id="ch19">
+          <div class="chapter-number">Chapter 19</div>
+          <h2 class="chapter-title">Frequently Asked Questions (FAQ)</h2>
+          <div class="chapter-body">
+            <p><strong>Can multiple devices access the system at once?</strong><br>Yes. Enable the built-in Remote Web Server in Settings to let smartphones and tablets perform circulation and cataloguing over school Wi-Fi.</p>
+            <p style="margin-top: 12px;"><strong>Are student records private?</strong><br>Yes. All database files remain strictly on your local PC. ErrinILS transmits no personal student data over the internet.</p>
+            <p style="margin-top: 12px;"><strong>Can we change the 7-day loan duration?</strong><br>In v1.3.1, the loan duration is fixed at 7 days with up to 2 renewals (21 days max). Fine rates and block thresholds can be customized at any time in Settings.</p>
+          </div>
+        </article>
+
+        <!-- Appendix A -->
+        <article class="guide-chapter" id="appA">
+          <div class="chapter-number">Appendix A</div>
+          <h2 class="chapter-title">Quick Task Reference Guide</h2>
+          <div class="chapter-body">
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Goal</th>
+                    <th>Tab</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Lend a book</strong></td>
+                    <td>Circulation</td>
+                    <td>Scan student card, scan book barcode.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Return a book</strong></td>
+                    <td>Circulation</td>
+                    <td>Scan book barcode in Return box.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Renew a loan</strong></td>
+                    <td>Circulation</td>
+                    <td>Scan book barcode, click Renew.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Add a book via ISBN</strong></td>
+                    <td>Catalog</td>
+                    <td>Click + Add record, scan ISBN, click Look up, Save.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Weed damaged book</strong></td>
+                    <td>Catalog</td>
+                    <td>Select book, click Weed Copy, select reason, confirm.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Register student</strong></td>
+                    <td>Students</td>
+                    <td>Click + Register student, enter 12-digit IC, name, class.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Record fine payment</strong></td>
+                    <td>Fines</td>
+                    <td>Select fine record, click Pay.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Pair phone via QR</strong></td>
+                    <td>Settings</td>
+                    <td>Click Pair New Device, scan QR with camera.</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Export backup to USB</strong></td>
+                    <td>Backup</td>
+                    <td>Click Export Backup (ZIP), save to flash drive.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </article>
+
+        <!-- Appendix B -->
+        <article class="guide-chapter" id="appB">
+          <div class="chapter-number">Appendix B</div>
+          <h2 class="chapter-title">Glossary of Terms</h2>
+          <div class="chapter-body">
+            <ul class="step-list">
+              <li><strong>Accession / Acquisition Number:</strong> Sequential identifier assigned to each physical copy in the order received (<code>ACQ-000001</code>).</li>
+              <li><strong>Call Number:</strong> Shelf classification mark (e.g. <code>823.914 ROW</code> or <code>F DAH</code>) indicating physical placement on library shelves.</li>
+              <li><strong>Control Number:</strong> Master bibliographic identifier stored in MARC 21 field `001` (<code>ER00000001</code>).</li>
+              <li><strong>Malaysian IC / MyKid:</strong> 12-digit identity number (`YYMMDD-PB-###G`) used as the primary student patron ID.</li>
+              <li><strong>MARC 21:</strong> International standard machine-readable cataloguing format.</li>
+              <li><strong>Nilam:</strong> Malaysian reading program (*Nadi Ilmu Amalan Membaca*) tracked via the Reading Champions leaderboard.</li>
+              <li><strong>Weeding:</strong> Planned withdrawal of obsolete, damaged, or lost books while preserving circulation history.</li>
+            </ul>
+          </div>
+        </article>
+
+        <!-- Appendix C -->
+        <article class="guide-chapter" id="appC">
+          <div class="chapter-number">Appendix C</div>
+          <h2 class="chapter-title">File and Folder Directory Reference</h2>
+          <div class="chapter-body">
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Component</th>
+                    <th>Standard File System Location</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Program Binary</strong></td>
+                    <td><code>C:\Program Files (x86)\ErrinILS\ErrinILS.exe</code></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Main Database</strong></td>
+                    <td><code>%APPDATA%\Errin\errin-data.json</code></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Automatic Rollback File</strong></td>
+                    <td><code>%APPDATA%\Errin\errin-data.bak</code></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Config &amp; Auth Tokens</strong></td>
+                    <td><code>%APPDATA%\Errin\errin-config.json</code></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Online Documentation</strong></td>
+                    <td><a href="https://rzsy.github.io/ErrinILS/guide.html">https://rzsy.github.io/ErrinILS/guide.html</a></td>
+                  </tr>
+                  <tr>
+                    <td><strong>GitHub Repository</strong></td>
+                    <td><a href="https://github.com/RZSY/ErrinILS" target="_blank" rel="noopener">https://github.com/RZSY/ErrinILS</a></td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </article>
@@ -534,8 +888,8 @@
           <div class="footer-col-title">Resources</div>
           <ul class="footer-links">
             <li><a href="download.html#requirements">System Requirements</a></li>
-            <li><a href="guide.html#ch4">Circulation Desk Guide</a></li>
-            <li><a href="guide.html#ch8">Student Kiosk Setup</a></li>
+            <li><a href="guide.html#circ">Circulation Desk Guide</a></li>
+            <li><a href="guide.html#kiosk">Student Kiosk Setup</a></li>
             <li><a href="assets/ErrinILS-User-Guide.md" download>Download Manual (.md)</a></li>
           </ul>
         </div>
