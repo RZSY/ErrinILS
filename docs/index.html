@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ErrinILS - Lightweight School Library Management System for Windows</title>
   <meta name="description"
-    content="Standalone, zero-dependency school library system (ILS) for Windows. Fast barcode circulation, automated 5-source ISBN cataloguing, student kiosk mode, and offline JSON database.">
+    content="Standalone, zero-dependency school library system (ILS) for Windows. Fast barcode circulation, automated 5-source ISBN cataloguing, Simplified View, and offline JSON database.">
   <link rel="icon" type="image/png" href="assets/icon.png">
   <link rel="stylesheet" href="styles.css">
   <script>
@@ -103,7 +103,7 @@
               Desk</button>
             <button class="showcase-tab" data-shot="catalog" role="tab" aria-selected="false">5-Source ISBN
               Lookup</button>
-            <button class="showcase-tab" data-shot="kiosk" role="tab" aria-selected="false">Student Kiosk</button>
+            <button class="showcase-tab" data-shot="simple" role="tab" aria-selected="false">Simplified View</button>
             <button class="showcase-tab" data-shot="reports" role="tab" aria-selected="false">Reading Champions</button>
             <button class="showcase-tab" data-shot="students" role="tab" aria-selected="false">Student Patrons
               (IC)</button>
@@ -117,8 +117,7 @@
             <div class="window-titlebar">
               <div class="window-titlebar-left">
                 <img src="assets/icon.png" alt="ErrinILS" class="window-app-icon">
-                <span class="window-title-text" id="window-title-text">ErrinILS — SK Taman Ceria [Circulation
-                  Desk]</span>
+                <span class="window-title-text" id="window-title-text">ErrinILS — Circulation Desk</span>
               </div>
               <div class="window-controls">
                 <span class="win-btn win-min">─</span>
@@ -163,7 +162,7 @@
           </div>
           <h3 class="card-title">Fast Barcode Circulation</h3>
           <p class="card-text">
-            Works with standard USB barcode scanners. Scan student IDs and book labels with instant audio cues,
+            Works with standard USB barcode scanners. Scan student IDs and book labels with instant visual feedback,
             automatic return dates, loan limit enforcement, and hold alerts.
           </p>
           <div class="card-footer">
@@ -202,13 +201,13 @@
               <line x1="12" y1="17" x2="12" y2="21"></line>
             </svg>
           </div>
-          <h3 class="card-title">Student Self-Checkout Kiosk</h3>
+          <h3 class="card-title">Simplified View</h3>
           <p class="card-text">
-            Full-screen kiosk mode for primary and secondary students. Oversized touch buttons, cheerful chimes, and
+            Streamlined simplified circulation for primary and secondary students. Oversized touch buttons, clear status banners, and
             simple prompts allow students to check out and return books independently.
           </p>
           <div class="card-footer">
-            <a href="guide.html#ch8" class="card-link">Kiosk guide →</a>
+            <a href="guide.html#ch8" class="card-link">Simplified View guide →</a>
           </div>
         </div>
 
@@ -326,7 +325,7 @@
               <td>Manual entry</td>
             </tr>
             <tr>
-              <td><strong>Student Kiosk View</strong></td>
+              <td><strong>Simplified View</strong></td>
               <td class="highlight">Built-in simplified touch mode</td>
               <td>Third-party module</td>
               <td>Self-checkout module</td>
@@ -441,7 +440,7 @@
           <ul class="footer-links">
             <li><a href="download.html#requirements">System Requirements</a></li>
             <li><a href="guide.html#ch7">Circulation Desk Guide</a></li>
-            <li><a href="guide.html#ch8">Student Kiosk Setup</a></li>
+            <li><a href="guide.html#ch8">Simplified View Setup</a></li>
             <li><a href="assets/ErrinILS-User-Guide.pdf" download="ErrinILS-User-Guide-v1.3.1.pdf">Official Manual
                 (PDF)</a></li>
             <li><a href="assets/ErrinILS-User-Guide.md" download>Download Manual (.md)</a></li>

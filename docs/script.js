@@ -91,43 +91,43 @@ function initScreenshotViewer() {
     circulation: {
       src: 'assets/screenshot-circulation.png',
       alt: 'ErrinILS Circulation Desk Screen',
-      title: 'ErrinILS — SK Taman Ceria [Circulation Desk]',
+      title: 'ErrinILS — Circulation Desk',
       caption: '<strong>Circulation Desk:</strong> Fast barcode scanning for Malaysian IC student cards and book barcodes. Shows active loans, loan limits (default 3 books / 7 days), hold queues, and fine status immediately.'
     },
     catalog: {
       src: 'assets/screenshot-catalog.png',
       alt: 'ErrinILS ISBN Copy-Cataloguing Screen',
-      title: 'ErrinILS — SK Taman Ceria [Catalog & Lookup]',
+      title: 'ErrinILS — Catalog & Lookup',
       caption: '<strong>5-Source ISBN Copy-Cataloguing:</strong> Scan or type any ISBN. ErrinILS automatically queries the Library of Congress (via native Z39.50) and Open Library to fill in title, author, publisher, and Dewey Decimal classification.'
     },
-    kiosk: {
+    simple: {
       src: 'assets/screenshot-kiosk.png',
-      alt: 'ErrinILS Student Kiosk Screen',
-      title: 'ErrinILS — SK Taman Ceria [Student Self-Checkout Kiosk]',
-      caption: '<strong>Student Kiosk Mode:</strong> Simplified, touch-friendly kiosk view designed for students. Large buttons, audio chimes, and friendly error dialogs so students can borrow and return books independently.'
+      alt: 'ErrinILS Simplified View Screen',
+      title: 'ErrinILS — Simplified View',
+      caption: '<strong>Simplified View:</strong> Simplified, touch-friendly circulation screen designed for quick checkout and return. Large buttons, clear status banners, and friendly error dialogs so students can borrow and return books independently.'
     },
     reports: {
       src: 'assets/screenshot-reports.png',
       alt: 'ErrinILS Reports and Reading Champions Screen',
-      title: 'ErrinILS — SK Taman Ceria [Reports & Analytics]',
+      title: 'ErrinILS — Reports & Analytics',
       caption: '<strong>Reports & Analytics:</strong> Instant reading statistics including the Nilam Reading Champions leaderboard, 6-month borrowing trends, Dewey classification distribution, and 1-click CSV export.'
     },
     students: {
       src: 'assets/screenshot-students.png',
       alt: 'ErrinILS Student & Patron Management Screen',
-      title: 'ErrinILS — SK Taman Ceria [Patron Management]',
+      title: 'ErrinILS — Patron Management',
       caption: '<strong>Student & Patron Management:</strong> Register students with automatic Malaysian IC / MyKid format validation (<code>YYMMDD-PB-###G</code>). Search by name, IC, or class standard with instant borrowing history.'
     },
     fines: {
       src: 'assets/screenshot-fines.png',
       alt: 'ErrinILS Fines Management Screen',
-      title: 'ErrinILS — SK Taman Ceria [Fines & Overdues]',
+      title: 'ErrinILS — Fines & Overdues',
       caption: '<strong>Fines & Overdues:</strong> Track overdue books and fine balances per student. Automatically blocks borrowing if overdue items exist or unpaid fines exceed threshold.'
     },
     settings: {
       src: 'assets/screenshot-settings.png',
       alt: 'ErrinILS Settings and Mobile QR Screen',
-      title: 'ErrinILS — SK Taman Ceria [Settings & Remote Access]',
+      title: 'ErrinILS — Settings & Remote Access',
       caption: '<strong>Settings & Mobile QR Access:</strong> Pair phones and tablets over school Wi-Fi with a 6-digit PIN and QR code for wireless shelf audits. One-click ZIP backup of the entire library database.'
     }
   };

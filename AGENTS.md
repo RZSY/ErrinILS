@@ -7,7 +7,7 @@ Welcome to **ErrinILS** (School Integrated Library System). This guide provides 
 ## 1. Project Overview
 
 - **Name**: ErrinILS
-- **Description**: Lightweight, zero-dependency school library system (ILS) with cataloguing, circulation, patron management, copy-cataloguing (ISBN lookup via Z39.50/APIs), and student self-checkout kiosk mode.
+- **Description**: Lightweight, zero-dependency school library system (ILS) with cataloguing, circulation, patron management, copy-cataloguing (ISBN lookup via Z39.50/APIs), and Simplified View.
 - **Target OS**: Windows 7, 8, 8.1, 10, and 11 (32-bit and 64-bit).
 - **Runtime**: Microsoft .NET Framework 4.0 or newer (built into Windows 8+; Windows 7 requires .NET 4.8).
 - **Core Philosophy**:
@@ -51,7 +51,7 @@ d:/errin/
     │   ├── Models.cs             # Data models (Item, Patron, Loan, Hold, Fine, Db, Settings)
     │   ├── Program.cs            # Single-instance mutex & application entry point
     │   ├── SelfTest.cs           # Automated self-tests (MARC, Z39.50, circulation rules, JSON)
-    │   ├── Simple.cs             # Simplified student self-checkout / checkin kiosk mode
+    │   ├── Simple.cs             # Simplified circulation view (Simplified View)
     │   ├── Ui.cs                 # UI controls, styles, layout, and rendering helpers
     │   ├── Web.cs                # Remote access HTTP server, device pairing, and web SPA
     │   ├── Z3950.cs              # ASN.1 BER encoding/decoding and Z39.50 v3 client & server
@@ -73,7 +73,7 @@ d:/errin/
   - Windows: `%APPDATA%\Errin\errin-data.json`
 - Backup / Restore: Handled via `Zip.cs` generating standard ZIP archives containing JSON records and catalog data.
 - Configuration: `%APPDATA%\Errin\errin-config.json` stores administrator password hash, Z39.50 settings, and paired device tokens.
-- **Admin Password**: Protects Settings, record deletion, database restoration, and kiosk exit. Stored as salted PBKDF2/SHA-256 (`Auth.cs`). Factory default password is `admin123` (SHA-256 hash `f16959ae2d027f8562807b5d1dbbef305556f3fd4caaac6ac82679b33397ad72`). Deleting `errin-config.json` resets the password to `admin123`.
+- **Admin Password**: Protects Settings, record deletion, and database restoration. Stored as salted PBKDF2/SHA-256 (`Auth.cs`). Factory default password is `admin123` (SHA-256 hash `f16959ae2d027f8562807b5d1dbbef305556f3fd4caaac6ac82679b33397ad72`). Deleting `errin-config.json` resets the password to `admin123`.
 
 ### 3.2 Circulation & Business Rules (`Lib.cs`)
 - **Loan Duration**: Default 7 days (`Lib.LOAN`).
@@ -113,7 +113,7 @@ d:/errin/
 - Standard WinForms application with custom styling and flat controls in `Ui.cs`.
 - **High-DPI Sharpness**: Native PerMonitorV2 awareness via `Program.cs` and `app.manifest`. Prevents blurry DWM bitmap scaling on modern displays (125%, 150%, 200%), rendering razor-sharp ClearType text and proportional layouts without extra GPU/CPU consumption.
 - **Main View**: Tabbed librarian interface with Circulation, Catalog (with Active/Weeded filters and Weeding dialog), Patrons, Overdue Notices, Inventory, Reports, and System Settings.
-- **Simplified View (`Simple.cs`)**: Kiosk view tailored for young children with large touch/mouse targets, barcode scanner focus, and friendly error dialogs (`Lib.Friendly(...)`).
+- **Simplified View (`Simple.cs`)**: Simplified view tailored for young children with large touch/mouse targets, barcode scanner focus, and friendly error dialogs (`Lib.Friendly(...)`).
 
 ---
 

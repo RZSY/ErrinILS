@@ -47,8 +47,8 @@ namespace Errin
                 var p = lib.PatronById(pid); string who = p != null ? p.name : pid; string m;
                 var err = lib.Checkout(pid, b, out m);
                 if (err != null) { SBanner(Lib.Friendly(err), "bad"); SLog(who, "Borrow: " + b, "bad"); sBc.SelectAll(); return; }
-                var it = lib.ItemByBarcode(b); var l = lib.OpenLoan(it.id); Save();
-                SBanner("Checked out: " + Short(it.title) + "\nDue back " + Nice(l.due), "ok"); SLog(who, "Borrowed: " + Short(it.title), "ok"); sBc.Clear(); sBc.Focus();
+                var it = lib.ItemByBarcode(b); var l = it != null ? lib.OpenLoan(it.id) : null; Save();
+                SBanner("Checked out: " + Short(it != null ? it.title : b) + (l != null ? "\nDue back " + Nice(l.due) : ""), "ok"); SLog(who, "Borrowed: " + Short(it != null ? it.title : b), "ok"); sBc.Clear(); sBc.Focus();
             };
             Action doRet = () =>
             {
@@ -56,8 +56,9 @@ namespace Errin
                 var it0 = lib.ItemByBarcode(b); var l0 = it0 != null ? lib.OpenLoan(it0.id) : null; string who = l0 != null ? lib.PName(l0.pid) : "";
                 var err = lib.Return(b, out m);
                 if (err != null) { SBanner(Lib.Friendly(err), err == "Item is not on loan" ? "warn" : "bad"); SLog(who, "Return: " + b, err == "Item is not on loan" ? "warn" : "bad"); sRb.SelectAll(); return; }
-                bool late = m.Contains("Late"); Save();
-                SBanner("Returned: " + Short(it0.title) + (late ? "\nThis book was late. A fine has been added." : "\nThank you!"), late ? "warn" : "ok"); SLog(who, "Returned: " + Short(it0.title), late ? "warn" : "ok");
+                bool late = m != null && m.Contains("Late"); Save();
+                string title = it0 != null ? it0.title : b;
+                SBanner("Returned: " + Short(title) + (late ? "\nThis book was late. A fine has been added." : "\nThank you!"), late ? "warn" : "ok"); SLog(who, "Returned: " + Short(title), late ? "warn" : "ok");
                 sRb.Clear(); sRb.Focus();
             };
             Func<Action, KeyEventHandler> enter = a => (s, e) => { if (e.KeyCode == Keys.Enter) { e.SuppressKeyPress = true; a(); } };

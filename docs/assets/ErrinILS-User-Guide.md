@@ -53,9 +53,9 @@
    - 7.6 The Current loans list
    - 7.7 The Holds queue
    - 7.8 Complete circulation error messages reference
-8. [The Simplified View (Student Self-Checkout Kiosk)](#8-the-simplified-view-student-self-checkout-kiosk)
+8. [The Simplified View](#8-the-simplified-view)
    - 8.1 Purpose & design for young students
-   - 8.2 Opening and leaving Kiosk mode
+   - 8.2 Opening and leaving Simplified View
    - 8.3 Checking out books independently
    - 8.4 Returning books independently
    - 8.5 The color banner & transaction log
@@ -164,7 +164,7 @@ ErrinILS is built on a **strict zero-external-dependency philosophy**:
 - **5-Source Copy-Cataloguing**: Scan an ISBN to auto-fill title, author, publisher, publication year, and Dewey Decimal Classification (DDC) from the Library of Congress (Z39.50), Open Library, Google Books, HathiTrust, and K10plus.
 - **Students & Patrons**: Register students with automatic Malaysian IC / MyKid validation, manage class allocations, and track complete reading histories.
 - **Printing**: Print 1D Code 128 book barcode labels (70 x 30 mm), spine call-number labels (25 x 38 mm), and scannable plastic-size student library cards (85.6 x 54 mm).
-- **Simplified Kiosk View**: A locked-down, high-contrast, child-friendly self-checkout desk designed for elementary and high school students with cheerful audio cues.
+- **Simplified View**: An uncluttered, high-contrast, child-friendly circulation desk designed for elementary and high school students.
 - **Weeding & Collection Maintenance**: Mark damaged, obsolete, lost, or duplicate books as weeded to remove them from borrowing while permanently preserving historical circulation metrics.
 - **Remote Access & QR Wireless Pairing**: Connect smartphones and classroom tablets to the built-in HTTP server using a zero-password 6-digit PIN and scannable QR code. Use your phone camera as a wireless shelf scanner.
 - **Reports & Reading Champions**: Track Nilam Reading Champions leaderboards (top student readers), 6-month borrowing trajectories, Dewey Decimal 100s breakdown, dormant inventory audits, and 1-click CSV spreadsheet exports.
@@ -176,14 +176,14 @@ ErrinILS is built on a **strict zero-external-dependency philosophy**:
 | If you are… | Read… |
 |---|---|
 | **The Teacher-Librarian or Library Administrator** | Everything. Start with Chapters 3, 4, and 5, followed by Chapters 6 through 16. |
-| **A Student Helper or Library Prefect** | Chapter 4.4 (barcode scanners), Chapter 7 (Circulation Desk), and Chapter 8 (Simplified Kiosk View). |
+| **A Student Helper or Library Prefect** | Chapter 4.4 (barcode scanners), Chapter 7 (Circulation Desk), and Chapter 8 (The Simplified View). |
 | **The School IT Coordinator or Technician** | Chapter 2 (System Requirements), Chapter 3 (Installation & Data Storage), Chapter 13 (Remote QR Access & Networking), Chapter 15 (Backups), and Chapter 18 (Troubleshooting). |
 
 ### 1.5 Conventions used in this manual
 - **Bold text** represents buttons, tabs, input boxes, and menu options exactly as they appear on screen (e.g., **Check out**, **Add Record**, **Settings**).
 - **"Tab"** refers to one of the main navigation buttons across the top toolbar (**Dashboard**, **Circulation**, **Catalog**, **Students**, **Fines**, **Reports**, **Backup**, **Settings**).
 - **Monetary amounts** are expressed in Malaysian Ringgit (**RM**).
-- **Dates** are formatted in ISO standard `YYYY-MM-DD` (e.g., `2026-10-09`), except in the Simplified Kiosk View where they are presented in natural English (e.g., `9 Oct 2026`).
+- **Dates** are formatted in ISO standard `YYYY-MM-DD` (e.g., `2026-10-09`), except in the Simplified View where they are presented in natural English (e.g., `9 Oct 2026`).
 - **Callout boxes** highlight critical guidance:
   - **Tip**: Shortcuts and operational best practices.
   - **Note**: Technical context and background details.
@@ -220,7 +220,7 @@ ErrinILS incorporates native **PerMonitorV2 High-DPI awareness** in its core man
 ### 2.3 Barcode Scanners & Wedge Input
 ErrinILS is engineered to work out of the box with any **USB Keyboard Wedge Barcode Scanner**. These scanners emulate rapid keyboard typing followed by an Enter keypress (`\r\n` carriage return).
 - Ensure your scanner is programmed in **USB HID Keyboard Mode** (the factory default for 99% of barcode scanners).
-- When you open the **Circulation** tab or **Simplified Kiosk View**, the cursor is automatically focused on the active scan box. Simply scan the barcode and ErrinILS processes the transaction instantly.
+- When you open the **Circulation** tab or **Simplified View**, the cursor is automatically focused on the active scan box. Simply scan the barcode and ErrinILS processes the transaction instantly.
 
 ### 2.4 Label Printers & Paper Sheets
 - **Book Barcode Labels (70 × 30 mm)**: Formatted for standard 3-column sticker sheets (e.g., 24 or 30 labels per A4 page) or single continuous thermal label rolls.
@@ -299,7 +299,6 @@ To prevent accidental changes or student tampering, the administrator password i
 1. Opening the **Settings** tab.
 2. Deleting a catalogue item or patron record.
 3. Restoring a database from a backup file.
-4. Exiting from the **Simplified Kiosk View** back to the administrative desk.
 
 > [!IMPORTANT]
 > ErrinILS ships with a default administrator password (`admin123`). Change this password immediately upon your first launch in **Settings → Admin Password**.
@@ -365,7 +364,7 @@ When a checkout is attempted, ErrinILS evaluates the patron and copy against 6 c
 
 ### 6.1 What the Dashboard shows
 The Dashboard provides an immediate executive snapshot of library activity:
-- **Simplified View Card**: One-click launcher for the student kiosk desk.
+- **Simplified View Card**: One-click launcher for the Simplified View.
 - **Key Metric Tiles**:
   - **Titles in Catalog**: Total active catalogued copies.
   - **Registered Students**: Total active student patron accounts.
@@ -448,24 +447,24 @@ Columns: **Title**, **Reserving Student**, **Date Placed**, and **Status** (`Wai
 
 ---
 
-## 8. The Simplified View (Student Self-Checkout Kiosk)
+## 8. The Simplified View
 
 ### 8.1 Purpose & design for young students
-The **Simplified View** transforms ErrinILS into an uncluttered, high-contrast, child-friendly self-service kiosk. Designed specifically for primary and secondary students:
+The **Simplified View** transforms ErrinILS into an uncluttered, high-contrast, child-friendly circulation screen. Designed specifically for primary and secondary students:
 - Large oversized touch and click buttons.
-- Cheerful visual feedback and audio chimes.
+- Clear visual feedback and status banners.
 - Hidden administrative toolbars and settings to prevent tampering.
 
-### 8.2 Opening and leaving Kiosk mode
-- **To Launch**: On the Dashboard, click **Open Simplified View** (or press <kbd>F11</kbd>).
-- **To Exit**: Click **Exit Simplified View** at the bottom-right corner. The system prompts for the administrator password before returning to the full administrative desk.
+### 8.2 Opening and leaving Simplified View
+- **To Launch**: On the Dashboard, click **Open Simplified View**.
+- **To Exit**: Click **Exit Simplified View** at the bottom-right corner to return to the full administrative desk.
 
 ### 8.3 Checking out books independently
-1. The kiosk screen displays: *"Ready. Scan a library card."*
+1. The screen displays: *"Ready. Scan a library card."*
 2. The student scans their school card barcode.
 3. The top banner illuminates in vibrant green: *"Hello, [Student Name]!"*
 4. The student scans their book barcode.
-5. The kiosk plays a cheerful chime and confirms: *"Checked out: [Book Title]. Due back [Date]!"*
+5. ErrinILS confirms on screen: *"Checked out: [Book Title]. Due back [Date]!"*
 6. When finished, clicking **Next Student** clears the session for the next child.
 
 ### 8.4 Returning books independently
@@ -477,7 +476,7 @@ The **Simplified View** transforms ErrinILS into an uncluttered, high-contrast, 
 
 | Banner Color | Meaning | Student Experience |
 |---|---|---|
-| **Green** | Transaction Successful | Positive chime, book checked out or returned cleanly. |
+| **Green** | Transaction Successful | Book checked out or returned cleanly. |
 | **Yellow** | Warning / Notice | Late return fine assessed or book was already returned. |
 | **Red** | Blocked Action | Student has overdue books, unpaid fines, or invalid card. |
 | **Slate / Grey** | Idle / Waiting | Awaiting student card or book barcode scan. |
@@ -486,7 +485,7 @@ The **Done so far** table displays the last 8 transactions with timestamp, stude
 
 ### 8.6 Student-friendly messages reference
 
-| System Condition | Child-Friendly Kiosk Message |
+| System Condition | Child-Friendly Message |
 |---|---|
 | Card not in database | *"I can't find that card. Please ask the librarian for help."* |
 | Barcode not in database | *"I don't know this book. Please ask the librarian."* |
@@ -834,7 +833,7 @@ Displays the exact file path where your active database is stored (`%APPDATA%\Er
 
 ### 17.1 Every day the library is open
 1. **Morning**: Review the Dashboard Overdue Items table and note students requiring reminder notices.
-2. **Desk Duty**: Operate Circulation or launch Simplified Kiosk View for student self-service.
+2. **Desk Duty**: Operate Circulation or launch Simplified View for student self-service.
 3. **Returns**: Put aside books flagged with *"Hold ready for [Student]"* and notify the reserving child.
 4. **Fines**: Settle cash fines collected during recess in the **Fines** tab.
 

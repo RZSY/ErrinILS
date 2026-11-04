@@ -52,7 +52,7 @@
       <span class="section-eyebrow">Official Master Manual</span>
       <h1 class="section-title" style="font-size: 2.5rem;">ErrinILS User Manual &amp; Guidelines</h1>
       <p class="section-subtitle">
-        Exhaustive step-by-step operating guidelines for school librarians, administrators, IT staff, and student helpers. Covers daily circulation, automated copy-cataloguing, Malaysian IC student management, kiosk self-checkout, weeding, remote QR access, and disaster recovery.
+        Exhaustive step-by-step operating guidelines for school librarians, administrators, IT staff, and student helpers. Covers daily circulation, automated copy-cataloguing, Malaysian IC student management, simplified circulation, weeding, remote QR access, and disaster recovery.
       </p>
     </div>
 
@@ -91,7 +91,7 @@
           <li><a href="#ch5" class="guide-nav-link">5. Rules &amp; Numbering</a></li>
           <li><a href="#ch6" class="guide-nav-link">6. The Dashboard</a></li>
           <li><a href="#ch7" class="guide-nav-link">7. Daily Circulation</a></li>
-          <li><a href="#ch8" class="guide-nav-link">8. Simplified Kiosk View</a></li>
+          <li><a href="#ch8" class="guide-nav-link">8. The Simplified View</a></li>
           <li><a href="#ch9" class="guide-nav-link">9. The Catalog &amp; Lookup</a></li>
           <li><a href="#ch10" class="guide-nav-link">10. Students &amp; Patrons</a></li>
           <li><a href="#ch11" class="guide-nav-link">11. Fines Management</a></li>
@@ -150,8 +150,8 @@
                 <p style="font-size: 0.88rem; color: var(--text-muted); margin-top: 4px;">Full validation for 12-digit Malaysian IC and MyKid cards (<code>YYMMDD-PB-###G</code>) with scannable card printing.</p>
               </div>
               <div class="card" style="padding: 16px;">
-                <strong style="color: var(--text-main);">Student Kiosk Mode</strong>
-                <p style="font-size: 0.88rem; color: var(--text-muted); margin-top: 4px;">Simplified touch/scanner desk with cheerful sound cues, oversized buttons, and child-friendly wording.</p>
+                <strong style="color: var(--text-main);">Simplified View</strong>
+                <p style="font-size: 0.88rem; color: var(--text-muted); margin-top: 4px;">Simplified touch/scanner desk with high-contrast screen, oversized buttons, and child-friendly wording.</p>
               </div>
               <div class="card" style="padding: 16px;">
                 <strong style="color: var(--text-main);">Weeding &amp; Maintenance</strong>
@@ -179,7 +179,7 @@
                   </tr>
                   <tr>
                     <td><strong>A Student Helper or Library Prefect</strong></td>
-                    <td>Chapter 4.4 (barcode scanners), Chapter 7 (Circulation), and Chapter 8 (Simplified Kiosk View).</td>
+                    <td>Chapter 4.4 (barcode scanners), Chapter 7 (Circulation), and Chapter 8 (The Simplified View).</td>
                   </tr>
                   <tr>
                     <td><strong>The School IT Coordinator / Technician</strong></td>
@@ -353,7 +353,6 @@
               <li>Opening the <strong>Settings</strong> tab.</li>
               <li>Deleting catalogue records or student accounts.</li>
               <li>Restoring from a backup.</li>
-              <li>Exiting from the Simplified Kiosk View.</li>
             </ol>
             <div class="callout callout-warning">
               <div class="callout-header">
@@ -367,7 +366,7 @@
 
             <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">4.4 Using a barcode scanner</h4>
             <p>
-              USB barcode scanners operate as keyboard wedge devices. When opening Circulation or Kiosk view, ErrinILS focuses the cursor in the scan box automatically. Scan the barcode, and the scanner transmits the digits followed by an Enter key to submit immediately.
+              USB barcode scanners operate as keyboard wedge devices. When opening Circulation or Simplified View, ErrinILS focuses the cursor in the scan box automatically. Scan the barcode, and the scanner transmits the digits followed by an Enter key to submit immediately.
             </p>
           </div>
         </article>
@@ -447,7 +446,7 @@
               The Dashboard is your morning command center. It requires no typing and provides an immediate view of active operations:
             </p>
             <ul class="step-list">
-              <li><strong>Open Simplified View:</strong> One-click launch button for the student self-checkout kiosk.</li>
+              <li><strong>Open Simplified View:</strong> One-click launch button for the simplified circulation view.</li>
               <li><strong>Executive Metric Counters:</strong> Total catalogued titles, registered students, active loans, all-time checkout tally, overdue book count, total unpaid fines balance, and active holds.</li>
               <li><strong>Overdue Items Table:</strong> Lists every student with late books, showing class, title, due date, days late, and total monetary amount owed. Use this list to print class reminder slips.</li>
               <li><strong>Top 10 Borrowers:</strong> Leaderboard showing top readers this month, this year, and all-time.</li>
@@ -497,28 +496,28 @@
 
         <!-- Chapter 8 -->
         <article class="guide-chapter" id="ch8">
-          <span id="kiosk"></span>
+          <span id="simple"></span>
           <div class="chapter-number">Chapter 8</div>
-          <h2 class="chapter-title">The Simplified View (Student Self-Checkout Kiosk)</h2>
+          <h2 class="chapter-title">The Simplified View</h2>
           <div class="chapter-body">
             <div class="figure-box">
-              <img src="assets/screenshot-kiosk.png" alt="ErrinILS Kiosk Mode Screenshot" class="figure-img">
-              <div class="figure-caption">Figure 3: Simplified Student Kiosk — Child-friendly touch interface, large color banner, and audit transaction log.</div>
+              <img src="assets/screenshot-kiosk.png" alt="ErrinILS Simplified View Screenshot" class="figure-img">
+              <div class="figure-caption">Figure 3: Simplified View — Child-friendly touch interface, large color banner, and audit transaction log.</div>
             </div>
             <p>
               A locked-down, high-contrast, distraction-free screen designed for primary and secondary students to borrow and return books independently.
             </p>
-            <h4 style="color: var(--accent-gold); margin: 16px 0 8px 0;">8.2 Opening and leaving Kiosk mode</h4>
+            <h4 style="color: var(--accent-gold); margin: 16px 0 8px 0;">8.2 Opening and leaving Simplified View</h4>
             <ul class="step-list">
-              <li><strong>Open:</strong> On the Dashboard, click <strong>Open Simplified View</strong> (or press <kbd>F11</kbd>).</li>
-              <li><strong>Exit:</strong> Click <strong>Exit Simplified View</strong> in the bottom right corner and enter the administrator password.</li>
+              <li><strong>Open:</strong> On the Dashboard, click <strong>Open Simplified View</strong>.</li>
+              <li><strong>Exit:</strong> Click <strong>Exit Simplified View</strong> in the bottom right corner to return to the dashboard.</li>
             </ul>
 
-            <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">8.3 Kiosk checkout workflow</h4>
+            <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">8.3 Simplified checkout workflow</h4>
             <ol class="step-list">
               <li>Screen prompts: *"Ready. Scan a library card."*</li>
               <li>Student scans card. Top banner turns green: *"Hello, [Student Name]!"*</li>
-              <li>Student scans book barcode. Kiosk plays a cheerful chime: *"Checked out: [Title]. Due back [Date]!"*</li>
+              <li>Student scans book barcode. ErrinILS confirms on screen: *"Checked out: [Title]. Due back [Date]!"*</li>
               <li>Click **Next student** to reset session.</li>
             </ol>
           </div>
@@ -933,7 +932,7 @@
           <ul class="footer-links">
             <li><a href="download.html#requirements">System Requirements</a></li>
             <li><a href="guide.html#circ">Circulation Desk Guide</a></li>
-            <li><a href="guide.html#kiosk">Student Kiosk Setup</a></li>
+            <li><a href="guide.html#simple">Simplified View Setup</a></li>
             <li><a href="assets/ErrinILS-User-Guide.pdf" download="ErrinILS-User-Guide-v1.3.1.pdf">Official Manual (PDF)</a></li>
             <li><a href="assets/ErrinILS-User-Guide.md" download>Download Manual (.md)</a></li>
           </ul>

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>About ErrinILS - Architecture, Features &amp; Specifications</title>
-  <meta name="description" content="In-depth overview of ErrinILS architecture: zero-dependency C# design, 5-source copy cataloguing, MARC21/Z39.50 protocols, kiosk mode, and single JSON persistence.">
+  <meta name="description" content="In-depth overview of ErrinILS architecture: zero-dependency C# design, 5-source copy cataloguing, MARC21/Z39.50 protocols, Simplified View, and single JSON persistence.">
   <link rel="icon" type="image/png" href="assets/icon.png">
   <link rel="stylesheet" href="styles.css">
   <script>
@@ -162,18 +162,18 @@
         </div>
 
         <!-- Feature 4 -->
-        <div class="card" id="kiosk">
+        <div class="card" id="simple">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-            <h3 class="card-title" style="margin-bottom: 0;">Simplified Student Self-Checkout Kiosk</h3>
-            <span class="badge badge-gold">KIOSK MODE</span>
+            <h3 class="card-title" style="margin-bottom: 0;">Simplified View</h3>
+            <span class="badge badge-gold">SIMPLIFIED VIEW</span>
           </div>
           <p class="card-text">
             Primary and secondary students can independently manage their book borrowings without librarian supervision:
           </p>
           <ul class="step-list" style="margin-left: 16px;">
-            <li><strong>Child-Friendly UI:</strong> Oversized high-contrast touch targets, cheerful colors, and friendly wording (<code>Lib.Friendly</code>).</li>
-            <li><strong>Audio-Visual Feedback:</strong> Distinct pleasant chime on success; warning buzz on overdue or hold restrictions.</li>
-            <li><strong>Restricted Librarian Exit:</strong> Protected by admin password (default: <code>admin123</code>) to prevent students from exiting into administrative settings.</li>
+            <li><strong>Child-Friendly UI:</strong> Oversized high-contrast touch targets, clear status banners, and friendly wording (<code>Lib.Friendly</code>).</li>
+            <li><strong>Visual Status Feedback:</strong> High-contrast status banner color changes (green for success, red for errors, yellow for warnings).</li>
+            <li><strong>Simple Exit:</strong> Dedicated button to return immediately to the librarian dashboard when the session ends.</li>
           </ul>
         </div>
       </div>
@@ -244,7 +244,7 @@
         </div>
         <pre><code>{
   "settings": {
-    "libraryName": "SK Taman Ceria Library",
+    "libraryName": "School Library",
     "loanDays": 7,
     "finePerDay": 0.10,
     "maxFine": 10.00,
@@ -334,7 +334,7 @@
               <td>None (Manual data entry)</td>
             </tr>
             <tr>
-              <td><strong>Student Kiosk Mode</strong></td>
+              <td><strong>Simplified View</strong></td>
               <td class="highlight">Built-in simplified touch mode</td>
               <td>Plugin / Third-party module</td>
               <td>Self-checkout module</td>
@@ -461,7 +461,7 @@
           <ul class="footer-links">
             <li><a href="download.html#requirements">System Requirements</a></li>
             <li><a href="guide.html#circ">Circulation Desk Guide</a></li>
-            <li><a href="guide.html#kiosk">Student Kiosk Setup</a></li>
+            <li><a href="guide.html#simple">Simplified View Setup</a></li>
             <li><a href="assets/ErrinILS-User-Guide.pdf" download="ErrinILS-User-Guide-v1.3.1.pdf">Official Manual (PDF)</a></li>
             <li><a href="assets/ErrinILS-User-Guide.md" download>Download Manual (.md)</a></li>
           </ul>

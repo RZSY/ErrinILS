@@ -175,6 +175,10 @@ namespace Errin
             Action doRen = () => { string m; var e = lib.Renew(rtI.Text.Trim(), out m); if (e != null) { Toast(e); return; } Commit(m); };
             Action doHold = () => { string m; var e = lib.PlaceHold(hP.Text.Trim(), hI.Text.Trim(), out m); if (e != null) { Toast(e); return; } Commit(m); };
             Func<Action, KeyEventHandler> enter = a => (s, e) => { if (e.KeyCode == Keys.Enter) { e.SuppressKeyPress = true; a(); } };
+            coP.KeyDown += (s, e) => { if (e.KeyCode == Keys.Enter) { e.SuppressKeyPress = true; var n = Lib.NormIc(coP.Text); if (n != null) coP.Text = n; coI.Focus(); } };
+            coP.Leave += (s, e) => { var n = Lib.NormIc(coP.Text); if (n != null) coP.Text = n; };
+            hP.KeyDown += (s, e) => { if (e.KeyCode == Keys.Enter) { e.SuppressKeyPress = true; var n = Lib.NormIc(hP.Text); if (n != null) hP.Text = n; hI.Focus(); } };
+            hP.Leave += (s, e) => { var n = Lib.NormIc(hP.Text); if (n != null) hP.Text = n; };
             coI.KeyDown += enter(doCo); rtI.KeyDown += enter(doRet); hI.KeyDown += enter(doHold);
             var c1 = Ui.Card("Check out", Vbox(Ui.Caption("IC number (scan library card)"), coP, Ui.Caption("Item barcode"), coI, Ui.Btn("Check out", 0, (s, e) => doCo())));
             var rr = Ui.Flow(false); rr.Controls.Add(Ui.Btn("Return", 0, (s, e) => doRet())); rr.Controls.Add(Ui.Btn("Renew", 1, (s, e) => doRen()));
