@@ -39,15 +39,20 @@
        Cover Page Styling
        ------------------------------------------------------------- */
     .cover-page {
-      height: 100%;
-      min-height: 250mm;
+      height: 250mm;
+      max-height: 250mm;
+      box-sizing: border-box;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
       border: 4px solid #1a1b1e;
-      padding: 30mm 20mm;
+      padding: 16mm 16mm;
       background: #fafaf8;
       position: relative;
+      page-break-inside: avoid;
+      break-inside: avoid;
+      page-break-after: always;
+      break-after: page;
     }
 
     .cover-top {
@@ -93,28 +98,28 @@
 
     .cover-center {
       text-align: center;
-      margin: 30mm 0;
+      margin: 10mm 0;
     }
 
     .cover-logo {
-      width: 100px;
-      height: 100px;
-      margin: 0 auto 16px auto;
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 12px auto;
     }
 
     .cover-meta {
       background: #ffffff;
       border: 1px solid #d4d6dc;
       border-top: 3px solid #1a1b1e;
-      padding: 16px 20px;
-      font-size: 9pt;
+      padding: 12px 18px;
+      font-size: 8.8pt;
       color: #4a4d57;
     }
 
     .cover-meta-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 10px 24px;
+      gap: 8px 20px;
     }
 
     .cover-meta-item strong {
@@ -127,7 +132,9 @@
        Table of Contents
        ------------------------------------------------------------- */
     .toc-container {
-      padding: 10mm 0;
+      padding: 6mm 0;
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
 
     .toc-title {
@@ -340,14 +347,14 @@
     <div class="cover-center">
       <img src="icon.png" alt="ErrinILS Logo" class="cover-logo">
       <div style="font-weight: bold; font-size: 14pt; color: #1a1b1e;">Version 1.3.1 (Windows Edition)</div>
-      <div style="font-size: 9.5pt; color: #6b6f7c; margin-top: 4px;">Zero-Dependency Architecture • Standalone C# Executable</div>
+      <div style="font-size: 9.5pt; color: #6b6f7c; margin-top: 4px;">Zero-Dependency Architecture &bull; Standalone C# Executable</div>
     </div>
 
     <div class="cover-meta">
       <div class="cover-meta-grid">
         <div class="cover-meta-item"><strong>Target OS:</strong> Windows 7, 8, 8.1, 10, 11 (32/64-bit)</div>
         <div class="cover-meta-item"><strong>Runtime:</strong> Microsoft .NET Framework 4.0+</div>
-        <div class="cover-meta-item"><strong>Database:</strong> Single JSON File (`errin-data.json`)</div>
+        <div class="cover-meta-item"><strong>Database:</strong> Single JSON File (<code>errin-data.json</code>)</div>
         <div class="cover-meta-item"><strong>Release Date:</strong> November 2026</div>
         <div class="cover-meta-item"><strong>License:</strong> MIT Open Source License</div>
         <div class="cover-meta-item"><strong>Web Portal:</strong> https://rzsy.github.io/ErrinILS/</div>
