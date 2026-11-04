@@ -3,10 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ErrinILS - Lightweight School Library System</title>
-  <meta name="description" content="Lightweight, zero-dependency school library system (ILS) with cataloguing, circulation, 5-source copy cataloguing, student kiosk mode, and remote QR access.">
+  <title>ErrinILS - Lightweight School Library Management System for Windows</title>
+  <meta name="description" content="Standalone, zero-dependency school library system (ILS) for Windows. Fast barcode circulation, automated 5-source ISBN cataloguing, student kiosk mode, and offline JSON database.">
   <link rel="icon" type="image/png" href="assets/icon.png">
   <link rel="stylesheet" href="styles.css">
+  <script>
+    (function() {
+      var theme = localStorage.getItem('errin_theme');
+      if (!theme) {
+        theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
 </head>
 <body>
 
@@ -24,11 +33,12 @@
       <nav class="main-nav">
         <a href="index.html" class="nav-link active">Home</a>
         <a href="about.html" class="nav-link">About</a>
-        <a href="download.html" class="nav-link">Download &amp; Install</a>
+        <a href="download.html" class="nav-link">Download</a>
         <a href="guide.html" class="nav-link">User Guide</a>
       </nav>
 
       <div class="nav-actions">
+        <button class="theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme"></button>
         <a href="download.html" class="btn btn-primary btn-sm">Download v1.3.1</a>
       </div>
     </div>
@@ -39,438 +49,287 @@
 
     <!-- Hero Section -->
     <section class="hero">
-      <div class="hero-content">
-        <div class="hero-text">
-          <div class="hero-pill">
-            <span class="badge badge-gold">NEW IN v1.3.1</span>
-            <span>QR Remote Access &amp; Advanced Analytics</span>
-          </div>
-
-          <h1 class="hero-title">
-            The Zero-Dependency <span class="highlight">School Library</span> System.
-          </h1>
-
-          <p class="hero-desc">
-            ErrinILS is an ultra-fast, standalone library management system engineered specifically for schools. It runs on any Windows PC without servers, databases, or runtime dependencies—giving librarians effortless cataloguing, circulation, student self-checkout, and mobile access.
-          </p>
-
-          <div class="hero-actions">
-            <a href="download.html" class="btn btn-primary btn-lg">Download ErrinILS v1.3.1</a>
-            <a href="guide.html" class="btn btn-secondary btn-lg">Read Step-by-Step Guide</a>
-            <a href="about.html" class="btn btn-secondary btn-lg">Explore Features</a>
-          </div>
-
-          <div class="hero-meta">
-            <div class="hero-meta-item">
-              <span class="hero-meta-icon">✓</span>
-              <span>Zero external setup</span>
-            </div>
-            <div class="hero-meta-item">
-              <span class="hero-meta-icon">✓</span>
-              <span>Runs on 1 GB RAM</span>
-            </div>
-            <div class="hero-meta-item">
-              <span class="hero-meta-icon">✓</span>
-              <span>Single 200 KB binary</span>
-            </div>
-          </div>
+      <div class="hero-container">
+        
+        <div class="hero-badge-row">
+          <span class="badge badge-gold">Release v1.3.1</span>
+          <span class="hero-tagline">Open-source school library software for Windows</span>
         </div>
 
-        <!-- Hero UI Slideshow Mockup -->
-        <div class="slideshow-wrapper">
-          <div class="window-header">
-            <div class="window-dots">
-              <span class="window-dot red"></span>
-              <span class="window-dot yellow"></span>
-              <span class="window-dot green"></span>
-            </div>
-            <div class="window-title">ErrinILS — School Integrated Library System</div>
-            <div class="window-badge">STANDALONE</div>
+        <h1 class="hero-title">
+          Simple, lightweight library software built for schools.
+        </h1>
+
+        <p class="hero-lead">
+          ErrinILS is a standalone library management system designed for everyday school computers. Fast barcode circulation, automated ISBN cataloguing, and student self-checkout—with zero dependencies and no server setup.
+        </p>
+
+        <div class="hero-actions">
+          <a href="download.html" class="btn btn-primary btn-lg">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Download for Windows
+          </a>
+          <a href="guide.html" class="btn btn-secondary btn-lg">
+            User Manual
+          </a>
+          <a href="https://github.com/RZSY/ErrinILS" class="btn btn-secondary btn-lg" target="_blank" rel="noopener">
+            GitHub
+          </a>
+        </div>
+
+        <div class="hero-specs-row">
+          <span>Windows 7, 8, 10, 11 (32 &amp; 64-bit)</span>
+          <span class="dot-sep">•</span>
+          <span>~200 KB standalone executable</span>
+          <span class="dot-sep">•</span>
+          <span>Runs offline on 1 GB RAM</span>
+          <span class="dot-sep">•</span>
+          <span>Free &amp; Open Source (MIT)</span>
+        </div>
+
+        <!-- Real Application Showcase -->
+        <div class="app-showcase">
+          <div class="showcase-tabs" role="tablist">
+            <button class="showcase-tab active" data-shot="circulation" role="tab" aria-selected="true">Circulation Desk</button>
+            <button class="showcase-tab" data-shot="catalog" role="tab" aria-selected="false">5-Source ISBN Lookup</button>
+            <button class="showcase-tab" data-shot="kiosk" role="tab" aria-selected="false">Student Kiosk</button>
+            <button class="showcase-tab" data-shot="reports" role="tab" aria-selected="false">Reading Champions</button>
+            <button class="showcase-tab" data-shot="students" role="tab" aria-selected="false">Student Patrons (IC)</button>
+            <button class="showcase-tab" data-shot="fines" role="tab" aria-selected="false">Fines &amp; Overdues</button>
+            <button class="showcase-tab" data-shot="settings" role="tab" aria-selected="false">Settings &amp; Mobile QR</button>
           </div>
 
-          <div class="slides-viewport">
-            
-            <!-- Slide 1: Circulation Desk -->
-            <div class="slide active" data-slide="0">
-              <div class="slide-banner">
-                <div>
-                  <div class="slide-tag">Core Workflow</div>
-                  <h3 class="slide-title">Circulation &amp; Barcode Desk</h3>
-                </div>
-                <div class="slide-indicator-label">1 / 5</div>
+          <div class="window-frame">
+            <div class="window-titlebar">
+              <div class="window-titlebar-left">
+                <img src="assets/icon.png" alt="ErrinILS" class="window-app-icon">
+                <span class="window-title-text" id="window-title-text">ErrinILS — SK Taman Ceria [Circulation Desk]</span>
               </div>
-
-              <div class="mock-ui">
-                <div class="mock-row">
-                  <div class="mock-input">
-                    <span>Scan Student IC or Book Barcode: <strong>9780141325286</strong></span>
-                    <span class="mock-pill">ENTER</span>
-                  </div>
-                </div>
-
-                <div style="background-color: var(--bg-surface-elevated); padding: 12px; margin-bottom: 12px; border: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
-                  <div>
-                    <strong style="color: var(--text-main);">Adam Tan (080415-10-5421)</strong>
-                    <div style="font-size: 0.78rem; color: var(--text-dim);">Standard 4 Melur • Active Borrowing: 1/3</div>
-                  </div>
-                  <div>
-                    <span class="badge badge-green">ELIGIBLE</span>
-                    <span class="badge badge-gold">Fines: RM 0.00</span>
-                  </div>
-                </div>
-
-                <table class="mock-table">
-                  <thead>
-                    <tr>
-                      <th>Book Title</th>
-                      <th>Barcode</th>
-                      <th>Due Date</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td class="highlight-col">Charlie and the Chocolate Factory</td>
-                      <td><code>9780141325286</code></td>
-                      <td>10 Nov 2026 (7 days)</td>
-                      <td><span class="badge badge-blue">Check-Out</span></td>
-                    </tr>
-                    <tr>
-                      <td>The Lightning Thief (Percy Jackson)</td>
-                      <td><code>9780141346809</code></td>
-                      <td>03 Nov 2026</td>
-                      <td><span class="badge badge-green">Active</span></td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div class="window-controls">
+                <span class="win-btn win-min">─</span>
+                <span class="win-btn win-max">□</span>
+                <span class="win-btn win-close">✕</span>
               </div>
-              <p class="slide-caption">
-                Sub-second checkout and check-in with automatic Malaysian IC formatting, fine calculation (RM 0.10/day), hold restrictions, and instant audio-visual cues.
-              </p>
             </div>
-
-            <!-- Slide 2: Copy-Cataloguing -->
-            <div class="slide" data-slide="1">
-              <div class="slide-banner">
-                <div>
-                  <div class="slide-tag">Automated Metadata</div>
-                  <h3 class="slide-title">5-Source ISBN Copy-Cataloguing</h3>
-                </div>
-                <div class="slide-indicator-label">2 / 5</div>
-              </div>
-
-              <div class="mock-ui">
-                <div class="mock-row">
-                  <div class="mock-input">
-                    <span>ISBN Query: <strong>9780545010221</strong></span>
-                    <span class="badge badge-green">✓ Library of Congress (Z39.50)</span>
-                  </div>
-                </div>
-
-                <div style="background: var(--bg-surface-elevated); padding: 14px; border: 1px solid var(--border-subtle); font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.6;">
-                  <div><span style="color: var(--text-dim);">Title:</span> <strong style="color: var(--accent-gold);">Harry Potter and the Deathly Hallows</strong></div>
-                  <div><span style="color: var(--text-dim);">Author:</span> J.K. Rowling</div>
-                  <div><span style="color: var(--text-dim);">DDC / Classification:</span> <span class="badge badge-blue">823.914</span></div>
-                  <div><span style="color: var(--text-dim);">Publisher:</span> Arthur A. Levine Books (2007)</div>
-                  <div><span style="color: var(--text-dim);">Protocol:</span> ASN.1 BER over Z39.50 v3 (Fallback: OpenLib, Google, Hathi, K10plus)</div>
-                </div>
-              </div>
-              <p class="slide-caption">
-                Enter or scan any 10 or 13-digit ISBN. ErrinILS instantly negotiates with 5 international bibliographic catalogues in priority order and auto-fills every record field.
-              </p>
+            <div class="window-screen">
+              <img src="assets/screenshot-circulation.png" alt="ErrinILS Circulation Screen" id="showcase-image" class="showcase-img">
             </div>
-
-            <!-- Slide 3: QR Remote Access -->
-            <div class="slide" data-slide="2">
-              <div class="slide-banner">
-                <div>
-                  <div class="slide-tag">Mobile Pairing</div>
-                  <h3 class="slide-title">QR Code Wireless Pairing</h3>
-                </div>
-                <div class="slide-indicator-label">3 / 5</div>
-              </div>
-
-              <div class="mock-ui" style="display: flex; gap: 20px; align-items: center;">
-                <div style="background: #ffffff; padding: 10px; width: 130px; height: 130px; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 2px solid var(--accent-gold); flex-shrink: 0;">
-                  <!-- Pure SVG Sharp QR representation -->
-                  <svg width="100" height="100" viewBox="0 0 25 25" style="shape-rendering: crispEdges;">
-                    <rect width="25" height="25" fill="#fff"/>
-                    <rect x="2" y="2" width="7" height="7" fill="#000"/>
-                    <rect x="3" y="3" width="5" height="5" fill="#fff"/>
-                    <rect x="4" y="4" width="3" height="3" fill="#000"/>
-                    <rect x="16" y="2" width="7" height="7" fill="#000"/>
-                    <rect x="17" y="3" width="5" height="5" fill="#fff"/>
-                    <rect x="18" y="4" width="3" height="3" fill="#000"/>
-                    <rect x="2" y="16" width="7" height="7" fill="#000"/>
-                    <rect x="3" y="17" width="5" height="5" fill="#fff"/>
-                    <rect x="4" y="18" width="3" height="3" fill="#000"/>
-                    <rect x="11" y="4" width="2" height="4" fill="#000"/>
-                    <rect x="11" y="11" width="3" height="3" fill="#000"/>
-                    <rect x="16" y="11" width="5" height="2" fill="#000"/>
-                    <rect x="12" y="16" width="4" height="2" fill="#000"/>
-                    <rect x="18" y="16" width="3" height="5" fill="#000"/>
-                  </svg>
-                </div>
-                <div>
-                  <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-dim); margin-bottom: 4px;">6-DIGIT PAIRING PIN:</div>
-                  <div style="font-family: var(--font-mono); font-size: 1.8rem; font-weight: 800; letter-spacing: 0.15em; color: var(--accent-gold);">849 201</div>
-                  <div style="font-size: 0.82rem; color: var(--text-muted); margin-top: 6px;">
-                    Scan with smartphone camera or open <code>http://192.168.1.100:8080</code> on your school Wi-Fi or hotspot. Token persists securely.
-                  </div>
-                </div>
-              </div>
-              <p class="slide-caption">
-                Zero passwords to remember. Pure C# HTTP server (`TcpListener`) binds to all network interfaces, allowing teachers and librarians to perform stocktaking and circulation from mobile devices.
-              </p>
-            </div>
-
-            <!-- Slide 4: Reports & Analytics -->
-            <div class="slide" data-slide="3">
-              <div class="slide-banner">
-                <div>
-                  <div class="slide-tag">Executive Intelligence</div>
-                  <h3 class="slide-title">Circulation Reports &amp; Reading Champions</h3>
-                </div>
-                <div class="slide-indicator-label">4 / 5</div>
-              </div>
-
-              <div class="mock-ui">
-                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px;">
-                  <div style="background: var(--bg-surface-elevated); padding: 10px; border-left: 2px solid var(--accent-gold);">
-                    <div style="font-size: 0.72rem; color: var(--text-dim);">ACTIVE COPIES</div>
-                    <div style="font-family: var(--font-mono); font-weight: 700; font-size: 1.1rem; color: var(--text-main);">4,820</div>
-                  </div>
-                  <div style="background: var(--bg-surface-elevated); padding: 10px; border-left: 2px solid var(--accent-blue);">
-                    <div style="font-size: 0.72rem; color: var(--text-dim);">ACTIVE LOANS</div>
-                    <div style="font-family: var(--font-mono); font-weight: 700; font-size: 1.1rem; color: var(--text-main);">342 (7.1%)</div>
-                  </div>
-                  <div style="background: var(--bg-surface-elevated); padding: 10px; border-left: 2px solid var(--accent-green);">
-                    <div style="font-size: 0.72rem; color: var(--text-dim);">FINES COLLECTED</div>
-                    <div style="font-family: var(--font-mono); font-weight: 700; font-size: 1.1rem; color: var(--accent-gold);">RM 84.50</div>
-                  </div>
-                </div>
-
-                <table class="mock-table">
-                  <thead>
-                    <tr>
-                      <th>Rank</th>
-                      <th>Top Student Reader (Nilam Champion)</th>
-                      <th>Class</th>
-                      <th>Books Read</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td class="highlight-col">#1 🏆</td>
-                      <td>Nur Aisyah binti Razali</td>
-                      <td>6 Amanah</td>
-                      <td class="highlight-col">42 books</td>
-                    </tr>
-                    <tr>
-                      <td class="highlight-col">#2 🥈</td>
-                      <td>Marcus Lim Jun Wei</td>
-                      <td>5 Cemerlang</td>
-                      <td>37 books</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <p class="slide-caption">
-                Instant analytics: Reading Champions leaderboard, 6-month circulation trajectory, Dewey Decimal 100s distribution, dormant book tracking, and 1-click CSV export.
-              </p>
-            </div>
-
-            <!-- Slide 5: Student Self-Checkout Kiosk -->
-            <div class="slide" data-slide="4">
-              <div class="slide-banner">
-                <div>
-                  <div class="slide-tag">Kiosk Mode</div>
-                  <h3 class="slide-title">Simplified Student Self-Checkout</h3>
-                </div>
-                <div class="slide-indicator-label">5 / 5</div>
-              </div>
-
-              <div class="mock-ui" style="text-align: center; padding: 24px;">
-                <div style="display: inline-block; padding: 6px 16px; background-color: var(--accent-gold); color: var(--text-inverted); font-weight: 700; font-size: 0.9rem; margin-bottom: 14px;">
-                  STUDENT KIOSK DESK
-                </div>
-                <div style="font-size: 1.4rem; font-weight: 800; color: var(--text-main); margin-bottom: 8px;">
-                  Hello! Please Scan Your School ID Card
-                </div>
-                <div style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 16px;">
-                  Hold your barcode under the red laser scanner to borrow or return books.
-                </div>
-                <div style="display: flex; gap: 12px; justify-content: center;">
-                  <span class="btn btn-primary btn-sm" style="pointer-events: none;">[ F1 ] Borrow Book</span>
-                  <span class="btn btn-secondary btn-sm" style="pointer-events: none;">[ F2 ] Return Book</span>
-                  <span class="btn btn-secondary btn-sm" style="pointer-events: none;">[ ESC ] Librarian Exit</span>
-                </div>
-              </div>
-              <p class="slide-caption">
-                Locked-down, child-friendly self-service mode designed for primary and secondary students. Big buttons, friendly error messages, and automated return processing.
-              </p>
-            </div>
-
           </div>
 
-          <!-- Slideshow Controls -->
-          <div class="slideshow-controls">
-            <div class="slideshow-nav-btns">
-              <button class="slide-btn slide-prev" aria-label="Previous slide">‹</button>
-              <button class="slide-btn slide-next" aria-label="Next slide">›</button>
-            </div>
-
-            <div class="slide-dots">
-              <button class="slide-dot active" aria-label="Slide 1"></button>
-              <button class="slide-dot" aria-label="Slide 2"></button>
-              <button class="slide-dot" aria-label="Slide 3"></button>
-              <button class="slide-dot" aria-label="Slide 4"></button>
-              <button class="slide-dot" aria-label="Slide 5"></button>
-            </div>
-
-            <div class="slide-play-state">Slide 1 of 5</div>
+          <div class="showcase-caption" id="showcase-caption">
+            <strong>Circulation Desk:</strong> Fast barcode scanning for Malaysian IC student cards and book barcodes. Shows active loans, loan limits (default 3 books / 7 days), hold queues, and fine status immediately.
           </div>
         </div>
 
-      </div>
-
-      <!-- Quick Stats Ribbon -->
-      <div class="stats-ribbon">
-        <div class="stat-item">
-          <div class="stat-number">0</div>
-          <div class="stat-label">Dependencies</div>
-          <div class="stat-desc">Zero DLLs, NuGet packages, or external runtimes.</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-number">200 KB</div>
-          <div class="stat-label">Binary Size</div>
-          <div class="stat-desc">Entire system compiles into a single executable.</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-number">5-Source</div>
-          <div class="stat-label">ISBN Lookup</div>
-          <div class="stat-desc">LOC Z39.50, OpenLib, Google, Hathi &amp; K10plus.</div>
-        </div>
-        <div class="stat-item">
-          <div class="stat-number">100%</div>
-          <div class="stat-label">Offline First</div>
-          <div class="stat-desc">Single JSON database in your local AppData.</div>
-        </div>
       </div>
     </section>
 
-    <!-- Brief Overview Section -->
+    <!-- Core Features Section -->
     <section class="section">
       <div class="section-header">
-        <span class="section-eyebrow">Everything You Need</span>
-        <h2 class="section-title">Built for Real School Libraries</h2>
+        <span class="section-eyebrow">Practical School Features</span>
+        <h2 class="section-title">Built for the everyday reality of school libraries</h2>
         <p class="section-subtitle">
-          Traditional library systems like Koha or SLIMS require dedicated servers, MySQL configuration, Apache/PHP, and continuous IT support. ErrinILS runs instantly on any classroom computer with double-click simplicity.
+          Enterprise library platforms like Koha or SLiMS require dedicated Linux servers, MySQL administration, and constant IT upkeep. ErrinILS was designed to be double-clicked on any classroom PC and work immediately.
         </p>
       </div>
 
       <div class="grid-3">
+        <!-- Feature 1 -->
         <div class="card">
-          <div class="card-icon">⚡</div>
-          <h3 class="card-title">Lightning Fast Circulation</h3>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5v14M6 5v14M10 5v14M14 5v14M17 5v14M21 5v14"></path></svg>
+          </div>
+          <h3 class="card-title">Fast Barcode Circulation</h3>
           <p class="card-text">
-            Check in and check out books in milliseconds with barcode scanners. Handles automatic loan periods, daily fine calculation, loan limits, and hold queues without lag.
+            Works with standard USB barcode scanners. Scan student IDs and book labels with instant audio cues, automatic return dates, loan limit enforcement, and hold alerts.
           </p>
           <div class="card-footer">
-            <a href="guide.html#circ" class="card-link">Circulation Guide →</a>
+            <a href="guide.html#ch7" class="card-link">Circulation instructions →</a>
           </div>
         </div>
 
+        <!-- Feature 2 -->
         <div class="card">
-          <div class="card-icon">📚</div>
-          <h3 class="card-title">Automated Copy-Cataloguing</h3>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path><circle cx="12" cy="10" r="2.5"></circle><line x1="14" y1="12" x2="16.5" y2="14.5"></line></svg>
+          </div>
+          <h3 class="card-title">Automated ISBN Cataloguing</h3>
           <p class="card-text">
-            Don't type book metadata by hand. Scan an ISBN to auto-fetch title, author, publisher, and Dewey Decimal classification from Library of Congress and 4 other global archives.
+            Add books without tedious typing. Enter or scan an ISBN to automatically pull title, author, publisher, and Dewey Decimal classification from Library of Congress (Z39.50) and Open Library.
           </p>
           <div class="card-footer">
-            <a href="about.html#catalog" class="card-link">See Cataloguing Engine →</a>
+            <a href="about.html#catalog" class="card-link">Cataloguing details →</a>
           </div>
         </div>
 
+        <!-- Feature 3 -->
         <div class="card">
-          <div class="card-icon">📱</div>
-          <h3 class="card-title">QR Code Remote Web Access</h3>
-          <p class="card-text">
-            Scan a QR code from your smartphone camera or classroom tablet to access the ErrinILS Web SPA. Teachers and assistants can audit shelves and borrow books wirelessly.
-          </p>
-          <div class="card-footer">
-            <a href="about.html#remote" class="card-link">Remote Access Details →</a>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
           </div>
-        </div>
-
-        <div class="card">
-          <div class="card-icon">🧒</div>
           <h3 class="card-title">Student Self-Checkout Kiosk</h3>
           <p class="card-text">
-            Empower students to borrow and return books independently. Simplified high-contrast mode with cheerful sound cues, oversized buttons, and child-friendly wording.
+            Full-screen kiosk mode for primary and secondary students. Oversized touch buttons, cheerful chimes, and simple prompts allow students to check out and return books independently.
           </p>
           <div class="card-footer">
-            <a href="guide.html#kiosk" class="card-link">Kiosk Setup Guide →</a>
+            <a href="guide.html#ch8" class="card-link">Kiosk guide →</a>
           </div>
         </div>
 
+        <!-- Feature 4 -->
         <div class="card">
-          <div class="card-icon">📊</div>
-          <h3 class="card-title">Executive Reports &amp; Analytics</h3>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          </div>
+          <h3 class="card-title">100% Offline &amp; Zero Setup</h3>
           <p class="card-text">
-            Track Reading Champions leaderboards, 6-month borrowing trends, overdue fees, collection age, and Dewey classification breakdown with 1-click CSV export.
+            No database servers, IIS, Apache, or background services. All records reside in a single plain-text JSON file. Automatic pure C# ZIP archive backups ensure your data is always safe.
           </p>
           <div class="card-footer">
-            <a href="about.html#reports" class="card-link">Reports Overview →</a>
+            <a href="about.html#persistence" class="card-link">Data architecture →</a>
           </div>
         </div>
 
+        <!-- Feature 5 -->
         <div class="card">
-          <div class="card-icon">💾</div>
-          <h3 class="card-title">Single JSON Database</h3>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><circle cx="9" cy="10" r="2"></circle><line x1="15" y1="8" x2="17" y2="8"></line><line x1="15" y1="12" x2="17" y2="12"></line><line x1="7" y1="16" x2="17" y2="16"></line></svg>
+          </div>
+          <h3 class="card-title">Malaysian School Localization</h3>
           <p class="card-text">
-            Your entire library catalog, patrons, and loans live in one plain-text JSON file. Automatic pure C# ZIP archive backups ensure your data is always safe and easily transferred.
+            Native validation for Malaysian IC and MyKid numbers (<code>YYMMDD-PB-###G</code>) with birth date checks. Fine calculation configured in Ringgit Malaysia (RM 0.10/day) and Nilam reports.
           </p>
           <div class="card-footer">
-            <a href="about.html#persistence" class="card-link">Data Architecture →</a>
+            <a href="guide.html#ch10" class="card-link">Patron rules →</a>
+          </div>
+        </div>
+
+        <!-- Feature 6 -->
+        <div class="card">
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+          </div>
+          <h3 class="card-title">Mobile Audits via QR Code</h3>
+          <p class="card-text">
+            Teachers and student assistants can scan a temporary QR code with a smartphone camera to perform stock audits and borrow books wirelessly over the school Wi-Fi without cables.
+          </p>
+          <div class="card-footer">
+            <a href="about.html#remote" class="card-link">Wireless access →</a>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Quick Navigation Hub -->
-    <section class="section" style="background-color: var(--bg-surface); border: 1px solid var(--border-strong); padding: 40px;">
-      <div style="text-align: center; max-width: 680px; margin: 0 auto 36px auto;">
-        <span class="section-eyebrow">Explore ErrinILS</span>
-        <h2 class="section-title" style="font-size: 1.8rem;">Ready to Get Started?</h2>
+    <!-- Comparison Table Section -->
+    <section class="section">
+      <div class="section-header">
+        <span class="section-eyebrow">Comparison</span>
+        <h2 class="section-title">How ErrinILS compares to other solutions</h2>
+        <p class="section-subtitle">
+          How ErrinILS addresses the specific constraints of primary and secondary school libraries:
+        </p>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Feature / Metric</th>
+              <th class="highlight">ErrinILS</th>
+              <th>Koha ILS</th>
+              <th>SLiMS (Senayan)</th>
+              <th>Excel / Sheets</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Installation</strong></td>
+              <td class="highlight">Single EXE or NSIS installer</td>
+              <td>Complex Linux server &amp; Perl</td>
+              <td>Requires Apache &amp; MySQL stack</td>
+              <td>Spreadsheet file only</td>
+            </tr>
+            <tr>
+              <td><strong>Hardware Required</strong></td>
+              <td class="highlight">1 GB RAM, 10 MB Disk</td>
+              <td>4–8 GB RAM, Dedicated Server</td>
+              <td>2–4 GB RAM, Web Server</td>
+              <td>Standard PC</td>
+            </tr>
+            <tr>
+              <td><strong>Dependencies</strong></td>
+              <td class="highlight">0 (Pure .NET 4.0 Framework)</td>
+              <td>Hundreds (Perl, CPAN, MariaDB)</td>
+              <td>PHP, MySQL, Apache/Nginx</td>
+              <td>Office suite</td>
+            </tr>
+            <tr>
+              <td><strong>ISBN Book Lookup</strong></td>
+              <td class="highlight">Built-in 5-source automated lookup</td>
+              <td>Z39.50 (requires server setup)</td>
+              <td>P2P service or plugins</td>
+              <td>Manual entry</td>
+            </tr>
+            <tr>
+              <td><strong>Student Kiosk View</strong></td>
+              <td class="highlight">Built-in simplified touch mode</td>
+              <td>Third-party module</td>
+              <td>Self-checkout module</td>
+              <td>None</td>
+            </tr>
+            <tr>
+              <td><strong>Malaysian IC / MyKid</strong></td>
+              <td class="highlight">Native regex &amp; calendar verification</td>
+              <td>Custom regex required</td>
+              <td>Custom regex required</td>
+              <td>Formula required</td>
+            </tr>
+            <tr>
+              <td><strong>Database Backup</strong></td>
+              <td class="highlight">Copy 1 JSON file or 1-click ZIP</td>
+              <td>mysqldump &amp; Zebra index export</td>
+              <td>MySQL database export</td>
+              <td>Save file copy</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Getting Started Section -->
+    <section class="section info-banner">
+      <div style="text-align: center; max-width: 680px; margin: 0 auto 32px auto;">
+        <span class="section-eyebrow">Ready to Deploy</span>
+        <h2 class="section-title" style="font-size: 1.8rem;">Getting started with ErrinILS</h2>
         <p style="color: var(--text-muted); font-size: 0.95rem;">
-          Everything you need to evaluate, install, configure, and operate ErrinILS in your school is documented across our simple guides:
+          Download the standalone executable or explore the complete documentation:
         </p>
       </div>
 
       <div class="grid-3">
-        <div style="background-color: var(--bg-primary); border: 1px solid var(--border-subtle); padding: 24px;">
-          <h4 style="color: var(--accent-gold); font-size: 1.1rem; margin-bottom: 8px;">1. About &amp; Features</h4>
+        <div style="background-color: var(--bg-primary); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 22px;">
+          <h4 style="color: var(--text-main); font-size: 1.05rem; margin-bottom: 8px;">1. Download &amp; Install</h4>
           <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 16px;">
-            Deep dive into ErrinILS architecture, zero-dependency philosophy, MARC21/Z39.50 standards, and comparison with Koha.
-          </p>
-          <a href="about.html" class="btn btn-secondary btn-sm" style="width: 100%;">Read About ErrinILS →</a>
-        </div>
-
-        <div style="background-color: var(--bg-primary); border: 1px solid var(--border-subtle); padding: 24px;">
-          <h4 style="color: var(--accent-gold); font-size: 1.1rem; margin-bottom: 8px;">2. Download &amp; Install</h4>
-          <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 16px;">
-            Get the NSIS Windows Installer, portable ZIP package, or standalone 200 KB executable with SHA-256 verification.
+            Choose between the standard Windows installer, portable USB package, or standalone 200 KB executable with SHA-256 verification.
           </p>
           <a href="download.html" class="btn btn-primary btn-sm" style="width: 100%;">Download v1.3.1 →</a>
         </div>
 
-        <div style="background-color: var(--bg-primary); border: 1px solid var(--border-subtle); padding: 24px;">
-          <h4 style="color: var(--accent-gold); font-size: 1.1rem; margin-bottom: 8px;">3. Step-by-Step Guide</h4>
+        <div style="background-color: var(--bg-primary); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 22px;">
+          <h4 style="color: var(--text-main); font-size: 1.05rem; margin-bottom: 8px;">2. User Guide &amp; Manual</h4>
           <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 16px;">
-            Complete handbook from Day 1 setup, barcode scanning, student registration, weeding books, to printing user manuals.
+            Complete 19-chapter handbook covering barcode scanning, student registration, fines, weeding, and disaster recovery.
           </p>
           <a href="guide.html" class="btn btn-secondary btn-sm" style="width: 100%;">Open User Guide →</a>
+        </div>
+
+        <div style="background-color: var(--bg-primary); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 22px;">
+          <h4 style="color: var(--text-main); font-size: 1.05rem; margin-bottom: 8px;">3. About Architecture</h4>
+          <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 16px;">
+            Learn how the zero-dependency C# engine, Z39.50 client, MARC21 parser, and single JSON database work under the hood.
+          </p>
+          <a href="about.html" class="btn btn-secondary btn-sm" style="width: 100%;">Read Architecture →</a>
         </div>
       </div>
     </section>
@@ -483,41 +342,41 @@
       <div class="footer-top">
         <div>
           <div class="footer-brand-title">
-            <img src="assets/icon.png" alt="ErrinILS Icon" style="width: 28px; height: 28px;">
+            <img src="assets/icon.png" alt="ErrinILS Icon" style="width: 26px; height: 26px;">
             <span>ErrinILS</span>
           </div>
           <p class="footer-brand-desc">
-            Lightweight, zero-dependency school integrated library system built for modern and low-resource Windows PCs.
+            Lightweight, zero-dependency school library system built for modern and legacy Windows PCs.
           </p>
           <div class="footer-badges">
-            <span class="badge badge-gold">C# 5.0 / .NET 4.0</span>
-            <span class="badge badge-blue">Zero Dependencies</span>
+            <span class="badge badge-subtle">C# 5.0 / .NET 4.0</span>
+            <span class="badge badge-subtle">Zero Dependencies</span>
           </div>
         </div>
 
         <div>
-          <div class="footer-col-title">Pages</div>
+          <div class="footer-col-title">Documentation</div>
           <ul class="footer-links">
-            <li><a href="index.html">Home</a></li>
+            <li><a href="index.html">Overview</a></li>
             <li><a href="about.html">About &amp; Architecture</a></li>
             <li><a href="download.html">Download &amp; Installation</a></li>
-            <li><a href="guide.html">User Guide &amp; Manual</a></li>
+            <li><a href="guide.html">User Guide &amp; Handbook</a></li>
           </ul>
         </div>
 
         <div>
-          <div class="footer-col-title">Resources</div>
+          <div class="footer-col-title">Manual &amp; Resources</div>
           <ul class="footer-links">
             <li><a href="download.html#requirements">System Requirements</a></li>
-            <li><a href="guide.html#circ">Circulation Desk Guide</a></li>
-            <li><a href="guide.html#kiosk">Student Kiosk Setup</a></li>
+            <li><a href="guide.html#ch7">Circulation Desk Guide</a></li>
+            <li><a href="guide.html#ch8">Student Kiosk Setup</a></li>
             <li><a href="assets/ErrinILS-User-Guide.pdf" download="ErrinILS-User-Guide-v1.3.1.pdf">Official Manual (PDF)</a></li>
             <li><a href="assets/ErrinILS-User-Guide.md" download>Download Manual (.md)</a></li>
           </ul>
         </div>
 
         <div>
-          <div class="footer-col-title">Releases</div>
+          <div class="footer-col-title">Releases &amp; Code</div>
           <ul class="footer-links">
             <li><a href="https://github.com/RZSY/ErrinILS/releases/tag/v1.3.1" target="_blank" rel="noopener">ErrinILS v1.3.1 on GitHub</a></li>
             <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.3.1/ErrinILS-Setup-1.3.1.exe">Setup Installer (.exe)</a></li>
@@ -529,8 +388,8 @@
 
       <div class="footer-bottom">
         <div>&copy; 2026 ErrinILS Project. Released under the MIT License.</div>
-        <div style="font-family: var(--font-mono); font-size: 0.78rem;">
-          Designed with sharp corners • Pure C# Standalone
+        <div style="font-size: 0.82rem; color: var(--text-dim);">
+          Pure C# Standalone Application • For Malaysian &amp; Global School Libraries
         </div>
       </div>
     </div>

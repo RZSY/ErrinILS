@@ -1,23 +1,66 @@
 /**
  * ErrinILS - Universal Website Scripts
+ * Clean, lightweight, zero-dependency client scripts.
  * Features:
- * - Interactive Hero UI Slideshow (autoplay, controls, pause-on-hover)
- * - Mobile Navigation Drawer Toggle
- * - Code Block Clipboard Copying
- * - User Guide Downloader (.md and .txt) and Print trigger
+ * - Theme Switcher (Light / Dark mode persisted in localStorage)
+ * - Real Application Screenshot Viewer (interactive tabs & keyboard support)
+ * - Mobile Navigation Toggle
+ * - Code Block Copying
+ * - User Guide Downloader (.pdf, .md, .txt) & Print
  * - Sticky Table of Contents Scroll-Spy
  */
 
 document.addEventListener('DOMContentLoaded', function () {
+  initThemeToggle();
   initMobileNav();
-  initSlideshow();
+  initScreenshotViewer();
   initCodeCopyButtons();
   initGuideActions();
   initScrollSpy();
 });
 
 /* -------------------------------------------------------------------
-   1. Mobile Navigation Toggle
+   1. Theme Switcher (Light / Dark)
+   ------------------------------------------------------------------- */
+function initThemeToggle() {
+  var toggles = document.querySelectorAll('.theme-toggle-btn');
+  
+  function applyTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    try {
+      localStorage.setItem('errin_theme', theme);
+    } catch (e) {}
+    updateToggleIcons(theme);
+  }
+
+  function updateToggleIcons(theme) {
+    toggles.forEach(function (btn) {
+      if (theme === 'dark') {
+        btn.setAttribute('aria-label', 'Switch to light mode');
+        btn.setAttribute('title', 'Switch to light mode');
+        btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>';
+      } else {
+        btn.setAttribute('aria-label', 'Switch to dark mode');
+        btn.setAttribute('title', 'Switch to dark mode');
+        btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>';
+      }
+    });
+  }
+
+  var currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+  updateToggleIcons(currentTheme);
+
+  toggles.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var current = document.documentElement.getAttribute('data-theme') || 'light';
+      var next = current === 'dark' ? 'light' : 'dark';
+      applyTheme(next);
+    });
+  });
+}
+
+/* -------------------------------------------------------------------
+   2. Mobile Navigation Toggle
    ------------------------------------------------------------------- */
 function initMobileNav() {
   var menuBtn = document.querySelector('.mobile-menu-btn');
@@ -34,119 +77,114 @@ function initMobileNav() {
 }
 
 /* -------------------------------------------------------------------
-   2. Hero Slideshow Engine
+   3. Real Application Screenshot Showcase
    ------------------------------------------------------------------- */
-function initSlideshow() {
-  var wrapper = document.querySelector('.slideshow-wrapper');
-  if (!wrapper) return;
+function initScreenshotViewer() {
+  var tabs = document.querySelectorAll('.showcase-tab');
+  var img = document.getElementById('showcase-image');
+  var titleEl = document.getElementById('window-title-text');
+  var captionEl = document.getElementById('showcase-caption');
 
-  var slides = wrapper.querySelectorAll('.slide');
-  var dots = wrapper.querySelectorAll('.slide-dot');
-  var prevBtn = wrapper.querySelector('.slide-prev');
-  var nextBtn = wrapper.querySelector('.slide-next');
-  var playStateLabel = wrapper.querySelector('.slide-play-state');
-  
-  if (!slides.length) return;
+  if (!tabs.length || !img) return;
+
+  var shots = {
+    circulation: {
+      src: 'assets/screenshot-circulation.png',
+      alt: 'ErrinILS Circulation Desk Screen',
+      title: 'ErrinILS — SK Taman Ceria [Circulation Desk]',
+      caption: '<strong>Circulation Desk:</strong> Fast barcode scanning for Malaysian IC student cards and book barcodes. Shows active loans, loan limits (default 3 books / 7 days), hold queues, and fine status immediately.'
+    },
+    catalog: {
+      src: 'assets/screenshot-catalog.png',
+      alt: 'ErrinILS ISBN Copy-Cataloguing Screen',
+      title: 'ErrinILS — SK Taman Ceria [Catalog & Lookup]',
+      caption: '<strong>5-Source ISBN Copy-Cataloguing:</strong> Scan or type any ISBN. ErrinILS automatically queries the Library of Congress (via native Z39.50) and Open Library to fill in title, author, publisher, and Dewey Decimal classification.'
+    },
+    kiosk: {
+      src: 'assets/screenshot-kiosk.png',
+      alt: 'ErrinILS Student Kiosk Screen',
+      title: 'ErrinILS — SK Taman Ceria [Student Self-Checkout Kiosk]',
+      caption: '<strong>Student Kiosk Mode:</strong> Simplified, touch-friendly kiosk view designed for students. Large buttons, audio chimes, and friendly error dialogs so students can borrow and return books independently.'
+    },
+    reports: {
+      src: 'assets/screenshot-reports.png',
+      alt: 'ErrinILS Reports and Reading Champions Screen',
+      title: 'ErrinILS — SK Taman Ceria [Reports & Analytics]',
+      caption: '<strong>Reports & Analytics:</strong> Instant reading statistics including the Nilam Reading Champions leaderboard, 6-month borrowing trends, Dewey classification distribution, and 1-click CSV export.'
+    },
+    students: {
+      src: 'assets/screenshot-students.png',
+      alt: 'ErrinILS Student & Patron Management Screen',
+      title: 'ErrinILS — SK Taman Ceria [Patron Management]',
+      caption: '<strong>Student & Patron Management:</strong> Register students with automatic Malaysian IC / MyKid format validation (<code>YYMMDD-PB-###G</code>). Search by name, IC, or class standard with instant borrowing history.'
+    },
+    fines: {
+      src: 'assets/screenshot-fines.png',
+      alt: 'ErrinILS Fines Management Screen',
+      title: 'ErrinILS — SK Taman Ceria [Fines & Overdues]',
+      caption: '<strong>Fines & Overdues:</strong> Track overdue books and fine balances per student. Automatically blocks borrowing if overdue items exist or unpaid fines exceed threshold.'
+    },
+    settings: {
+      src: 'assets/screenshot-settings.png',
+      alt: 'ErrinILS Settings and Mobile QR Screen',
+      title: 'ErrinILS — SK Taman Ceria [Settings & Remote Access]',
+      caption: '<strong>Settings & Mobile QR Access:</strong> Pair phones and tablets over school Wi-Fi with a 6-digit PIN and QR code for wireless shelf audits. One-click ZIP backup of the entire library database.'
+    }
+  };
 
   var currentIndex = 0;
-  var totalSlides = slides.length;
-  var timer = null;
-  var isPlaying = true;
-  var autoIntervalMs = 5000;
+  var tabKeys = Object.keys(shots);
 
-  function showSlide(index) {
-    if (index >= totalSlides) currentIndex = 0;
-    else if (index < 0) currentIndex = totalSlides - 1;
-    else currentIndex = index;
+  function selectTab(key) {
+    var data = shots[key];
+    if (!data) return;
 
-    slides.forEach(function (slide, idx) {
-      if (idx === currentIndex) {
-        slide.classList.add('active');
+    tabs.forEach(function (tab) {
+      if (tab.getAttribute('data-shot') === key) {
+        tab.classList.add('active');
+        tab.setAttribute('aria-selected', 'true');
       } else {
-        slide.classList.remove('active');
+        tab.classList.remove('active');
+        tab.setAttribute('aria-selected', 'false');
       }
     });
 
-    dots.forEach(function (dot, idx) {
-      if (idx === currentIndex) {
-        dot.classList.add('active');
-        dot.setAttribute('aria-current', 'true');
-      } else {
-        dot.classList.remove('active');
-        dot.removeAttribute('aria-current');
-      }
-    });
+    img.style.opacity = '0.4';
+    setTimeout(function () {
+      img.src = data.src;
+      img.alt = data.alt;
+      img.style.opacity = '1';
+    }, 100);
 
-    if (playStateLabel) {
-      playStateLabel.textContent = 'Slide ' + (currentIndex + 1) + ' of ' + totalSlides;
-    }
+    if (titleEl) titleEl.textContent = data.title;
+    if (captionEl) captionEl.innerHTML = data.caption;
   }
 
-  function startAutoplay() {
-    stopAutoplay();
-    isPlaying = true;
-    timer = setInterval(function () {
-      showSlide(currentIndex + 1);
-    }, autoIntervalMs);
-  }
-
-  function stopAutoplay() {
-    isPlaying = false;
-    if (timer) {
-      clearInterval(timer);
-      timer = null;
-    }
-  }
-
-  if (prevBtn) {
-    prevBtn.addEventListener('click', function () {
-      showSlide(currentIndex - 1);
-      startAutoplay();
-    });
-  }
-
-  if (nextBtn) {
-    nextBtn.addEventListener('click', function () {
-      showSlide(currentIndex + 1);
-      startAutoplay();
-    });
-  }
-
-  dots.forEach(function (dot, idx) {
-    dot.addEventListener('click', function () {
-      showSlide(idx);
-      startAutoplay();
+  tabs.forEach(function (tab, index) {
+    tab.addEventListener('click', function () {
+      var key = tab.getAttribute('data-shot');
+      currentIndex = index;
+      selectTab(key);
     });
   });
 
-  // Pause on mouse hover over the slideshow
-  wrapper.addEventListener('mouseenter', function () {
-    stopAutoplay();
-  });
-
-  wrapper.addEventListener('mouseleave', function () {
-    startAutoplay();
-  });
-
-  // Keyboard navigation when user presses left/right arrow
+  // Keyboard navigation across tabs
   document.addEventListener('keydown', function (e) {
     if (document.activeElement && (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA')) {
       return;
     }
     if (e.key === 'ArrowRight') {
-      showSlide(currentIndex + 1);
+      currentIndex = (currentIndex + 1) % tabKeys.length;
+      selectTab(tabKeys[currentIndex]);
     } else if (e.key === 'ArrowLeft') {
-      showSlide(currentIndex - 1);
+      currentIndex = (currentIndex - 1 + tabKeys.length) % tabKeys.length;
+      selectTab(tabKeys[currentIndex]);
     }
   });
-
-  // Start initial slide and autoplay
-  showSlide(0);
-  startAutoplay();
 }
 
 /* -------------------------------------------------------------------
-   3. Code Copy Buttons
+   4. Code Copy Buttons
    ------------------------------------------------------------------- */
 function initCodeCopyButtons() {
   var copyButtons = document.querySelectorAll('.code-box-copy');
@@ -160,14 +198,9 @@ function initCodeCopyButtons() {
       var text = pre.innerText || pre.textContent;
       navigator.clipboard.writeText(text).then(function () {
         var originalText = btn.textContent;
-        btn.textContent = '✓ Copied';
-        btn.style.backgroundColor = 'var(--accent-gold)';
-        btn.style.color = 'var(--text-inverted)';
-
+        btn.textContent = 'Copied';
         setTimeout(function () {
           btn.textContent = originalText;
-          btn.style.backgroundColor = '';
-          btn.style.color = '';
         }, 2000);
       }).catch(function () {
         btn.textContent = 'Error';
@@ -177,7 +210,7 @@ function initCodeCopyButtons() {
 }
 
 /* -------------------------------------------------------------------
-   4. User Guide Actions (Download MD, TXT & Print)
+   5. User Guide Actions (PDF, MD, TXT Download & Print)
    ------------------------------------------------------------------- */
 function initGuideActions() {
   var btnDownloadPdf = document.getElementById('btn-download-guide-pdf');
@@ -185,13 +218,11 @@ function initGuideActions() {
   var btnDownloadTxt = document.getElementById('btn-download-guide-txt');
   var btnPrintGuide = document.getElementById('btn-print-guide');
 
-  // Paths to bundled guide artifacts
   var pdfPath = 'assets/ErrinILS-User-Guide.pdf';
   var guidePath = 'assets/ErrinILS-User-Guide.md';
 
   if (btnDownloadPdf) {
-    btnDownloadPdf.addEventListener('click', function (e) {
-      // Direct navigation to pre-prepared PDF file
+    btnDownloadPdf.addEventListener('click', function () {
       window.location.href = pdfPath;
     });
   }
@@ -220,7 +251,6 @@ function initGuideActions() {
           triggerBlobDownload(mdText, 'ErrinILS-User-Guide-v1.3.1.md', 'text/markdown;charset=utf-8');
         })
         .catch(function () {
-          // Fallback direct link
           window.location.href = guidePath;
         });
     });
@@ -251,7 +281,7 @@ function initGuideActions() {
 }
 
 /* -------------------------------------------------------------------
-   5. Sticky Scroll-Spy for Table of Contents
+   6. Sticky Scroll-Spy for Table of Contents
    ------------------------------------------------------------------- */
 function initScrollSpy() {
   var chapters = document.querySelectorAll('.guide-chapter');

@@ -7,6 +7,15 @@
   <meta name="description" content="Download ErrinILS v1.3.1 for Windows. Available as an NSIS setup installer, portable ZIP, or standalone single-file binary. Zero dependencies required.">
   <link rel="icon" type="image/png" href="assets/icon.png">
   <link rel="stylesheet" href="styles.css">
+  <script>
+    (function() {
+      var theme = localStorage.getItem('errin_theme');
+      if (!theme) {
+        theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
 </head>
 <body>
 
@@ -24,11 +33,12 @@
       <nav class="main-nav">
         <a href="index.html" class="nav-link">Home</a>
         <a href="about.html" class="nav-link">About</a>
-        <a href="download.html" class="nav-link active">Download &amp; Install</a>
+        <a href="download.html" class="nav-link active">Download</a>
         <a href="guide.html" class="nav-link">User Guide</a>
       </nav>
 
       <div class="nav-actions">
+        <button class="theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme"></button>
         <a href="https://github.com/RZSY/ErrinILS/releases/tag/v1.3.1" class="btn btn-secondary btn-sm" target="_blank" rel="noopener">GitHub Releases ↗</a>
       </div>
     </div>
@@ -201,7 +211,6 @@
 
       <div class="callout callout-note">
         <div class="callout-header">
-          <span>ℹ️</span>
           <span>A Note on Windows 7 and .NET Framework</span>
         </div>
         <p>
@@ -243,7 +252,6 @@
 
       <div class="callout callout-warning">
         <div class="callout-header">
-          <span>⚠️</span>
           <span>Windows SmartScreen Note ("Windows protected your PC")</span>
         </div>
         <p>
@@ -343,8 +351,8 @@
 
       <div class="footer-bottom">
         <div>&copy; 2026 ErrinILS Project. Released under the MIT License.</div>
-        <div style="font-family: var(--font-mono); font-size: 0.78rem;">
-          Designed with sharp corners • Pure C# Standalone
+        <div style="font-size: 0.82rem; color: var(--text-dim);">
+          Pure C# Standalone Application • For Malaysian &amp; Global School Libraries
         </div>
       </div>
     </div>

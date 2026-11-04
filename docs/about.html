@@ -7,6 +7,15 @@
   <meta name="description" content="In-depth overview of ErrinILS architecture: zero-dependency C# design, 5-source copy cataloguing, MARC21/Z39.50 protocols, kiosk mode, and single JSON persistence.">
   <link rel="icon" type="image/png" href="assets/icon.png">
   <link rel="stylesheet" href="styles.css">
+  <script>
+    (function() {
+      var theme = localStorage.getItem('errin_theme');
+      if (!theme) {
+        theme = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
 </head>
 <body>
 
@@ -24,11 +33,12 @@
       <nav class="main-nav">
         <a href="index.html" class="nav-link">Home</a>
         <a href="about.html" class="nav-link active">About</a>
-        <a href="download.html" class="nav-link">Download &amp; Install</a>
+        <a href="download.html" class="nav-link">Download</a>
         <a href="guide.html" class="nav-link">User Guide</a>
       </nav>
 
       <div class="nav-actions">
+        <button class="theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme"></button>
         <a href="download.html" class="btn btn-primary btn-sm">Download v1.3.1</a>
       </div>
     </div>
@@ -58,7 +68,9 @@
 
       <div class="grid-3">
         <div class="card">
-          <div class="card-icon">📦</div>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
+          </div>
           <h3 class="card-title">Pure Base .NET 4.0</h3>
           <p class="card-text">
             Written entirely in pure C# using only the base assemblies shipped with Windows (<code>mscorlib</code>, <code>System</code>, <code>System.Drawing</code>, <code>System.Windows.Forms</code>). No NuGet packages, no third-party DLLs, and no registry pollution.
@@ -66,15 +78,19 @@
         </div>
 
         <div class="card">
-          <div class="card-icon">⚡</div>
-          <h3 class="card-title">Runs on Legacy School Hardware</h3>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+          </div>
+          <h3 class="card-title">Runs on Legacy Hardware</h3>
           <p class="card-text">
-            School computers are often 8 to 15 years old with limited RAM. ErrinILS runs comfortably on 1 GB RAM and consumes less than 15 MB of memory under heavy circulation load.
+            School computers are often 8 to 15 years old with limited RAM. ErrinILS runs comfortably on 1 GB RAM and consumes less than 15 MB of memory under active circulation load.
           </p>
         </div>
 
         <div class="card">
-          <div class="card-icon">💾</div>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+          </div>
           <h3 class="card-title">Single JSON Database</h3>
           <p class="card-text">
             All bibliographic records, patrons, loans, and settings reside in a single human-readable file (<code>errin-data.json</code>). Backing up or migrating your entire school library takes two seconds: copy one file or use built-in ZIP export.
@@ -203,7 +219,6 @@
     <section class="section">
       <div class="callout callout-tip">
         <div class="callout-header">
-          <span>🖥️</span>
           <span>Native Per-Monitor V2 High-DPI Sharpness</span>
         </div>
         <p>
@@ -465,8 +480,8 @@
 
       <div class="footer-bottom">
         <div>&copy; 2026 ErrinILS Project. Released under the MIT License.</div>
-        <div style="font-family: var(--font-mono); font-size: 0.78rem;">
-          Designed with sharp corners • Pure C# Standalone
+        <div style="font-size: 0.82rem; color: var(--text-dim);">
+          Pure C# Standalone Application • For Malaysian &amp; Global School Libraries
         </div>
       </div>
     </div>
