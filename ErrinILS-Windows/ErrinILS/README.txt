@@ -52,6 +52,9 @@
 
   5. Next time, open ErrinILS from the Start menu or the desktop icon.
 
+  Default administrator password: admin123
+  (Protects Settings, deleting records, and restoring backups. Change it in Settings).
+
   Your library data is saved automatically on this computer, in the
   folder  %APPDATA%\Errin . Use the Backup page now and then to keep
   a copy on a USB drive.

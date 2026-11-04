@@ -302,7 +302,7 @@ To prevent accidental changes or student tampering, the administrator password i
 4. Exiting from the **Simplified Kiosk View** back to the administrative desk.
 
 > [!IMPORTANT]
-> ErrinILS ships with a default administrator password (`admin` or `errin`). Change this password immediately upon your first launch in **Settings → Admin Password**.
+> ErrinILS ships with a default administrator password (`admin123`). Change this password immediately upon your first launch in **Settings → Admin Password**.
 
 ### 4.4 Using a barcode scanner
 1. Connect your USB barcode scanner to any USB port.
@@ -883,7 +883,7 @@ If staff members forget the administrator password:
 1. Close ErrinILS.
 2. Press `Win + R`, paste `%APPDATA%\Errin`, and press Enter.
 3. Rename or delete `errin-config.json`.
-4. Launch ErrinILS. The administrator password resets to the built-in factory default (`admin` or `errin`).
+4. Launch ErrinILS. The administrator password resets to the built-in factory default (`admin123`).
 5. Open **Settings** and set a new, secure administrator password immediately.
 *(Note: Deleting `errin-config.json` resets Z39.50 and web server pairing tokens, but never deletes your library catalogue or student records).*
 

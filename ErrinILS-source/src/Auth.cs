@@ -7,7 +7,7 @@ namespace Errin
 {
     public static class Auth
     {
-        public const string DefaultHash = "9da843215ed05fc7bc8dc1ee501733f0dbd751c7d539118d2b7a867335a5b671";   // SHA-256("errinils:" + default password)
+        public const string DefaultHash = "f16959ae2d027f8562807b5d1dbbef305556f3fd4caaac6ac82679b33397ad72";   // SHA-256("errinils:admin123")
         public const int Iterations = 10000;
 
         static string Sha(string pw)

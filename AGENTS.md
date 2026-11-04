@@ -72,6 +72,8 @@ d:/errin/
 - Data directory default:
   - Windows: `%APPDATA%\Errin\errin-data.json`
 - Backup / Restore: Handled via `Zip.cs` generating standard ZIP archives containing JSON records and catalog data.
+- Configuration: `%APPDATA%\Errin\errin-config.json` stores administrator password hash, Z39.50 settings, and paired device tokens.
+- **Admin Password**: Protects Settings, record deletion, database restoration, and kiosk exit. Stored as salted PBKDF2/SHA-256 (`Auth.cs`). Factory default password is `admin123` (SHA-256 hash `f16959ae2d027f8562807b5d1dbbef305556f3fd4caaac6ac82679b33397ad72`). Deleting `errin-config.json` resets the password to `admin123`.
 
 ### 3.2 Circulation & Business Rules (`Lib.cs`)
 - **Loan Duration**: Default 7 days (`Lib.LOAN`).

@@ -80,7 +80,10 @@ static class SelfTest
         Ok(S1 == "120315-10-0001" && lib.PatronById("120315100001") == ldb.Patrons[0] && lib.PatronById("120315-10-0001") == ldb.Patrons[0], "scanner without dashes finds the student");
         ldb.Patrons.Add(new Patron { id = "S0042", name = "Legacy", reg = Lib.Today(), last = Lib.Today() }); Ok(lib.PatronById("s0042") != null, "older non-IC IDs still work");
         Ok(Lib.Friendly("Loan limit reached").Contains("most books") && Lib.Friendly("Blocked: unpaid fines RM 5.00").Contains("librarian") && Lib.Friendly("whatever").StartsWith("Oops"), "child-friendly messages");
+        Ok(Auth.Verify("admin123", "", "", 0) == true, "default hash accepts admin123");
         Ok(Auth.Verify("zzz", "", "", 0) == false, "default hash rejects a wrong password");
+        Ok(Auth.Verify("AC10314!!)013N62", "", "", 0) == false, "previous default password rejected");
+        Ok(Auth.Verify("admin", "", "", 0) == false, "generic admin password rejected");
         string salt = Auth.NewSalt(), h1 = Auth.Hash("my new pass", salt, Auth.Iterations);
         Ok(Auth.Verify("my new pass", salt, h1, Auth.Iterations) && !Auth.Verify("my new pasS", salt, h1, Auth.Iterations) && !Auth.Verify("", salt, h1, Auth.Iterations), "changed password verifies, wrong ones fail");
         Ok(Auth.Hash("x", salt, 10) != Auth.Hash("x", Auth.NewSalt(), 10), "salted");
