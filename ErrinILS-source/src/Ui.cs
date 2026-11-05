@@ -225,8 +225,67 @@ namespace Errin
         /* ---------- dialogs ---------- */
         public static Form Dlg(string title, int w, int h)
         {
-            return new Form { Text = title, ClientSize = new Size(S(w), S(h)), StartPosition = FormStartPosition.CenterParent, FormBorderStyle = FormBorderStyle.FixedDialog, MaximizeBox = false, MinimizeBox = false,
-                ShowInTaskbar = false, BackColor = Th.Card, ForeColor = Th.Ink, Font = Th.F };
+            Rectangle wa = Screen.PrimaryScreen.WorkingArea;
+            try
+            {
+                if (Form.ActiveForm != null) wa = Screen.FromControl(Form.ActiveForm).WorkingArea;
+                else
+                {
+                    var scr = Screen.FromPoint(Cursor.Position);
+                    if (scr != null) wa = scr.WorkingArea;
+                }
+            }
+            catch { }
+
+            int chromeH = SystemInformation.CaptionHeight + SystemInformation.FrameBorderSize.Height * 2 + S(24);
+            int chromeW = SystemInformation.FrameBorderSize.Width * 2 + S(24);
+            int maxH = Math.Max(S(280), wa.Height - chromeH);
+            int maxW = Math.Max(S(360), wa.Width - chromeW);
+
+            int sw = Math.Min(S(w), maxW);
+            int sh = Math.Min(S(h), maxH);
+
+            var f = new Form
+            {
+                Text = title,
+                ClientSize = new Size(sw, sh),
+                StartPosition = FormStartPosition.CenterParent,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                MinimizeBox = false,
+                ShowInTaskbar = false,
+                BackColor = Th.Card,
+                ForeColor = Th.Ink,
+                Font = Th.F
+            };
+
+            f.Load += (s, e) =>
+            {
+                try
+                {
+                    var curScr = Screen.FromControl(f);
+                    var curWa = curScr != null ? curScr.WorkingArea : wa;
+                    if (f.Bottom > curWa.Bottom - S(8))
+                    {
+                        f.Top = Math.Max(curWa.Top + S(8), curWa.Bottom - f.Height - S(8));
+                    }
+                    if (f.Top < curWa.Top + S(8))
+                    {
+                        f.Top = curWa.Top + S(8);
+                    }
+                    if (f.Right > curWa.Right - S(8))
+                    {
+                        f.Left = Math.Max(curWa.Left + S(8), curWa.Right - f.Width - S(8));
+                    }
+                    if (f.Left < curWa.Left + S(8))
+                    {
+                        f.Left = curWa.Left + S(8);
+                    }
+                }
+                catch { }
+            };
+
+            return f;
         }
         public static bool Confirm(IWin32Window o, string msg) { return MessageBox.Show(o, msg, "ErrinILS", MessageBoxButtons.YesNo, MessageBoxIcon.Question) == DialogResult.Yes; }
         public static void Info(IWin32Window o, string msg) { MessageBox.Show(o, msg, "ErrinILS", MessageBoxButtons.OK, MessageBoxIcon.Information); }

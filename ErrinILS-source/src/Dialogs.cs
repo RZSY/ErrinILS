@@ -189,7 +189,7 @@ namespace Errin
         void ItemForm(Item existing)
         {
             var src = existing ?? new Item { barcode = lib.NextBarcode(), ctl = lib.NextCtl(), acq = lib.NextAcq() };
-            using (var d = Ui.Dlg((existing != null ? "Edit" : "New") + " bibliographic record", 840, 720))
+            using (var d = Ui.Dlg((existing != null ? "Edit" : "New") + " bibliographic record", 840, 560))
             {
                 var boxes = new Dictionary<string, TextBox>();
                 var root = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true, Padding = Ui.S(new Padding(20, 14, 10, 10)), BackColor = Th.Card };
@@ -241,9 +241,29 @@ namespace Errin
                     foreach (var k in sc.keys) { var tb = Ui.Txt(220); tb.Text = src.Get(k); boxes[k] = tb; fl.Controls.Add(Ui.Field(IF.First(x => x[0] == k)[1], tb, 236)); }
                     root.Controls.Add(fl);
                 }
-                var save = Ui.Btn("Save", 0); var cancel = Ui.Btn("Cancel", 1); var br = Ui.Flow(false); br.Margin = Ui.S(new Padding(0, 14, 0, 0)); br.Controls.Add(save); br.Controls.Add(cancel);
+                root.Controls.Add(new Panel { Height = Ui.S(24), Width = Ui.S(10), BackColor = Color.Transparent });
+
+                var bottomBar = new Panel
+                {
+                    Dock = DockStyle.Bottom,
+                    Height = Ui.S(60),
+                    BackColor = Th.Bg,
+                    Padding = Ui.S(new Padding(20, 10, 20, 10))
+                };
+                bottomBar.Paint += (s, e) =>
+                {
+                    using (var pen = new Pen(Th.Border, 1))
+                    {
+                        e.Graphics.DrawLine(pen, 0, 0, bottomBar.Width, 0);
+                    }
+                };
+
+                var save = Ui.Btn("Save", 0); var cancel = Ui.Btn("Cancel", 1);
+                var br = Ui.Flow(false); br.Dock = DockStyle.Fill;
+                br.Controls.Add(save); br.Controls.Add(cancel);
                 if (existing != null) { var histBtn = Ui.Btn("Circulation history", 1, (s, e) => ItemHistoryDialog(existing)); br.Controls.Add(histBtn); }
-                root.Controls.Add(br);
+                bottomBar.Controls.Add(br);
+
                 cancel.Click += (s, e) => d.Close();
                 save.Click += (s, e) =>
                 {
@@ -255,7 +275,10 @@ namespace Errin
                     var tgt = existing ?? new Item { id = Lib.Uid() }; foreach (var kv in o) tgt.Set(kv.Key, kv.Value); if (existing == null) db.Items.Add(tgt);
                     d.Close(); Commit("Record saved");
                 };
-                d.Controls.Add(root); if (existing == null) d.Shown += (s, e) => lk.Focus();
+                d.Controls.Add(root);
+                d.Controls.Add(bottomBar);
+                root.BringToFront();
+                if (existing == null) d.Shown += (s, e) => lk.Focus();
                 d.ShowDialog(this);
             }
         }
@@ -318,7 +341,7 @@ namespace Errin
         void PatForm(Patron edit = null)
         {
             bool isEdit = edit != null;
-            using (var d = Ui.Dlg(isEdit ? "Edit student \u00B7 " + edit.name : "Register student (Pendaftaran Murid)", 860, 720))
+            using (var d = Ui.Dlg(isEdit ? "Edit student \u00B7 " + edit.name : "Register student (Pendaftaran Murid)", 860, 560))
             {
                 var root = new FlowLayoutPanel
                 {
@@ -440,6 +463,8 @@ namespace Errin
                     }
                     root.Controls.Add(secFlow);
                 }
+                // Spacer so the last fields under Alamat have comfortable scrolling margin above bottomBar
+                root.Controls.Add(new Panel { Height = Ui.S(24), Width = Ui.S(10), BackColor = Color.Transparent });
 
                 // IC leave auto-fill (DOB, Gender, ID Murid)
                 if (ctrls.ContainsKey("no_pengenalan"))
@@ -486,9 +511,9 @@ namespace Errin
                 var bottomBar = new Panel
                 {
                     Dock = DockStyle.Bottom,
-                    Height = Ui.S(62),
+                    Height = Ui.S(60),
                     BackColor = Th.Bg,
-                    Padding = Ui.S(new Padding(24, 12, 24, 12))
+                    Padding = Ui.S(new Padding(24, 10, 24, 10))
                 };
                 bottomBar.Paint += (s, e) =>
                 {
@@ -499,6 +524,7 @@ namespace Errin
                 };
 
                 var btnRow = Ui.Flow(false);
+                btnRow.Dock = DockStyle.Fill;
                 var ok = Ui.Btn(isEdit ? "Save changes" : "Register student", 0);
                 var ca = Ui.Btn("Cancel", 1); ca.Click += (s, e) => d.Close();
                 btnRow.Controls.Add(ok);
@@ -913,9 +939,10 @@ namespace Errin
                 us.Width = Ui.S(150); pw.Width = Ui.S(150); put(h, "Host", 10); put(p, "Port", 210); put(dbn, "Database", 310); put(us, "User name (optional)", 456); put(pw, "Password (optional)", 634);
                 var sv = Ui.Btn("Save this library", 1); sv.Location = new Point(Ui.S(10), Ui.S(88)); sv.MinimumSize = new Size(0, Ui.S(28)); var rm = Ui.Btn("Remove saved library", 1); rm.Location = new Point(Ui.S(175), Ui.S(88)); rm.MinimumSize = new Size(0, Ui.S(28)); gb.Controls.Add(sv); gb.Controls.Add(rm);
                 var st = new Label { UseMnemonic = false, Text = "", ForeColor = Th.Mut, AutoSize = false, Size = new Size(Ui.S(835), Ui.S(22)), Location = new Point(Ui.S(20), Ui.S(336)) };
-                var res = new List<Item>(); var grid = Ui.Grid(); grid.Location = new Point(Ui.S(20), Ui.S(364)); grid.Size = new Size(Ui.S(835), Ui.S(218)); grid.Dock = DockStyle.None;
+                int btnY = d.ClientSize.Height - Ui.S(48);
+                var res = new List<Item>(); var grid = Ui.Grid(); grid.Location = new Point(Ui.S(20), Ui.S(364)); grid.Size = new Size(Ui.S(835), Math.Max(Ui.S(120), btnY - Ui.S(376))); grid.Dock = DockStyle.None;
                 Ui.Fill(grid, new[] { "Title", "Author", "Publisher", "Year", "ISBN" }, new List<string[]>(), null, "No results yet");
-                var add = Ui.Btn("Add selected to catalogue", 0); add.Location = new Point(Ui.S(20), Ui.S(594)); var close = Ui.Btn("Close", 1); close.Location = new Point(Ui.S(280), Ui.S(594)); close.Click += (s, e) => d.Close();
+                var add = Ui.Btn("Add selected to catalogue", 0); add.Location = new Point(Ui.S(20), btnY); var close = Ui.Btn("Close", 1); close.Location = new Point(Ui.S(280), btnY); close.Click += (s, e) => d.Close();
                 Action reload = () => { cbT.Items.Clear(); foreach (var t in all()) cbT.Items.Add(t.n); cbT.Items.Add("Another library\u2026"); };
                 Action pick = () =>
                 {
@@ -1117,15 +1144,16 @@ namespace Errin
                     Font = Th.FB, ForeColor = Th.Yel, AutoSize = false, Size = new Size(Ui.S(815), Ui.S(22)), Location = new Point(Ui.S(20), Ui.S(232)) };
                 d.Controls.Add(stLbl);
 
+                int botY = d.ClientSize.Height - Ui.S(54);
                 var grid = Ui.Grid();
                 grid.Location = new Point(Ui.S(20), Ui.S(258));
-                grid.Size = new Size(Ui.S(815), Ui.S(335));
+                grid.Size = new Size(Ui.S(815), Math.Max(Ui.S(140), botY - Ui.S(270)));
                 grid.Dock = DockStyle.None;
                 Ui.Fill(grid, new[] { "ISBN", "Title", "Author", "Publisher", "Year", "Call no.", "Status / Source" }, new List<string[]>(), null, "No ISBNs searched yet");
                 d.Controls.Add(grid);
 
                 var botFlow = Ui.Flow(false);
-                botFlow.Location = new Point(Ui.S(20), Ui.S(605));
+                botFlow.Location = new Point(Ui.S(20), botY);
                 var btnAddAll = Ui.Btn("Add found items to catalog", 0);
                 btnAddAll.Enabled = false;
                 var btnExportCsv = Ui.Btn("Export results (CSV)", 1);
@@ -1331,15 +1359,16 @@ namespace Errin
                 var stLbl = new Label { UseMnemonic = false, Text = "Select an Excel (.xlsx) or CSV file to preview student records.", Font = Th.FB, ForeColor = Th.Yel, AutoSize = false, Size = new Size(Ui.S(800), Ui.S(24)), Location = new Point(Ui.S(20), Ui.S(128)) };
                 d.Controls.Add(stLbl);
 
+                int botY = d.ClientSize.Height - Ui.S(54);
                 var grid = Ui.Grid();
                 grid.Location = new Point(Ui.S(20), Ui.S(156));
-                grid.Size = new Size(Ui.S(800), Ui.S(410));
+                grid.Size = new Size(Ui.S(800), Math.Max(Ui.S(140), botY - Ui.S(168)));
                 grid.Dock = DockStyle.None;
                 Ui.Fill(grid, new[] { "Action / Status", "IC Number", "Full Name", "Class / Grade", "Contact" }, new List<string[]>(), null, "No file loaded yet");
                 d.Controls.Add(grid);
 
                 var botRow = Ui.Flow(false);
-                botRow.Location = new Point(Ui.S(20), Ui.S(578));
+                botRow.Location = new Point(Ui.S(20), botY);
                 var btnImport = Ui.Btn("Import / Update students", 0);
                 btnImport.Enabled = false;
                 var btnCancel = Ui.Btn("Cancel", 1, (s, e) => d.Close());
