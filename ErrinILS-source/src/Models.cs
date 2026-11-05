@@ -130,7 +130,7 @@ namespace Errin
             new PatronFieldDef("no_pengenalan", "No. Pengenalan", true, "Maklumat Asas & Pengenalan"),
             new PatronFieldDef("dob", "Tarikh Lahir", false, "Maklumat Asas & Pengenalan"),
             new PatronFieldDef("jantina", "Jantina", true, "Maklumat Asas & Pengenalan", new[] { "Lelaki", "Perempuan" }),
-            new PatronFieldDef("status_pengajian", "Status Pengajian", false, "Maklumat Asas & Pengenalan", new[] { "Aktif", "Bersekolah", "Mengulang", "Pindah Sekolah", "Tamat", "Berhenti" }),
+            new PatronFieldDef("status_pengajian", "Status Pengajian", false, "Maklumat Asas & Pengenalan", new[] { "Aktif", "Bersekolah", "Mengulang", "Pindah Sekolah", "Tamat", "Berhenti", "Deactivated", "Tidak Aktif" }),
 
             // Maklumat Persekolahan & Kelas
             new PatronFieldDef("tarikh_masuk_sekolah", "Tarikh Masuk Sekolah", true, "Maklumat Persekolahan & Kelas"),
@@ -603,6 +603,22 @@ namespace Errin
             }
             catch { }
             return res;
+        }
+
+        public string Optimize()
+        {
+            if (SqliteNative.IsAvailable && File.Exists(DataFile))
+            {
+                try
+                {
+                    return SqliteStore.Optimize(DataFile);
+                }
+                catch (Exception ex)
+                {
+                    return "Database optimization failed: " + ex.Message;
+                }
+            }
+            return "SQLite is not active or database file does not exist.";
         }
     }
 }

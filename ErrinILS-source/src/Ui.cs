@@ -413,4 +413,211 @@ namespace Errin
             }
         }
     }
+
+    public class PagerBar : FlowLayoutPanel
+    {
+        public readonly Button BtnPrev;
+        public readonly NumericUpDown NumPage;
+        public readonly Label LblOf;
+        public readonly Button BtnNext;
+        public readonly Label LblPer;
+        public readonly ComboBox CbSize;
+        public readonly Label LblStatus;
+
+        private bool _updating;
+        public int CurrentPage = 1;
+        public int PageSize = 100; // 50, 100, 250, 0 = Show All
+        public int TotalItems = 0;
+
+        public event EventHandler PageChanged;
+
+        public int TotalPages
+        {
+            get
+            {
+                if (PageSize <= 0 || TotalItems <= 0) return 1;
+                return (int)Math.Ceiling((double)TotalItems / PageSize);
+            }
+        }
+
+        public PagerBar()
+        {
+            FlowDirection = FlowDirection.LeftToRight;
+            WrapContents = true;
+            AutoSize = true;
+            AutoSizeMode = AutoSizeMode.GrowAndShrink;
+            BackColor = Color.Transparent;
+            Margin = Ui.S(new Padding(0, 4, 0, 4));
+
+            BtnPrev = Ui.Btn("◄ Previous", 1);
+            BtnPrev.Padding = Ui.S(new Padding(8, 2, 8, 2));
+            BtnPrev.MinimumSize = new Size(0, Ui.S(28));
+            BtnPrev.Click += (s, e) =>
+            {
+                if (CurrentPage > 1)
+                {
+                    CurrentPage--;
+                    OnPageChanged();
+                }
+            };
+
+            NumPage = new NumericUpDown
+            {
+                Minimum = 1,
+                Maximum = 1,
+                Value = 1,
+                Width = Ui.S(60),
+                BackColor = Th.Bg,
+                ForeColor = Th.Ink,
+                Font = Th.F,
+                BorderStyle = BorderStyle.FixedSingle,
+                Margin = Ui.S(new Padding(4, 3, 2, 0))
+            };
+            NumPage.ValueChanged += (s, e) =>
+            {
+                if (!_updating && (int)NumPage.Value != CurrentPage)
+                {
+                    CurrentPage = (int)NumPage.Value;
+                    OnPageChanged();
+                }
+            };
+
+            LblOf = new Label
+            {
+                UseMnemonic = false,
+                Text = "of 1",
+                AutoSize = true,
+                ForeColor = Th.Mut,
+                Font = Th.F,
+                Margin = Ui.S(new Padding(2, 6, 8, 0))
+            };
+
+            BtnNext = Ui.Btn("Next ►", 1);
+            BtnNext.Padding = Ui.S(new Padding(8, 2, 8, 2));
+            BtnNext.MinimumSize = new Size(0, Ui.S(28));
+            BtnNext.Margin = Ui.S(new Padding(0, 0, 14, 0));
+            BtnNext.Click += (s, e) =>
+            {
+                if (CurrentPage < TotalPages)
+                {
+                    CurrentPage++;
+                    OnPageChanged();
+                }
+            };
+
+            LblPer = new Label
+            {
+                UseMnemonic = false,
+                Text = "Per page:",
+                AutoSize = true,
+                ForeColor = Th.Mut,
+                Font = Th.F,
+                Margin = Ui.S(new Padding(4, 6, 4, 0))
+            };
+
+            CbSize = new ComboBox
+            {
+                Width = Ui.S(105),
+                DropDownStyle = ComboBoxStyle.DropDownList,
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Th.Bg,
+                ForeColor = Th.Ink,
+                Font = Th.F,
+                Margin = Ui.S(new Padding(0, 2, 14, 0))
+            };
+            CbSize.Items.AddRange(new object[] { "50", "100", "250", "Show All" });
+            CbSize.SelectedIndex = 1; // Default 100
+            CbSize.SelectedIndexChanged += (s, e) =>
+            {
+                if (!_updating)
+                {
+                    int sz = 100;
+                    if (CbSize.SelectedIndex == 0) sz = 50;
+                    else if (CbSize.SelectedIndex == 1) sz = 100;
+                    else if (CbSize.SelectedIndex == 2) sz = 250;
+                    else if (CbSize.SelectedIndex == 3) sz = 0; // Show all
+                    PageSize = sz;
+                    CurrentPage = 1;
+                    OnPageChanged();
+                }
+            };
+
+            LblStatus = new Label
+            {
+                UseMnemonic = false,
+                Text = "",
+                AutoSize = true,
+                ForeColor = Th.Ink,
+                Font = Th.FB,
+                Margin = Ui.S(new Padding(8, 6, 0, 0))
+            };
+
+            Controls.Add(BtnPrev);
+            Controls.Add(NumPage);
+            Controls.Add(LblOf);
+            Controls.Add(BtnNext);
+            Controls.Add(LblPer);
+            Controls.Add(CbSize);
+            Controls.Add(LblStatus);
+        }
+
+        private void OnPageChanged()
+        {
+            if (_updating) return;
+            if (PageChanged != null) PageChanged(this, EventArgs.Empty);
+        }
+
+        public void ResetPage()
+        {
+            CurrentPage = 1;
+        }
+
+        public void Update(int totalItems)
+        {
+            TotalItems = totalItems;
+            _updating = true;
+            try
+            {
+                int maxPages = TotalPages;
+                if (CurrentPage > maxPages) CurrentPage = maxPages;
+                if (CurrentPage < 1) CurrentPage = 1;
+
+                NumPage.Maximum = Math.Max(1, maxPages);
+                NumPage.Value = CurrentPage;
+                NumPage.Enabled = maxPages > 1;
+                LblOf.Text = "of " + maxPages;
+
+                BtnPrev.Enabled = CurrentPage > 1;
+                BtnNext.Enabled = CurrentPage < maxPages;
+
+                if (TotalItems <= 0)
+                {
+                    LblStatus.Text = "No records";
+                }
+                else if (PageSize <= 0)
+                {
+                    LblStatus.Text = string.Format("Showing all {0:N0} records", TotalItems);
+                }
+                else
+                {
+                    int start = (CurrentPage - 1) * PageSize + 1;
+                    int end = Math.Min(TotalItems, CurrentPage * PageSize);
+                    LblStatus.Text = string.Format("Showing {0:N0}\u2013{1:N0} of {2:N0}", start, end, TotalItems);
+                }
+            }
+            finally
+            {
+                _updating = false;
+            }
+        }
+
+        public IEnumerable<T> GetSlice<T>(IList<T> source)
+        {
+            if (source == null || source.Count == 0) return Enumerable.Empty<T>();
+            if (PageSize <= 0) return source;
+            int skip = (CurrentPage - 1) * PageSize;
+            if (skip < 0) skip = 0;
+            return source.Skip(skip).Take(PageSize);
+        }
+    }
 }

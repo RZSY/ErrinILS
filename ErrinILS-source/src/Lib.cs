@@ -9,7 +9,7 @@ namespace Errin
 {
     public class Lib
     {
-        public const int LOAN = 7, RET_YEARS = 5;
+        public const int LOAN = 7, RET_YEARS = 6;
         public Db D;
         public Lib(Db d) { D = d; }
 
@@ -31,6 +31,23 @@ namespace Errin
             if (p != null) return p;
             string n = NormIc(id);                                   // "120315100001" finds "120315-10-0001"
             return n == null ? null : D.Patrons.FirstOrDefault(x => x.id == n || NormIc(x.id) == n || NormIc(x.no_pengenalan) == n);
+        }
+        public bool IsActive(Patron p)
+        {
+            if (p == null) return false;
+            string st = (p.status_pengajian ?? "").Trim();
+            if (string.Equals(st, "Deactivated", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(st, "Tidak Aktif", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(st, "Inactive", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(st, "Tamat", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(st, "Berhenti", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(st, "Pindah Sekolah", StringComparison.OrdinalIgnoreCase))
+                return false;
+            return true;
+        }
+        public bool IsActive(string pid)
+        {
+            return IsActive(PatronById(pid));
         }
         /// <summary>Malaysian IC / MyKid number: 12 digits shown as YYMMDD-PB-###G. Returns null if it is not 12 digits.</summary>
         public static string NormIc(string s)
@@ -95,6 +112,7 @@ namespace Errin
         {
             msg = null; var p = PatronById(pid); var i = ItemByBarcode(bc);
             if (p == null) return "Student not found"; if (i == null) return "Item not found";
+            if (!IsActive(p)) return "Blocked: student account is deactivated or inactive";
             if (IsWeeded(i)) return "Item has been weeded and withdrawn from circulation";
             if (OpenLoan(i.id) != null) return "Item is already checked out";
             double un = Unpaid(p.id); if (un >= D.Set.block) return "Blocked: unpaid fines " + Money(un);
@@ -134,8 +152,15 @@ namespace Errin
         {
             msg = null; var p = PatronById(pid); var i = ItemByBarcode(bc);
             if (p == null || i == null) return "Student or item not found";
+            if (!IsActive(p)) return "Blocked: student account is deactivated or inactive";
             if (IsWeeded(i)) return "Cannot place hold on a weeded item";
             if (OpenLoan(i.id) == null) return "Item is available. Check it out instead";
+            double un = Unpaid(p.id);
+            if (D.Set != null && un >= D.Set.block) return "Blocked: unpaid fines " + Money(un);
+            if (D.Loans.Any(l => l.pid == p.id && Overdue(l))) return "Blocked: student has overdue items";
+            int activeHolds = D.Holds.Count(h => h.pid == p.id && h.st != "done");
+            int maxHolds = (D.Set != null && D.Set.maxLoans > 0) ? D.Set.maxLoans : 3;
+            if (activeHolds >= maxHolds) return "Hold limit reached (maximum " + maxHolds + " reservations)";
             if (D.Holds.Any(h => h.iid == i.id && h.pid == p.id && h.st != "done")) return "Hold already exists";
             D.Holds.Add(new Hold { id = Uid(), iid = i.id, pid = p.id, date = Today(), st = "waiting" });
             msg = "Hold placed"; return null;
@@ -215,6 +240,7 @@ namespace Errin
                         fines = D.Fines.Where(f => f.pid == pid).ToList()
                     };
                     foreach (var k in Patron.Keys) ap.Set(k, p.Get(k));
+                    ap.status_pengajian = "Deactivated";
                     D.ArchivedPatrons.RemoveAll(x => x.id == pid);
                     D.ArchivedPatrons.Add(ap);
                 }
@@ -235,6 +261,7 @@ namespace Errin
             if (PatronById(ap.id) != null) return false; // already active
             var p = new Patron { id = ap.id, name = ap.name, cls = ap.cls, contact = ap.contact, reg = ap.reg, last = Today() };
             foreach (var k in Patron.Keys) p.Set(k, ap.Get(k));
+            p.status_pengajian = "Aktif";
             p.last = Today();
             D.Patrons.Add(p);
             if (ap.loans != null) { foreach (var l in ap.loans) D.Loans.Add(l); }

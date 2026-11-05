@@ -99,7 +99,7 @@ namespace Errin
             toast = new Label { UseMnemonic = false, AutoSize = true, BackColor = Th.Yel, ForeColor = Th.Dark, Font = new Font("Segoe UI", 10.5f, FontStyle.Bold), Padding = Ui.S(new Padding(16, 10, 16, 10)), Visible = false };
             Controls.Add(toast); toast.BringToFront();
             toastT = new Timer { Interval = 3300 }; toastT.Tick += (s, e) => { toastT.Stop(); toast.Visible = false; };
-            debT = new Timer { Interval = 150 }; debT.Tick += (s, e) => { debT.Stop(); if (view == "cat") FilterCat(); else if (view == "pat") FilterPat(); };
+            debT = new Timer { Interval = 150 }; debT.Tick += (s, e) => { debT.Stop(); if (view == "cat") { if (catPager != null) catPager.ResetPage(); FilterCat(); } else if (view == "pat") { if (patPager != null) patPager.ResetPage(); FilterPat(); } };
         }
 
         /* ---------- state helpers ---------- */
@@ -124,6 +124,8 @@ namespace Errin
         }
         Control setPageCached;
         Action refreshSetPage;
+        PagerBar catPager;
+        PagerBar patPager;
 
         void Render()
         {
@@ -180,10 +182,30 @@ namespace Errin
         static DataGridView MakeGrid(string[] h, List<string[]> rows, List<object> tags, string empty) { var g = Ui.Grid(); Ui.Fill(g, h, rows, tags, empty); return g; }
         static Control WithButtons(Control grid, params Button[] btns)
         {
-            var t = new TableLayoutPanel { ColumnCount = 1, RowCount = 2, BackColor = Color.Transparent, Margin = new Padding(0) };
-            t.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); t.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); t.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            grid.Dock = DockStyle.Fill; t.Controls.Add(grid, 0, 0);
-            var f = Ui.Flow(true); f.Padding = Ui.S(new Padding(0, 8, 0, 0)); f.Dock = DockStyle.Fill; foreach (var b in btns) f.Controls.Add(b); t.Controls.Add(f, 0, 1); return t;
+            return WithButtonsAndPager(grid, null, btns);
+        }
+        static Control WithButtonsAndPager(Control grid, Control pager, params Button[] btns)
+        {
+            var t = new TableLayoutPanel { ColumnCount = 1, RowCount = 3, BackColor = Color.Transparent, Margin = new Padding(0) };
+            t.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            t.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+            t.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            t.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            grid.Dock = DockStyle.Fill;
+            t.Controls.Add(grid, 0, 0);
+
+            if (pager != null)
+            {
+                pager.Dock = DockStyle.Top;
+                t.Controls.Add(pager, 0, 1);
+            }
+
+            var f = Ui.Flow(true);
+            f.Padding = Ui.S(new Padding(0, 6, 0, 0));
+            f.Dock = DockStyle.Fill;
+            foreach (var b in btns) f.Controls.Add(b);
+            t.Controls.Add(f, 0, 2);
+            return t;
         }
         static Control Vbox(params Control[] c)
         {
@@ -263,18 +285,18 @@ namespace Errin
             var q = Ui.Txt(200); q.Text = catQ; q.Margin = Ui.S(new Padding(0, 0, 8, 0));
             q.TextChanged += (s, e) => { catQ = q.Text; debT.Stop(); debT.Start(); };
             q.KeyDown += (s, e) => {
-                if (e.KeyCode == Keys.Enter) { e.SuppressKeyPress = true; debT.Stop(); FilterCat(); }
+                if (e.KeyCode == Keys.Enter) { e.SuppressKeyPress = true; debT.Stop(); if (catPager != null) catPager.ResetPage(); FilterCat(); }
                 else if (e.KeyCode == Keys.Escape) { e.SuppressKeyPress = true; q.Text = ""; }
             };
 
             var qSubj = Ui.Txt(180); qSubj.Text = catSubj; qSubj.Margin = Ui.S(new Padding(0, 0, 8, 0));
             qSubj.TextChanged += (s, e) => { catSubj = qSubj.Text; debT.Stop(); debT.Start(); };
             qSubj.KeyDown += (s, e) => {
-                if (e.KeyCode == Keys.Enter) { e.SuppressKeyPress = true; debT.Stop(); FilterCat(); }
+                if (e.KeyCode == Keys.Enter) { e.SuppressKeyPress = true; debT.Stop(); if (catPager != null) catPager.ResetPage(); FilterCat(); }
                 else if (e.KeyCode == Keys.Escape) { e.SuppressKeyPress = true; qSubj.Text = ""; }
             };
 
-            var btnClear = Ui.Btn("✕ Clear", 1, (s, e) => { q.Text = ""; qSubj.Text = ""; catQ = ""; catSubj = ""; q.Focus(); });
+            var btnClear = Ui.Btn("✕ Clear", 1, (s, e) => { if (catPager != null) catPager.ResetPage(); q.Text = ""; qSubj.Text = ""; catQ = ""; catSubj = ""; q.Focus(); });
             btnClear.Margin = Ui.S(new Padding(0, 18, 14, 0));
             btnClear.Visible = !string.IsNullOrEmpty(catQ) || !string.IsNullOrEmpty(catSubj);
             Action updateClear = () => { btnClear.Visible = !string.IsNullOrEmpty(q.Text) || !string.IsNullOrEmpty(qSubj.Text); };
@@ -287,13 +309,14 @@ namespace Errin
             else cbFilt.SelectedIndex = 0;
             cbFilt.SelectedIndexChanged += (s, e) =>
             {
+                if (catPager != null) catPager.ResetPage();
                 catFilter = cbFilt.SelectedIndex == 1 ? "weeded" : cbFilt.SelectedIndex == 2 ? "all" : "active";
                 FilterCat();
             };
 
             var cbSort = Ui.Combo(175, "Title (A-Z)", "Title (Z-A)", "Author (A-Z)", "Subject (A-Z)", "Barcode", "Call Number", "Acq. No.", "Newest Added", "Control No.");
             cbSort.SelectedIndex = Math.Min(catSort, cbSort.Items.Count - 1);
-            cbSort.SelectedIndexChanged += (s, e) => { catSort = cbSort.SelectedIndex; FilterCat(); };
+            cbSort.SelectedIndexChanged += (s, e) => { if (catPager != null) catPager.ResetPage(); catSort = cbSort.SelectedIndex; FilterCat(); };
 
             // Row 1: Search & Filter fields
             var filterRow = Ui.Flow(true);
@@ -310,7 +333,6 @@ namespace Errin
             btnRow.Controls.Add(Ui.Btn("Batch ISBN lookup", 1, (s, e) => BatchLookupDialog()));
             btnRow.Controls.Add(Ui.Btn("Import MARC", 1, (s, e) => PickImport()));
             btnRow.Controls.Add(Ui.Btn("Z39.50 search", 1, (s, e) => ZDialog()));
-            btnRow.Controls.Add(Ui.Btn("Export Static OPAC", 1, (s, e) => ExportStaticOpacDialog()));
             btnRow.Controls.Add(Ui.Btn("Print labels", 1, (s, e) => PrintShown()));
             btnRow.Controls.Add(Ui.Btn("Print spine labels", 1, (s, e) => PrintSpines()));
 
@@ -375,6 +397,7 @@ namespace Errin
                 else if (e.ColumnIndex == 5) catSort = 3;
                 else if (e.ColumnIndex == 6) catSort = 5;
                 if (cbSort.SelectedIndex != catSort && catSort < cbSort.Items.Count) cbSort.SelectedIndex = catSort;
+                if (catPager != null) catPager.ResetPage();
                 FilterCat();
             };
             var btns = new[] {
@@ -386,7 +409,9 @@ namespace Errin
                 Ui.Btn("Spine label", 1, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i == null) Toast("Select a record first"); else SpineDialog(i); }),
                 Ui.Btn("Delete", 2, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i == null) Toast("Select a record first"); else DelItem(i); })
             };
-            var body = WithButtons(catGrid, btns);
+            catPager = new PagerBar();
+            catPager.PageChanged += (s, e) => FilterCat();
+            var body = WithButtonsAndPager(catGrid, catPager, btns);
             var card = Ui.Card("Records", body, 1);
             return Ui.Stack(new Control[] { Ui.Heading("Catalog", "Bibliographic records with MARC 21 fields and weeding control"), tool, catNote, card }, 3);
         }
@@ -463,12 +488,13 @@ namespace Errin
             }
             int availCount = activeCount - onLoanCount;
 
-            int take = Math.Min(shown.Count, LIM);
-            var rows = new List<string[]>(take);
-            var tags = new List<object>(take);
-            for (int i = 0; i < take; i++)
+            if (catPager != null) catPager.Update(shown.Count);
+            var paged = (catPager != null ? catPager.GetSlice(shown) : shown.Take(LIM)).ToList();
+            var rows = new List<string[]>(paged.Count);
+            var tags = new List<object>(paged.Count);
+            for (int i = 0; i < paged.Count; i++)
             {
-                var it = shown[i];
+                var it = paged[i];
                 string status;
                 if (!string.IsNullOrEmpty(it.weeded))
                 {
@@ -503,9 +529,8 @@ namespace Errin
                 }
             }
 
-            string countMsg = shown.Count > LIM ? "Showing the first " + LIM + " of " + shown.Count + " record(s)" : shown.Count + " record(s)";
-            countMsg += " \u00B7 " + availCount + " available \u00B7 " + onLoanCount + " on loan";
-            if (catFilter == "active" && weededTotal > 0) countMsg += " \u00B7 " + weededTotal + " weeded item(s) hidden";
+            string countMsg = string.Format("{0:N0} record(s) \u00B7 {1:N0} available \u00B7 {2:N0} on loan", shown.Count, availCount, onLoanCount);
+            if (catFilter == "active" && weededTotal > 0) countMsg += string.Format(" \u00B7 {0:N0} weeded item(s) hidden", weededTotal);
             else if (catFilter == "weeded") countMsg += " (weeded / withdrawn from circulation)";
             catNote.Text = countMsg;
         }
@@ -536,7 +561,7 @@ namespace Errin
             var bar = Ui.Flow(false); bar.Controls.Add(Ui.Field("Search", q, 260));
             var cbSort = Ui.Combo(180, "Name (A-Z)", "Name (Z-A)", "Class / Grade", "IC / ID Number", "Recently Registered", "Most Loans", "Highest Fines");
             cbSort.SelectedIndex = patSort;
-            cbSort.SelectedIndexChanged += (s, e) => { patSort = cbSort.SelectedIndex; FilterPat(); };
+            cbSort.SelectedIndexChanged += (s, e) => { if (patPager != null) patPager.ResetPage(); patSort = cbSort.SelectedIndex; FilterPat(); };
             bar.Controls.Add(Ui.Field("Sort by", cbSort, 195));
             var bf = Ui.Flow(false); bf.Padding = Ui.S(new Padding(0, 18, 0, 0));
             bf.Controls.Add(Ui.Btn("+ Register student", 0, (s, e) => PatForm()));
@@ -557,15 +582,18 @@ namespace Errin
                 else if (e.ColumnIndex == 4) patSort = 5;
                 else if (e.ColumnIndex == 5) patSort = 6;
                 if (cbSort.SelectedIndex != patSort && patSort < cbSort.Items.Count) cbSort.SelectedIndex = patSort;
+                if (patPager != null) patPager.ResetPage();
                 FilterPat();
             };
-            var body = WithButtons(patGrid,
+            patPager = new PagerBar();
+            patPager.PageChanged += (s, e) => FilterPat();
+            var body = WithButtonsAndPager(patGrid, patPager,
                 Ui.Btn("Account", 1, (s, e) => { var p = Ui.Sel<Patron>(patGrid); if (p == null) Toast("Select a student first"); else PatView(p); }),
                 Ui.Btn("Edit", 1, (s, e) => { var p = Ui.Sel<Patron>(patGrid); if (p == null) Toast("Select a student first"); else PatForm(p); }),
                 Ui.Btn("Print library card", 0, (s, e) => { var p = Ui.Sel<Patron>(patGrid); if (p == null) Toast("Select a student first"); else CardDialog(p); }),
                 Ui.Btn("Print cards for list", 1, (s, e) => PrintCards()),
                 Ui.Btn("Delete", 2, (s, e) => { var p = Ui.Sel<Patron>(patGrid); if (p == null) Toast("Select a student first"); else DelPat(p); }));
-            return Ui.Stack(new Control[] { Ui.Heading("Students", "Register students with their IC number, print library cards and manage accounts. Inactive records are archived after " + Lib.RET_YEARS + " years."), Ui.Card(null, bar), patNote, Ui.Card("Students", body, 1) }, 3);
+            return Ui.Stack(new Control[] { Ui.Heading("Students", "Register students with their IC number, print library cards and manage accounts. Inactive records are deactivated after " + Lib.RET_YEARS + " years."), Ui.Card(null, bar), patNote, Ui.Card("Students", body, 1) }, 3);
         }
         void FilterPat()
         {
@@ -585,8 +613,25 @@ namespace Errin
             }
 
             shownPat = r;
-            Ui.Fill(patGrid, new[] { "IC number", "Name", "Class", "Registered", "On loan", "Fines" }, r.Take(LIM).Select(p => new[] { p.id, p.name, p.cls, p.reg, db.Loans.Count(l => l.pid == p.id && l.ret == null).ToString(), Mn(lib.Unpaid(p.id)) }).ToList(), r.Take(LIM).Cast<object>().ToList(), "No students");
-            patNote.Text = r.Count > LIM ? "Showing the first " + LIM + " of " + r.Count + ". Use the search box to narrow down." : r.Count + " student(s)";
+            if (patPager != null) patPager.Update(shownPat.Count);
+            var paged = (patPager != null ? patPager.GetSlice(shownPat) : shownPat.Take(LIM)).ToList();
+            var rows = new List<string[]>(paged.Count);
+            var tags = new List<object>(paged.Count);
+            for (int i = 0; i < paged.Count; i++)
+            {
+                var p = paged[i];
+                rows.Add(new[] {
+                    p.id ?? "",
+                    p.name ?? "",
+                    p.cls ?? "",
+                    p.reg ?? "",
+                    db.Loans.Count(l => l.pid == p.id && l.ret == null).ToString(),
+                    Mn(lib.Unpaid(p.id))
+                });
+                tags.Add(p);
+            }
+            Ui.Fill(patGrid, new[] { "IC number", "Name", "Class", "Registered", "On loan", "Fines" }, rows, tags, "No students");
+            patNote.Text = string.Format("{0:N0} student(s)", shownPat.Count);
         }
         List<Patron> shownPat = new List<Patron>();
         void PrintCards()
@@ -600,8 +645,32 @@ namespace Errin
         {
             if (db.Loans.Any(l => l.pid == p.id && l.ret == null)) { Toast("Student has unreturned items"); return; }
             if (!AskPw()) return;
-            if (Ui.Confirm(this, "Delete this student and their history?"))
-            { db.Patrons.Remove(p); db.Loans.RemoveAll(l => l.pid == p.id); db.Fines.RemoveAll(f => f.pid == p.id); db.Holds.RemoveAll(h => h.pid == p.id); Commit(null); }
+            if (Ui.Confirm(this, "Deactivate this student and move to Archive?\n\nTheir records will be preserved in the Inactive Archive, and their name will no longer appear on leaderboards or active lists."))
+            {
+                if (db.ArchivedPatrons == null) db.ArchivedPatrons = new List<ArchivedPatron>();
+                var ap = new ArchivedPatron
+                {
+                    id = p.id,
+                    name = p.name,
+                    cls = p.cls,
+                    contact = p.contact,
+                    reg = p.reg,
+                    last = p.last,
+                    archivedDate = Lib.Today(),
+                    loans = db.Loans.Where(l => l.pid == p.id).ToList(),
+                    fines = db.Fines.Where(f => f.pid == p.id).ToList()
+                };
+                foreach (var k in Patron.Keys) ap.Set(k, p.Get(k));
+                ap.status_pengajian = "Deactivated";
+                db.ArchivedPatrons.RemoveAll(x => x.id == p.id);
+                db.ArchivedPatrons.Add(ap);
+
+                db.Patrons.Remove(p);
+                db.Loans.RemoveAll(l => l.pid == p.id);
+                db.Fines.RemoveAll(f => f.pid == p.id);
+                db.Holds.RemoveAll(h => h.pid == p.id);
+                Commit("Student " + p.name + " deactivated and moved to archive");
+            }
         }
 
         /* ---------- Fines ---------- */
@@ -646,7 +715,7 @@ namespace Errin
             };
             subNav.Controls.Add(subBtn("analytics", "Circulation & Collection Analytics"));
             subNav.Controls.Add(subBtn("prev_years", "Previous Years (Classes)"));
-            subNav.Controls.Add(subBtn("archive", "\uD83D\uDD12 Inactive Archive (5-Year Retention)"));
+            subNav.Controls.Add(subBtn("archive", "\uD83D\uDD12 Inactive Archive (" + Lib.RET_YEARS + "-Year Retention)"));
 
             if (repSubTab == "prev_years") return RepPrevYearsPage(subNav);
             if (repSubTab == "archive") return RepArchivePage(subNav);
@@ -662,8 +731,8 @@ namespace Errin
             int activeCopies = db.Items.Count(i => !lib.IsWeeded(i));
             int weedTot = db.Items.Count(i => !string.IsNullOrEmpty(i.weeded));
             var borrowedPids = new HashSet<string>(db.Loans.Select(l => l.pid));
-            int activeBorrowers = borrowedPids.Count;
-            int totStudents = db.Patrons.Count;
+            int activeBorrowers = borrowedPids.Count(pid => lib.IsActive(pid));
+            int totStudents = db.Patrons.Count(p => lib.IsActive(p));
             double totFines = db.Fines.Sum(f => f.amt);
             double unpaidFines = db.Fines.Where(f => f.paid == "").Sum(f => f.amt);
             int late = db.Loans.Count(l => l.ret != null && string.CompareOrdinal(l.ret, l.due) > 0), rr = db.Loans.Count(l => l.ret != null);
@@ -679,13 +748,20 @@ namespace Errin
 
             Func<List<KeyValuePair<string, double>>, bool, BarChart> chart = (d, v) => new BarChart { Data = d, Vertical = v };
 
-            // Reading champions (Top students)
+            // Reading champions (Top students) - active students only
             var pLoans = new Dictionary<string, int>();
-            foreach (var l in db.Loans) pLoans[l.pid] = (pLoans.ContainsKey(l.pid) ? pLoans[l.pid] : 0) + 1;
+            foreach (var l in db.Loans)
+            {
+                var p = lib.PatronById(l.pid);
+                if (p != null && lib.IsActive(p))
+                {
+                    pLoans[l.pid] = (pLoans.ContainsKey(l.pid) ? pLoans[l.pid] : 0) + 1;
+                }
+            }
             int rank = 1;
             var topReaders = pLoans.OrderByDescending(x => x.Value).Take(10).Select(x => {
                 var p = lib.PatronById(x.Key);
-                return new[] { (rank++).ToString(), p != null ? p.name : "(removed)", p != null ? p.cls : "", x.Value.ToString() };
+                return new[] { (rank++).ToString(), p != null ? p.name : "", p != null ? p.cls : "", x.Value.ToString() };
             }).ToList();
             var readerGrid = MakeGrid(new[] { "Rank", "Student", "Class", "Books read" }, topReaders, null, "No borrowing records yet");
             if (readerGrid.Columns.Count > 0) readerGrid.Columns[0].FillWeight = 25;
@@ -707,8 +783,8 @@ namespace Errin
             }
             var deweyData = deweyMap.Where(x => x.Value > 0).Select(x => new KeyValuePair<string, double>(x.Key, x.Value)).ToList();
 
-            // Students with unpaid fines
-            var unpaid = db.Patrons.Select(p => new { p.name, p.cls, v = lib.Unpaid(p.id) }).Where(x => x.v > 0).OrderByDescending(x => x.v).Select(x => new[] { x.name, x.cls, Mn(x.v) }).ToList();
+            // Students with unpaid fines - active students only
+            var unpaid = db.Patrons.Where(p => lib.IsActive(p)).Select(p => new { p.name, p.cls, v = lib.Unpaid(p.id) }).Where(x => x.v > 0).OrderByDescending(x => x.v).Select(x => new[] { x.name, x.cls, Mn(x.v) }).ToList();
             var finesGrid = MakeGrid(new[] { "Student", "Class", "Owed" }, unpaid, null, "No unpaid fines \U0001F389");
 
             // Weeding breakdown
@@ -875,11 +951,11 @@ namespace Errin
 
             var topBar = Ui.Flow(false);
             var btnRestore = Ui.Btn("Restore selected student", 0);
-            var btnCheckPurge = Ui.Btn("Check 5-year retention now", 1, (s, e) =>
+            var btnCheckPurge = Ui.Btn("Check " + Lib.RET_YEARS + "-year retention now", 1, (s, e) =>
             {
                 int purged = lib.Purge();
                 Save();
-                Toast(purged > 0 ? string.Format("Moved {0} inactive student(s) to archive.", purged) : "All active students have activity within the 5-year retention period.");
+                Toast(purged > 0 ? string.Format("Deactivated {0} inactive student(s) and moved to archive.", purged) : "All active students have activity within the " + Lib.RET_YEARS + "-year retention period.");
                 Render();
             });
             var btnExportCsv = Ui.Btn("Export archive (CSV)", 1);
@@ -896,7 +972,7 @@ namespace Errin
             }).ToList();
 
             Ui.Fill(patGrid, new[] { "IC Number", "Name", "Last Class", "Registered", "Last Active", "Archived Date", "Loans" },
-                rows, arch.OrderByDescending(p => p.archivedDate).Cast<object>().ToList(), "No archived students. Inactive records (>5 years) are safely stored here.");
+                rows, arch.OrderByDescending(p => p.archivedDate).Cast<object>().ToList(), "No archived students. Deactivated records (>" + Lib.RET_YEARS + " years) are safely stored here.");
 
             Action showHistory = () =>
             {
@@ -974,7 +1050,7 @@ namespace Errin
                 }
             };
 
-            var note = Ui.Lbl("\uD83D\uDD12 Password-protected archive: Data retention policy preserves student borrowing records after 5 years of inactivity rather than deleting them permanently.", true);
+            var note = Ui.Lbl("\uD83D\uDD12 Password-protected archive: Data retention policy preserves student borrowing records by deactivating them after " + Lib.RET_YEARS + " years of inactivity rather than deleting them.", true);
 
             var split = Cols(360, Ui.Card("Archived students", patGrid, 1), Ui.Card("Borrowing & fine records", loanGrid, 1));
 
@@ -1118,11 +1194,18 @@ namespace Errin
                     }
                     sb.AppendLine("</tbody></table>");
 
-                    // Reading champions
+                    // Reading champions (Top active students)
                     sb.AppendLine("<h2>Reading Champions (Top Students)</h2>");
                     sb.AppendLine("<table><thead><tr><th>Rank</th><th>Student Name</th><th>Class</th><th>IC / Student ID</th><th>Books Borrowed</th></tr></thead><tbody>");
                     var pLoans = new Dictionary<string, int>();
-                    foreach (var l in db.Loans) pLoans[l.pid] = (pLoans.ContainsKey(l.pid) ? pLoans[l.pid] : 0) + 1;
+                    foreach (var l in db.Loans)
+                    {
+                        var p = lib.PatronById(l.pid);
+                        if (p != null && lib.IsActive(p))
+                        {
+                            pLoans[l.pid] = (pLoans.ContainsKey(l.pid) ? pLoans[l.pid] : 0) + 1;
+                        }
+                    }
                     int rnk = 1;
                     foreach (var kv in pLoans.OrderByDescending(x => x.Value).Take(20))
                     {
@@ -1131,7 +1214,7 @@ namespace Errin
                                           rnk == 2 ? "<span class=\"badge badge-rank2\">#2 Silver</span>" :
                                           rnk == 3 ? "<span class=\"badge badge-rank3\">#3 Bronze</span>" : "#" + rnk;
                         sb.AppendLine(string.Format("<tr><td>{0}</td><td><strong>{1}</strong></td><td>{2}</td><td><code>{3}</code></td><td><strong>{4} books</strong></td></tr>",
-                            rankBadge, HtmlEscape(p != null ? p.name : "(removed)"), HtmlEscape(p != null ? p.cls : ""), HtmlEscape(kv.Key), kv.Value));
+                            rankBadge, HtmlEscape(p.name), HtmlEscape(p.cls), HtmlEscape(kv.Key), kv.Value));
                         rnk++;
                     }
                     sb.AppendLine("</tbody></table>");
@@ -1283,26 +1366,33 @@ namespace Errin
                     }
                     sb.AppendLine();
 
-                    // Top student readers
+                    // Top student readers (active students only)
                     sb.AppendLine("--- READING CHAMPIONS (TOP STUDENTS) ---");
                     sb.AppendLine("Rank,Student Name,IC / ID,Class,Total Books Borrowed");
                     var pLoans = new Dictionary<string, int>();
-                    foreach (var l in db.Loans) pLoans[l.pid] = (pLoans.ContainsKey(l.pid) ? pLoans[l.pid] : 0) + 1;
+                    foreach (var l in db.Loans)
+                    {
+                        var p = lib.PatronById(l.pid);
+                        if (p != null && lib.IsActive(p))
+                        {
+                            pLoans[l.pid] = (pLoans.ContainsKey(l.pid) ? pLoans[l.pid] : 0) + 1;
+                        }
+                    }
                     rnk = 1;
                     foreach (var kv in pLoans.OrderByDescending(x => x.Value).Take(25))
                     {
                         var p = lib.PatronById(kv.Key);
-                        sb.AppendLine(rnk++ + "," + EscapeCsv(p != null ? p.name : "(removed)") + "," +
+                        sb.AppendLine(rnk++ + "," + EscapeCsv(p != null ? p.name : "") + "," +
                             EscapeCsv(kv.Key) + "," +
                             EscapeCsv(p != null ? p.cls : "") + "," +
                             kv.Value);
                     }
                     sb.AppendLine();
 
-                    // Circulation by class
+                    // Circulation by class (active students)
                     sb.AppendLine("--- CIRCULATION BY CLASS ---");
                     sb.AppendLine("Class,Students,Total Loans,Active Loans");
-                    var classGroups = db.Patrons.GroupBy(p => string.IsNullOrEmpty(p.cls) ? "(No class)" : p.cls).OrderBy(g => g.Key);
+                    var classGroups = db.Patrons.Where(p => lib.IsActive(p)).GroupBy(p => string.IsNullOrEmpty(p.cls) ? "(No class)" : p.cls).OrderBy(g => g.Key);
                     foreach (var g in classGroups)
                     {
                         var pids = new HashSet<string>(g.Select(p => p.id));
@@ -1362,7 +1452,7 @@ namespace Errin
         Control BakPage()
         {
             var info = new Label { UseMnemonic = false, Text = "Download a backup of everything (students, loans, holds, fines, catalog), or restore from one. Keep a copy on a USB drive or cloud storage.", AutoSize = false, Size = new Size(Ui.S(760), Ui.S(44)), ForeColor = Th.Ink };
-            var row = Ui.Flow(false); row.Controls.Add(Ui.Btn("Download backup", 0, (s, e) => Backup())); row.Controls.Add(Ui.Btn("Restore from backup (password)", 1, (s, e) => { if (AskPw()) Restore(); }));
+            var row = Ui.Flow(false); row.Controls.Add(Ui.Btn("Download backup", 0, (s, e) => Backup())); row.Controls.Add(Ui.Btn("Restore from backup (password)", 1, (s, e) => { if (AskPw()) Restore(); })); row.Controls.Add(Ui.Btn("Optimize database", 1, (s, e) => DoOptimizeDb()));
             return ScrollPage(Ui.Heading("Backup", "Protect your data. Back up regularly and keep a copy on a USB drive or cloud storage."), Ui.Card("Backup & restore", Vbox(info, row)));
         }
         void Backup()
@@ -1427,6 +1517,25 @@ namespace Errin
                 db = n; lib = new Lib(db); lib.FixItems();
                 if (setPageCached != null) { setPageCached.Dispose(); setPageCached = null; refreshSetPage = null; }
                 Commit("Backup restored");
+            }
+        }
+        void DoOptimizeDb()
+        {
+            var prevCursor = Cursor.Current;
+            Cursor.Current = Cursors.WaitCursor;
+            try
+            {
+                string res = store.Optimize();
+                Toast("Database optimization complete");
+                MessageBox.Show(this, res, "Database Optimization", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(this, "Optimization error: " + ex.Message, "Database Optimization", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
+            finally
+            {
+                Cursor.Current = prevCursor;
             }
         }
 
@@ -1659,7 +1768,6 @@ namespace Errin
                 int port = wsrv != null ? wsrv.Port : wc.port;
                 try { Process.Start(scheme + "127.0.0.1:" + port + "/opac"); } catch (Exception ex) { Toast("Could not open browser: " + ex.Message); }
             }));
-            opacBtns.Controls.Add(Ui.Btn("Export Static OPAC (GitHub Pages)", 1, (a, b) => ExportStaticOpacDialog()));
 
             var opacNote = new Label
             {
@@ -1710,10 +1818,10 @@ namespace Errin
                 Ui.Card("Remote Access", webBody),
                 Ui.Card("OPAC (Public Catalog)", opacBody),
                 Ui.Card("Software updates", updateBody),
-                Ui.Card("Data retention", para("Student records (with their loan and fine history) are deleted " + Lib.RET_YEARS + " years after their last activity, provided they have no unreturned items or unpaid fines. This happens automatically when ErrinILS starts.", 44)),
+                Ui.Card("Data retention", para("Student records are never deleted. After " + Lib.RET_YEARS + " years of inactivity (provided they have no unreturned items or unpaid fines), student accounts are automatically deactivated and safely preserved in the password-protected Archive. Once deactivated, names will not appear on leaderboards or active circulation lists.", 44)),
                 Ui.Card("Switching systems?", Vbox(para("Export every catalogued item as MARC 21, MARCXML, MarcEdit text, JSON and CSV to move to another ILS. To bring records in, use Import MARC on the Catalog page.", 44), Ui.Btn("Export catalog", 0, (a, b) => ExportDialog()))),
                 Ui.Card("z39.50 server", zBody),
-                Ui.Card("Local database", Vbox(para("Every change is written to the database file on this computer the instant you make it. No save button needed.", 24), Ui.Lbl("Database file: " + store.DataFile, true))));
+                Ui.Card("Local database", Vbox(para("Every change is written to the database file on this computer the instant you make it. No save button needed.", 24), Ui.Lbl("Database file: " + store.DataFile, true), Spacer(6), Ui.Btn("Optimize database", 1, (a, b) => DoOptimizeDb()))));
         }
 
         /* ---------- Remote Access (Web server settings + lifecycle) ---------- */

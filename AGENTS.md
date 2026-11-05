@@ -76,6 +76,7 @@ d:/errin/
 - Data directory default:
   - Windows: `%APPDATA%\Errin\errin-data.db`
 - Backup / Restore: Supports native SQLite database backups (`.db`) and JSON exports (`.json`).
+- **Database Optimization (`SqliteStore.Optimize`)**: Built-in "Optimize Database" utility (accessible from Backup and Settings) executing `PRAGMA integrity_check;`, `PRAGMA optimize;`, and `VACUUM;` to reclaim unused disk space, defragment the SQLite database, and verify file integrity.
 - Configuration: `%APPDATA%\Errin\errin-config.json` stores administrator password hash, Z39.50 settings, and paired device tokens.
 - **Admin Password**: Protects Settings, record deletion, and database restoration. Stored as salted PBKDF2/SHA-256 (`Auth.cs`). Factory default password is `admin123` (SHA-256 hash `f16959ae2d027f8562807b5d1dbbef305556f3fd4caaac6ac82679b33397ad72`). Deleting `errin-config.json` resets the password to `admin123`.
 
@@ -85,7 +86,7 @@ d:/errin/
 - **Blocking**: Patrons are blocked from borrowing if overdue items exist or unpaid fines exceed `Set.block` (default RM 5.00).
 - **Holds**: Held items cannot be renewed or checked out to other patrons.
 - **Weeding / Collection Maintenance**: Items can be marked as weeded/withdrawn with reason (condition/damage, obsolete, lost, duplicate) and date. Weeded copies are blocked from checkout and hold requests, while preserving full bibliographic and circulation history. Can be restored to active status at any time or permanently deleted.
-- **Data Retention & Archive**: `Lib.Purge()` moves patron activity older than 5 years (`Lib.RET_YEARS`) into a password-protected Archive section under Reports, preserving student names, registration dates, past borrowing history, and fines rather than permanently destroying them. Archived students can be restored to active status at any time.
+- **Data Retention & Archive**: `Lib.Purge()` safely deactivates student records with no activity for 6 years (`Lib.RET_YEARS`), moving them into a password-protected Archive section under Reports. Preserves student names, registration dates, borrowing history, and fines—records are never deleted permanently. Once deactivated, students are automatically excluded from leaderboards (Reading Champions) and active circulation. Archived students can be restored to active status at any time.
 - **Academic Class Year Archiving**: Captures snapshots of class rosters and borrowing counts on December 31st (and anytime via manual snapshot), accessible under the Previous Years tab in Reports to preserve historical class cohorts.
 - **Batch Student Registration**: Imports students from Excel (`.xlsx`) or delimited files (`.csv`, `.tsv`, `.txt`) using a zero-dependency OpenXML parser (`ExcelReader`). Primary key is IC number: duplicate IC numbers update existing student details (name, class, contact) rather than creating duplicates.
 - **Malaysian IC / MyKid Validation**:
@@ -104,18 +105,17 @@ d:/errin/
 - **Batch ISBN Lookup**: High-throughput multi-ISBN copy cataloguing designed for book donations and bulk cataloguing (`BatchLookupDialog`). Supports pasting ISBN lists, scanning barcodes continuously, or loading files, with live multithreaded lookups and bulk catalog additions.
 - **Item Circulation History**: Full historical borrowing lens for any item (`ItemHistoryDialog`), detailing which students borrowed it, loan dates, due dates, return timestamps, and overdue metrics.
 
-### 3.5 Remote Access, OPAC & Static Export (`Web.cs`, `Qr.cs`, `Dialogs.cs`)
+### 3.5 Remote Access & OPAC (`Web.cs`, `Qr.cs`, `Dialogs.cs`)
 - **Device Pairing Model**: Zero-password access control using temporary 6-digit pairing codes (5-minute expiry, 3-attempt lockout) and persistent 32-byte cryptographically secure device tokens (`X-Errin-Token`).
 - **QR Code Generation (`Qr.cs`)**: Pure C# zero-dependency ISO/IEC 18004 QR code generator supporting Versions 1 to 10 with Error Correction Level M, rendering sharp `Bitmap`, `ToPng()`, and `ToSvg()` representations. Used in `PairNewDeviceDialog` for instant mobile connection via camera scanning (auto-filling pairing code), in Settings for sharing remote access links, and exposed via HTTP at `/api/qr` and `/qr.png`.
 - **Online Public Access Catalog (OPAC)**: Public-facing catalog served at `/opac` using the same pure C# HTTP server (`Web.cs`). Matches desktop `MainForm` visual theme (charcoal `#232427`, yellow accents `#f6c61b`, royal blue logo, left-border card styling). Enables searching by title, author, call number, and dedicated **Subject Heading** search, with multi-token keyword filters and subject topic exploration.
 - **OPAC Patron Login**: Optional student login (disabled by default, toggled in Settings `db.Set.opacLogin`). When enabled, students can sign in using their Student ID or Malaysian IC (`no_pengenalan`) to check current loans, due dates, fines, reading history, and place holds on borrowed copies.
-- **Static Hosting / GitHub Pages Export**: Schools can export their OPAC to a standalone bundle (`index.html`, `catalog.json`, `opac-standalone.html`, and `README.md` with step-by-step GitHub Pages instructions) via Settings > "Export Static OPAC (GitHub Pages)". Runs 100% client-side with zero external dependencies and zero backend server required.
 - **Multi-Network / Multi-Wi-Fi Support**: Pure C# HTTP server (`TcpListener`) binding to `0.0.0.0` (all interfaces: Ethernet, Wi-Fi 2.4/5GHz, VLANs, VPNs, and Tailscale mesh). Allows devices on different school Wi-Fi SSIDs/APs, subnets, or remote networks (via Tailscale or Cloudflare Tunnel) to connect seamlessly.
 - **Single Page App (SPA)**: Embedded mobile-friendly web replica covering Dashboard, Circulation, Catalog (with Subject Heading search), Students, Fines, and Reports with instant barcode scanner support.
 
 ### 3.6 Reports & Circulation Analytics (`MainForm.cs`, `Web.cs`)
 - **Executive Summary & Metrics**: Active copies, active loans, overdue items with percentages, registered students, active reader participation rate, fines assessed/collected/unpaid, and weeded items.
-- **Circulation Trends & Rankings**: Checkouts per month over the last 6 months, top 10/25 borrowed titles, and Reading Champions (Top student reader leaderboard by books read).
+- **Circulation Trends & Rankings**: Checkouts per month over the last 6 months, top 10/25 borrowed titles, and Reading Champions (Top student reader leaderboard by books read, filtering for active students only).
 - **Collection Classification**: Breakdown of cataloged books by Dewey Decimal Classification (DDC) 100s and fiction/subject categories.
 - **Dormant & Weeding Analysis**: Tracks titles with zero circulation (dormant collection) and categorizes weeded items by withdrawal reason (condition/damage, obsolete, lost, duplicate).
 - **Reports Sub-views**:
@@ -128,6 +128,7 @@ d:/errin/
 - Standard WinForms application with custom styling and flat controls in `Ui.cs`.
 - **High-DPI Sharpness**: Native PerMonitorV2 awareness via `Program.cs` and `app.manifest`. Prevents blurry DWM bitmap scaling on modern displays (125%, 150%, 200%), rendering razor-sharp ClearType text and proportional layouts without extra GPU/CPU consumption.
 - **Main View**: Tabbed librarian interface with Circulation, Catalog (with Active/Weeded filters and Weeding dialog), Patrons, Overdue Notices, Inventory, Reports, and System Settings.
+- **Grid Paging & Low-Memory Optimization (`PagerBar`)**: Slices records on Catalog (`catGrid`) and Students (`patGrid`) with customizable page sizes (50, 100, 250, Show All), Previous/Next controls, page selector, and slice metrics. Keeps UI responsive and RAM usage near zero even with 10,000+ items on 1–2 GB RAM school hardware.
 - **Simplified View (`Simple.cs`)**: Child-friendly circulation kiosk tailored for young students with large colorful touch/mouse targets, cheerful emoji badges, high-contrast friendly banner boxes, barcode scanner focus, and friendly error dialogs (`Lib.Friendly(...)`).
 
 ---

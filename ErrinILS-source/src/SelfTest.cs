@@ -71,6 +71,9 @@ static class SelfTest
             var snapItems = store.SnapshotItems();
             Ok(snapItems != null && snapItems.Count == 4 && snapItems[0].title == items[0].title, "SQLite store snapshot items");
 
+            string optResult = store.Optimize();
+            Ok(!string.IsNullOrEmpty(optResult) && optResult.Contains("Integrity check: OK"), "store.Optimize() runs integrity check, optimize and vacuum: " + optResult);
+
             // Test migration from JSON to SQLite
             File.Delete(store.DataFile);
             var bak = store.DataFile + ".bak"; if (File.Exists(bak)) File.Delete(bak);
@@ -101,10 +104,45 @@ static class SelfTest
         var dups = lib.DupSet(imp); int sk; int added = lib.AddItems(imp, "skip", true, dups, out sk);
         Ok(added == 1 && sk == 2, "import skips duplicates by barcode or ISBN: " + added + "/" + sk);
         Ok(ldb.Items.Select(i => i.ctl).Distinct().Count() == ldb.Items.Count && ldb.Items.Select(i => i.barcode).Distinct().Count() == ldb.Items.Count, "control numbers and barcodes stay unique");
+        Ok(Lib.RET_YEARS == 6, "RET_YEARS is 6");
+        Ok(lib.IsActive(new Patron { status_pengajian = "Aktif" }), "Aktif patron is active");
+        Ok(!lib.IsActive(new Patron { status_pengajian = "Deactivated" }), "Deactivated patron is not active");
+        Ok(!lib.IsActive(new Patron { status_pengajian = "Tidak Aktif" }), "Tidak Aktif patron is not active");
+        Ok(!lib.IsActive(new Patron { status_pengajian = "Tamat" }), "Tamat patron is not active");
+        var deactP = new Patron { id = "DEACT01", name = "Deact User", status_pengajian = "Deactivated" };
+        ldb.Patrons.Add(deactP);
+        string deactMsg;
+        Ok(lib.Checkout("DEACT01", "B1001", out deactMsg) == "Blocked: student account is deactivated or inactive", "deactivated student blocked from checkout");
+        Ok(lib.PlaceHold("DEACT01", "B1001", out deactMsg) == "Blocked: student account is deactivated or inactive", "deactivated student blocked from place hold");
+        ldb.Patrons.Remove(deactP);
+
+        // Test hold validation rules: limit, overdue, unpaid fines
+        var testP = new Patron { id = "HOLD01", name = "Hold Tester", status_pengajian = "Aktif" };
+        ldb.Patrons.Add(testP);
+        string holdErr;
+        // 1. Overdue blocks hold
+        ldb.Loans.Add(new Loan { id = "L_OVERDUE", pid = "HOLD01", iid = "ITM_X", @out = "2020-01-01", due = "2020-01-08", ret = null });
+        Ok(lib.PlaceHold("HOLD01", "B1001", out holdErr) == "Blocked: student has overdue items", "overdue items block placing a hold");
+        ldb.Loans.RemoveAll(l => l.id == "L_OVERDUE");
+
+        // 2. Unpaid fines block hold
+        ldb.Fines.Add(new Fine { id = "F_HIGH", pid = "HOLD01", amt = 10.0, paid = "" });
+        ldb.Set.block = 5.0;
+        Ok(lib.PlaceHold("HOLD01", "B1001", out holdErr) != null && lib.PlaceHold("HOLD01", "B1001", out holdErr).StartsWith("Blocked: unpaid fines"), "unpaid fines block placing a hold");
+        ldb.Fines.RemoveAll(f => f.id == "F_HIGH");
+
+        // 3. Hold limit
+        ldb.Set.maxLoans = 2;
+        ldb.Holds.Add(new Hold { id = "H1", pid = "HOLD01", iid = "ITM1", st = "waiting" });
+        ldb.Holds.Add(new Hold { id = "H2", pid = "HOLD01", iid = "ITM2", st = "waiting" });
+        Ok(lib.PlaceHold("HOLD01", "B1001", out holdErr) == "Hold limit reached (maximum 2 reservations)", "hold limit enforced");
+        ldb.Holds.RemoveAll(h => h.pid == "HOLD01");
+        ldb.Patrons.Remove(testP);
+
         ldb.Patrons.Add(new Patron { id = "OLD", name = "Old", reg = "2010-01-01", last = "2010-01-01" });
-        Ok(lib.Purge() == 1 && lib.PatronById("OLD") == null, "5-year retention purge");
-        Ok(ldb.ArchivedPatrons != null && ldb.ArchivedPatrons.Any(p => p.id == "OLD"), "5-year retention preserves data in Archive");
-        Ok(lib.RestoreArchivedPatron("OLD") && lib.PatronById("OLD") != null, "restore archived patron");
+        Ok(lib.Purge() == 1 && lib.PatronById("OLD") == null, "6-year retention purge");
+        Ok(ldb.ArchivedPatrons != null && ldb.ArchivedPatrons.Any(p => p.id == "OLD" && p.status_pengajian == "Deactivated"), "6-year retention preserves data as Deactivated in Archive");
+        Ok(lib.RestoreArchivedPatron("OLD") && lib.PatronById("OLD") != null && lib.IsActive(lib.PatronById("OLD")), "restore archived patron reactivates them");
         ldb.Patrons.RemoveAll(p => p.id == "OLD");
 
         // Item circulation history test

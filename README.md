@@ -219,14 +219,13 @@ ErrinILS includes a built-in HTTP server (`0.0.0.0:8080`) that allows staff to a
 
 ---
 
-## Online Public Access Catalog (OPAC) & Static Hosting
+## Online Public Access Catalog (OPAC)
 
 ErrinILS includes an **OPAC** (Online Public Access Catalog) for students, teachers, and parents:
 
-- **Local Network OPAC**: Reachable by anyone on the school network at `http://<computer-ip>:8080/opac`.
+- **Local Network OPAC**: Reachable by anyone on the school network at `http://<computer-ip>:8585/opac`.
 - **Subject Heading & Multi-Token Search**: Search by title, author, call number, or dedicated **Subject Heading** (Perkara) to explore books by curriculum or topic.
-- **Optional Patron Login**: Can be turned ON in **Settings** → **OPAC & Online Catalog** (`db.Set.opacLogin`, OFF by default). When active, students log in with their Student ID or Malaysian IC (`no_pengenalan`) to check current loans, due dates, fines, reading history, and place holds on borrowed copies.
-- **Static Hosting (e.g. GitHub Pages)**: Schools can export a complete static OPAC bundle by clicking **Export Static OPAC (GitHub Pages)** in Settings. Drag and drop the generated files (`index.html`, `catalog.json`, `opac-standalone.html`, `README.md`) into a free GitHub repository with GitHub Pages enabled to give the entire school community 24/7 web access without needing a server running.
+- **Optional Patron Login**: Can be turned ON in **Settings** → **OPAC (Public Catalog)** (`db.Set.opacLogin`, OFF by default). When active, students log in with their Student ID or Malaysian IC (`no_pengenalan`) to check current loans, due dates, fines, reading history, and place holds on borrowed copies.
 
 ---
 

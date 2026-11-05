@@ -267,7 +267,7 @@ namespace Errin
                         var qParams = ParseQuery(query);
 
                         // Route static files / SPA
-                        if (path == "/" || path == "/index.html")
+                        if (string.IsNullOrEmpty(path) || path == "/" || path == "/index.html" || path == "/index.htm" || path == "/remote" || path == "/app")
                         {
                             SendHtml(stream, HtmlPage);
                             return;
@@ -589,7 +589,7 @@ namespace Errin
                     var today = Lib.Today();
 
                     int activeTitles = db.Items.Count(i => !lib.IsWeeded(i));
-                    int totalStudents = db.Patrons.Count;
+                    int totalStudents = db.Patrons.Count(p => lib.IsActive(p));
                     int onLoan = db.Loans.Count(l => l.ret == null);
                     int allTimeLoans = db.Loans.Count;
                     int overdueCount = db.Loans.Count(l => lib.Overdue(l));
@@ -1017,11 +1017,28 @@ namespace Errin
                     if (db.Loans.Any(l => l.pid == p.id && l.ret == null)) { error = "Student has books on loan. Return them first."; return; }
                     if (lib.Unpaid(p.id) > 0) { error = "Student has unpaid fines."; return; }
 
+                    if (db.ArchivedPatrons == null) db.ArchivedPatrons = new List<ArchivedPatron>();
+                    var ap = new ArchivedPatron
+                    {
+                        id = p.id,
+                        name = p.name,
+                        cls = p.cls,
+                        contact = p.contact,
+                        reg = p.reg,
+                        last = p.last,
+                        archivedDate = Lib.Today(),
+                        loans = db.Loans.Where(l => l.pid == p.id).ToList(),
+                        fines = db.Fines.Where(f => f.pid == p.id).ToList()
+                    };
+                    foreach (var k in Patron.Keys) ap.Set(k, p.Get(k));
+                    ap.status_pengajian = "Deactivated";
+                    db.ArchivedPatrons.RemoveAll(x => x.id == p.id);
+                    db.ArchivedPatrons.Add(ap);
                     db.Patrons.Remove(p);
                     db.Loans.RemoveAll(l => l.pid == p.id);
                     db.Fines.RemoveAll(f => f.pid == p.id);
                     db.Holds.RemoveAll(h => h.pid == p.id);
-                    if (OnRemoteWrite != null) OnRemoteWrite("Student deleted: " + p.name);
+                    if (OnRemoteWrite != null) OnRemoteWrite("Student deactivated and archived: " + p.name);
                 });
 
                 if (error != null) SendJson(stream, 400, new Dictionary<string, object> { { "ok", false }, { "error", error } });
@@ -1287,13 +1304,13 @@ namespace Errin
                     int totalItems = db.Items.Count;
                     int activeItems = db.Items.Count(i => !lib.IsWeeded(i));
                     int weededItems = totalItems - activeItems;
-                    int totalStudents = db.Patrons.Count;
+                    int totalStudents = db.Patrons.Count(p => lib.IsActive(p));
                     int totalLoans = db.Loans.Count;
 
                     int activeLoans = db.Loans.Count(l => l.ret == null);
                     int overdueLoans = db.Loans.Count(lib.Overdue);
                     var borrowedPids = new HashSet<string>(db.Loans.Select(l => l.pid));
-                    int activeBorrowers = borrowedPids.Count;
+                    int activeBorrowers = borrowedPids.Count(pid => lib.IsActive(pid));
                     double borrowerRate = totalStudents > 0 ? Math.Round((double)activeBorrowers * 100.0 / totalStudents, 1) : 0.0;
                     double overdueRate = activeLoans > 0 ? Math.Round((double)overdueLoans * 100.0 / activeLoans, 1) : 0.0;
 
@@ -1333,20 +1350,19 @@ namespace Errin
 
                     // Top student borrowers
                     var topBorrowers = db.Loans.GroupBy(l => l.pid)
-                        .OrderByDescending(g => g.Count())
+                        .Select(g => new { pid = g.Key, patron = lib.PatronById(g.Key), count = g.Count() })
+                        .Where(x => x.patron != null && lib.IsActive(x.patron))
+                        .OrderByDescending(x => x.count)
                         .Take(10)
-                        .Select(g =>
-                        {
-                            var p = db.Patrons.FirstOrDefault(x => x.id == g.Key);
-                            return (object)new Dictionary<string, object> {
-                                { "name", p != null ? p.name : "(removed)" },
-                                { "cls", p != null ? p.cls : "" },
-                                { "count", (double)g.Count() }
-                            };
+                        .Select(x => (object)new Dictionary<string, object> {
+                            { "name", x.patron.name },
+                            { "cls", x.patron.cls },
+                            { "count", (double)x.count }
                         }).ToList();
+                    
 
                     // Class breakdown
-                    var classBreakdown = db.Patrons.GroupBy(p => string.IsNullOrEmpty(p.cls) ? "(No class)" : p.cls)
+                    var classBreakdown = db.Patrons.Where(p => lib.IsActive(p)).GroupBy(p => string.IsNullOrEmpty(p.cls) ? "(No class)" : p.cls)
                         .OrderBy(g => g.Key)
                         .Select(g =>
                         {
@@ -1820,6 +1836,13 @@ namespace Errin
                     return;
                 }
 
+                var lib = GetLib != null ? GetLib() : null;
+                if (lib != null && !lib.IsActive(patron))
+                {
+                    SendJson(stream, 403, new Dictionary<string, object> { { "ok", false }, { "error", "Student account is deactivated / inactive." } });
+                    return;
+                }
+
                 string token = "pat-" + Guid.NewGuid().ToString("N");
                 lock (syncLock)
                 {
@@ -2004,7 +2027,11 @@ namespace Errin
                 ExecuteOnUi(() =>
                 {
                     err = lib.PlaceHold(patron.id, barcode, out msg);
-                    if (err == null && OnRemoteWrite != null) OnRemoteWrite(msg);
+                    if (err == null)
+                    {
+                        if (SaveStore != null) SaveStore();
+                        if (OnRemoteWrite != null) OnRemoteWrite(msg);
+                    }
                 });
 
                 if (err != null) SendJson(stream, 400, new Dictionary<string, object> { { "ok", false }, { "error", err } });
@@ -2039,7 +2066,11 @@ namespace Errin
                 {
                     int rem = db.Holds.RemoveAll(h => h.id == holdId && h.pid == patron.id);
                     found = rem > 0;
-                    if (found && OnRemoteWrite != null) OnRemoteWrite("OPAC Hold cancelled");
+                    if (found)
+                    {
+                        if (SaveStore != null) SaveStore();
+                        if (OnRemoteWrite != null) OnRemoteWrite("OPAC Hold cancelled");
+                    }
                 });
 
                 if (!found) SendJson(stream, 404, new Dictionary<string, object> { { "ok", false }, { "error", "Hold not found or not owned by you." } });
@@ -2438,7 +2469,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       <div class=""detail-label"">Control / Acq No:</div><div class=""detail-val"" id=""dtCtl""></div>
     </div>
     <div class=""modal-actions"">
-      <button id=""btnHoldInModal"" class=""btn btn-primary"" style=""display: none;"" onclick=""onHoldFromModal()"">Place Hold</button>
+      <button id=""btnHoldInModal"" class=""btn btn-primary"" style=""display: none;"" onclick=""onHoldFromModal()"">Place Hold / Tempah Buku</button>
       <button class=""btn btn-sec"" onclick=""closeModal('detailModal')"">Close</button>
     </div>
   </div>
@@ -2921,10 +2952,10 @@ function renderResults(items, totalCount) {
       const btnRow = document.createElement('div');
       btnRow.style.cssText = 'display: flex; justify-content: flex-end; gap: 6px; margin-top: 10px;';
 
-      if (window.__OPAC_LOGIN_ENABLED__ && patronToken && !it.available) {
+      if (window.__OPAC_LOGIN_ENABLED__ && !it.available) {
         const hBtn = document.createElement('button');
         hBtn.className = 'btn btn-primary btn-sm';
-        hBtn.textContent = 'Reserve';
+        hBtn.textContent = 'Place Hold / Tempah Buku';
         hBtn.onclick = (e) => { e.stopPropagation(); doHold(it.barcode, it.title); };
         btnRow.appendChild(hBtn);
       }
@@ -2965,11 +2996,11 @@ function renderResults(items, totalCount) {
         tr.querySelector('.tbl-subj').onclick = () => selectSubject(it.subject.split(/[;,|/]/)[0].trim());
       }
       const actCell = tr.querySelector('.tbl-actions');
-      if (window.__OPAC_LOGIN_ENABLED__ && patronToken && !it.available) {
+      if (window.__OPAC_LOGIN_ENABLED__ && !it.available) {
         const hBtn = document.createElement('button');
         hBtn.className = 'btn btn-primary btn-sm';
         hBtn.style.marginRight = '4px';
-        hBtn.textContent = 'Reserve';
+        hBtn.textContent = 'Place Hold / Tempah Buku';
         hBtn.onclick = () => doHold(it.barcode, it.title);
         actCell.appendChild(hBtn);
       }
@@ -3025,7 +3056,7 @@ function openDetail(it) {
     holdBtn.style.display = 'none';
   } else {
     stBox.innerHTML = `<span class=""badge badge-warn"">&#x23F1; Currently on loan (Due date: ${escapeHtml(it.due || 'Soon')})</span>`;
-    holdBtn.style.display = (window.__OPAC_LOGIN_ENABLED__ && patronToken) ? 'inline-block' : 'none';
+    holdBtn.style.display = (window.__OPAC_LOGIN_ENABLED__ && !it.available) ? 'inline-block' : 'none';
   }
 
   document.getElementById('detailModal').style.display = 'flex';
@@ -3189,10 +3220,11 @@ function switchAccTab(tab) {
 
 async function doHold(barcode, title) {
   if (!patronToken) {
+    alert('Please sign in with your Student ID or IC Number to reserve books.\nSila log masuk dengan ID Murid atau No. Pengenalan untuk menempah buku.');
     openLoginModal();
     return;
   }
-  if (!confirm(`Place a hold/reservation for '${title}'?`)) return;
+  if (!confirm(`Place a hold/reservation for '${title}'?\nTempah buku ini?`)) return;
 
   try {
     const res = await fetch('/api/opac/hold', {
@@ -3389,6 +3421,9 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     <div class=""logo-box"">
       <span class=""logo-title"">errin.</span>
       <span class=""logo-sub"">A school library system.</span>
+    </div>
+    <div style=""display: flex; align-items: center; margin-left: 16px;"">
+      <span id=""viewTitle"" style=""font-size: 16px; font-weight: 700; color: #f6c61b;"">Dashboard</span>
     </div>
     <div class=""header-right"">
       <a href=""/opac"" target=""_blank"" class=""btn-opac-link"">Open OPAC &#x2197;</a>
@@ -3786,9 +3821,13 @@ function switchTab(tab) {
   document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
 
   const names = { dash: 'Dashboard', circ: 'Circulation', cat: 'Catalog', pat: 'Students', fine: 'Fines', rep: 'Reports' };
-  document.getElementById('viewTitle').textContent = names[tab] || 'ErrinILS';
+  const vt = document.getElementById('viewTitle');
+  if (vt) vt.textContent = names[tab] || 'ErrinILS';
 
-  const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.textContent.toLowerCase().startsWith(tab));
+  const btn = Array.from(document.querySelectorAll('.tab-btn')).find(b => {
+    const oc = b.getAttribute('onclick') || '';
+    return oc.indexOf(tab) >= 0;
+  });
   if (btn) btn.classList.add('active');
 
   const pane = document.getElementById('tab-' + tab);
@@ -4124,7 +4163,7 @@ async function savePatron(e) {
 }
 
 async function deletePatron(id, name) {
-  if (confirm(`Delete student record for '${name}'?`)) {
+  if (confirm(`Deactivate and archive student record for '${name}'?`)) {
     const res = await api('/api/delete-patron', { method: 'POST', body: { id: id } });
     if (res.ok) { showToast('Student deleted'); loadPatrons(); }
     else showToast(res.error, true);

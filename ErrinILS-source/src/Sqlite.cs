@@ -1216,5 +1216,42 @@ namespace Errin
 
             return res;
         }
+
+        public static string Optimize(string dbPath)
+        {
+            if (!File.Exists(dbPath)) return "Database file not found.";
+            long beforeBytes = 0;
+            try { beforeBytes = new FileInfo(dbPath).Length; } catch { }
+
+            using (var sdb = new SqliteDb(dbPath))
+            {
+                // 1. PRAGMA integrity_check
+                string integrity = "ok";
+                using (var cmd = sdb.CreateCommand("PRAGMA integrity_check;"))
+                {
+                    if (cmd.Step())
+                    {
+                        integrity = cmd.GetText(0);
+                    }
+                }
+                if (!string.Equals(integrity, "ok", StringComparison.OrdinalIgnoreCase))
+                {
+                    return "Integrity check reported issues: " + integrity;
+                }
+
+                // 2. PRAGMA optimize
+                sdb.Execute("PRAGMA optimize;");
+
+                // 3. VACUUM
+                sdb.Execute("VACUUM;");
+            }
+
+            long afterBytes = 0;
+            try { afterBytes = new FileInfo(dbPath).Length; } catch { }
+            long reclaimed = beforeBytes - afterBytes;
+            if (reclaimed < 0) reclaimed = 0;
+            return string.Format("Integrity check: OK. Database defragmented and vacuumed. Space reclaimed: {0:N1} KB (File size: {1:N1} KB).",
+                reclaimed / 1024.0, afterBytes / 1024.0);
+        }
     }
 }
