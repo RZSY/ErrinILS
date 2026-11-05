@@ -4,3 +4,9 @@ build/
 *.tmp
 *.bak
 selftest.exe
+*.zip
+
+# Spreadsheets and student data files
+*.xlsx
+*.xls
+KBA3044*.xlsx

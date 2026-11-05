@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ErrinILS - Lightweight School Library Management System for Windows</title>
   <meta name="description"
-    content="Standalone, zero-dependency school library system (ILS) for Windows. Fast barcode circulation, automated 5-source ISBN cataloguing, Simplified View, and offline JSON database.">
+    content="Standalone, zero-dependency school library system (ILS) for Windows. Fast barcode circulation, automated 5-source ISBN cataloguing, Simplified View, and offline SQLite database.">
   <link rel="icon" type="image/png" href="assets/icon.png">
   <link rel="stylesheet" href="styles.css">
   <script>
@@ -28,7 +28,7 @@
       <a href="index.html" class="brand-link">
         <img src="assets/icon.png" alt="ErrinILS Logo" class="brand-icon">
         <span>ErrinILS</span>
-        <span class="brand-badge">v1.3.1</span>
+        <span class="brand-badge">v1.3.2</span>
       </a>
 
       <button class="mobile-menu-btn" aria-label="Toggle navigation" aria-expanded="false">☰</button>
@@ -42,7 +42,7 @@
 
       <div class="nav-actions">
         <button class="theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme"></button>
-        <a href="download.html" class="btn btn-primary btn-sm">Download v1.3.1</a>
+        <a href="download.html" class="btn btn-primary btn-sm">Download v1.3.2</a>
       </div>
     </div>
   </header>
@@ -55,7 +55,7 @@
       <div class="hero-container">
 
         <div class="hero-badge-row">
-          <span class="badge badge-gold">Release v1.3.1</span>
+          <span class="badge badge-gold">Release v1.3.2</span>
           <span class="hero-tagline">Open-source school library software for Windows</span>
         </div>
 
@@ -223,8 +223,8 @@
           </div>
           <h3 class="card-title">100% Offline &amp; Zero Setup</h3>
           <p class="card-text">
-            No database servers, IIS, Apache, or background services. All records reside in a single plain-text JSON
-            file. Automatic pure C# ZIP archive backups ensure your data is always safe.
+            No database servers, IIS, Apache, or background services. All records reside in a fast, robust SQLite
+            database (<code>errin-data.db</code>). Built-in 1-click backups and automatic migration ensure your data is always safe.
           </p>
           <div class="card-footer">
             <a href="about.html#persistence" class="card-link">Data architecture →</a>
@@ -340,7 +340,7 @@
             </tr>
             <tr>
               <td><strong>Database Backup</strong></td>
-              <td class="highlight">Copy 1 JSON file or 1-click ZIP</td>
+              <td class="highlight">Copy 1 SQLite file or 1-click backup</td>
               <td>mysqldump &amp; Zebra index export</td>
               <td>MySQL database export</td>
               <td>Save file copy</td>
@@ -368,7 +368,7 @@
             Choose between the standard Windows installer, portable USB package, or standalone 200 KB executable with
             SHA-256 verification.
           </p>
-          <a href="download.html" class="btn btn-primary btn-sm" style="width: 100%;">Download v1.3.1 →</a>
+          <a href="download.html" class="btn btn-primary btn-sm" style="width: 100%;">Download v1.3.2 →</a>
         </div>
 
         <div
@@ -385,7 +385,7 @@
           style="background-color: var(--bg-primary); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 22px;">
           <h4 style="color: var(--text-main); font-size: 1.05rem; margin-bottom: 8px;">3. About Architecture</h4>
           <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 16px;">
-            Learn how the zero-dependency C# engine, Z39.50 client, MARC21 parser, and single JSON database work under
+            Learn how the zero-dependency C# engine, Z39.50 client, MARC21 parser, and SQLite database work under
             the hood.
           </p>
           <a href="about.html" class="btn btn-secondary btn-sm" style="width: 100%;">Read Architecture →</a>
@@ -441,7 +441,7 @@
             <li><a href="download.html#requirements">System Requirements</a></li>
             <li><a href="guide.html#ch7">Circulation Desk Guide</a></li>
             <li><a href="guide.html#ch8">Simplified View Setup</a></li>
-            <li><a href="assets/ErrinILS-User-Guide.pdf" download="ErrinILS-User-Guide-v1.3.1.pdf">Official Manual
+            <li><a href="assets/ErrinILS-User-Guide.pdf" download="ErrinILS-User-Guide-v1.3.2.pdf">Official Manual
                 (PDF)</a></li>
             <li><a href="assets/ErrinILS-User-Guide.md" download>Download Manual (.md)</a></li>
           </ul>
@@ -450,11 +450,11 @@
         <div>
           <div class="footer-col-title">Releases &amp; Code</div>
           <ul class="footer-links">
-            <li><a href="https://github.com/RZSY/ErrinILS/releases/tag/v1.3.1" target="_blank" rel="noopener">ErrinILS
-                v1.3.1 on GitHub</a></li>
-            <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.3.1/ErrinILS-Setup-1.3.1.exe">Setup
+            <li><a href="https://github.com/RZSY/ErrinILS/releases/tag/v1.3.2" target="_blank" rel="noopener">ErrinILS
+                v1.3.2 on GitHub</a></li>
+            <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.3.2/ErrinILS-Setup-1.3.2.exe">Setup
                 Installer (.exe)</a></li>
-            <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.3.1/ErrinILS-Windows.zip">Portable
+            <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.3.2/ErrinILS-Windows.zip">Portable
                 Package (.zip)</a></li>
             <li><a href="https://github.com/RZSY/ErrinILS" target="_blank" rel="noopener">GitHub Repository</a></li>
           </ul>

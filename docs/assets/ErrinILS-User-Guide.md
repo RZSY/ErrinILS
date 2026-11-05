@@ -1,7 +1,7 @@
 # ErrinILS School Library System
 ## User Manual and Operating Guidelines
 **Installation, daily circulation, cataloguing, students, fines, weeding, remote access, reports, backup and administration**  
-**Software Version 1.3.1 (Windows Edition)**  
+**Software Version 1.3.2 (Windows Edition)**  
 *For Windows 7, 8, 8.1, 10 and 11 (32-bit and 64-bit)*  
 *Official Repository: https://github.com/RZSY/ErrinILS*  
 *Online Portal: https://rzsy.github.io/ErrinILS/*
@@ -154,7 +154,7 @@ Traditional enterprise library software (such as Koha, SLiMS, or commercial web 
 ErrinILS is built on a **strict zero-external-dependency philosophy**:
 - **Pure .NET Framework 4.0**: Built using only the native Microsoft assemblies included with Windows (`mscorlib`, `System`, `System.Drawing`, `System.Windows.Forms`). No external NuGet packages, no C++ redistributables, and no third-party DLLs.
 - **Single Standalone Executable**: Compiles into a single binary (`ErrinILS.exe`) of ~200 KB.
-- **Single JSON Database**: All library data persists in human-readable JSON format (`%APPDATA%\Errin\errin-data.json`). No database server installation, configuration, or daemon management is required.
+- **Single SQLite Database**: All library data persists in a fast, robust SQLite database (`%APPDATA%\Errin\errin-data.db`) with automatic migration from legacy JSON databases. No database server installation, configuration, or daemon management is required.
 - **Ultra-Low Resource Footprint**: Operates with fluid speed on budget classroom PCs with as little as 1 GB RAM and ~10 MB disk space.
 - **School Localization**: Built-in support for Malaysian National Registration IC and MyKid formats (`YYMMDD-PB-###G`), Ringgit Malaysia (RM) fine calculations, Nilam reading awards tracking, and child-friendly terminology.
 
@@ -232,8 +232,8 @@ ErrinILS is engineered to work out of the box with any **USB Keyboard Wedge Barc
 ## 3. Installing, Updating and Starting ErrinILS
 
 ### 3.1 Installing with the Setup program
-1. Download `ErrinILS-Setup-1.3.1.exe` from the official release page: `https://github.com/RZSY/ErrinILS/releases/tag/v1.3.1`.
-2. Double-click `ErrinILS-Setup-1.3.1.exe`.
+1. Download `ErrinILS-Setup-1.3.2.exe` from the official release page: `https://github.com/RZSY/ErrinILS/releases/tag/v1.3.2`.
+2. Double-click `ErrinILS-Setup-1.3.2.exe`.
 3. If Windows User Account Control (UAC) prompts *"Do you want to allow this app to make changes?"*, click **Yes**.
 4. If a blue **Windows protected your PC** (SmartScreen) notification appears, click **More info**, then click **Run anyway**. *(This appears on open-source releases that do not have costly commercial signing certificates).*
 5. The setup wizard opens. Click **Next**, keep the default destination directory (`C:\Program Files (x86)\ErrinILS` or `C:\Program Files\ErrinILS`), click **Install**, then click **Finish**.
@@ -250,13 +250,13 @@ If you do not have Windows administrator rights or wish to operate ErrinILS enti
 Upgrading is 100% non-destructive:
 1. Close any running copies of ErrinILS.
 2. Run the new version's installer (or replace `ErrinILS.exe` with the new binary).
-3. All catalogued books, registered students, active loans, and fine histories are preserved intact in `%APPDATA%\Errin\errin-data.json`.
+3. All catalogued books, registered students, active loans, and fine histories are preserved intact in `%APPDATA%\Errin\errin-data.db` (with automatic migration from legacy `errin-data.json`).
 4. *(Best Practice: Always download a backup ZIP from the Backup tab before any major software upgrade).*
 
 ### 3.4 Uninstalling
 - On **Windows 10 / 11**: Open **Settings → Apps → Installed apps**, select **ErrinILS**, and click **Uninstall**.
 - On **Windows 7 / 8**: Open **Control Panel → Programs and Features**, select **ErrinILS**, and click **Uninstall**.
-- Uninstalling removes application binaries and shortcuts but leaves your library database (`%APPDATA%\Errin\errin-data.json`) intact to prevent accidental data loss.
+- Uninstalling removes application binaries and shortcuts but leaves your library database (`%APPDATA%\Errin\errin-data.db`) intact to prevent accidental data loss.
 
 ### 3.5 Where your data is stored
 All application data lives in your local Windows user profile directory:
@@ -267,12 +267,12 @@ All application data lives in your local Windows user profile directory:
 
 | File | Purpose | Contents |
 |---|---|---|
-| `errin-data.json` | **Main Library Database** | Entire collection catalogue, registered students, active and historical loans, holds, assessed fines, and circulation rules in plain-text JSON. |
-| `errin-data.bak` | **Automatic Rollback Backup** | The previous snapshot of the data file, written automatically before each save. If `errin-data.json` ever suffers power-cut corruption, the system automatically recovers from this file. |
+| `errin-data.db` | **Main Library Database** | Entire collection catalogue, registered students, active and historical loans, holds, assessed fines, and circulation rules in ACID SQLite. |
+| `errin-data.db.bak` | **Automatic Rollback Backup** | The previous snapshot of the data file, written automatically before each write. If `errin-data.db` ever suffers corruption, the system automatically recovers from this file. |
 | `errin-config.json` | **Security & Network Settings** | The administrator password (PBKDF2/SHA-256 salted hash), Z39.50 server configuration, and remote web server paired device tokens. |
 
 > [!IMPORTANT]
-> The database file `errin-data.json` contains real student names, Malaysian IC numbers, and class allocations. Protect the physical computer with a Windows login password and restrict USB drive backups to authorized staff.
+> The database file `errin-data.db` contains real student names, Malaysian IC numbers, and class allocations. Protect the physical computer with a Windows login password and restrict USB drive backups to authorized staff.
 
 ### 3.6 Single-instance execution mutex
 ErrinILS employs a named Windows kernel mutex (`ErrinILS_SingleInstance_Mutex`). Only one copy of the program can run on a computer at a time. If someone attempts to launch ErrinILS while it is already open, the system brings the existing window to the front instead of creating conflicting database locks.
@@ -310,7 +310,7 @@ To prevent accidental changes or student tampering, the administrator password i
 4. *Scanner Verification Test*: Open Notepad and scan any barcode. If the number appears and the cursor jumps to a new line, your scanner is configured correctly.
 
 ### 4.5 Saving your work (Automatic persistence)
-ErrinILS features zero-click automatic persistence. Every circulation event, newly catalogued item, fine payment, or patron update is written to `errin-data.json` the microsecond it occurs. There is no manual "Save" button for routine operations.
+ErrinILS features zero-click automatic persistence. Every circulation event, newly catalogued item, fine payment, or patron update is written to `errin-data.db` the microsecond it occurs. There is no manual "Save" button for routine operations.
 
 ### 4.6 If something goes wrong (Error resilience)
 If an unhandled system error occurs, ErrinILS displays a notification: *"Something went wrong: [details]. Your data is safe."* Click **OK** to resume. If the problem persists, export a backup from the **Backup** tab, restart the software, and consult Chapter 18.
@@ -323,8 +323,8 @@ If an unhandled system error occurs, ErrinILS displays a notification: *"Somethi
 
 | Rule | Default Value | Configurable? | Location in Settings |
 |---|---|---|---|
-| **Loan Period** | 7 calendar days | Fixed in v1.3.1 | Core Circulation Engine |
-| **Max Renewals per Loan** | 2 renewals (+14 days max) | Fixed in v1.3.1 | Core Circulation Engine |
+| **Loan Period** | 7 calendar days | Fixed in v1.3.2 | Core Circulation Engine |
+| **Max Renewals per Loan** | 2 renewals (+14 days max) | Fixed in v1.3.2 | Core Circulation Engine |
 | **Max Books per Student** | 3 books | Yes | **Settings → Max items per student** |
 | **Overdue Fine Rate** | RM 0.10 / day late | Yes | **Settings → Fine per day late** |
 | **Borrowing Block Threshold** | RM 5.00 unpaid fines | Yes | **Settings → Block checkout at unpaid fines of** |
@@ -781,7 +781,7 @@ Your library records are kept on the library computer. If the hard drive suffers
 4. All catalogued books, students, loans, and settings transfer seamlessly.
 
 ### 15.5 Recommended backup habits (3-2-1 strategy)
-- **Daily**: Allow the automatic backup (`errin-data.bak`) to protect against sudden power cuts.
+- **Daily**: Allow the automatic backup (`errin-data.db.bak`) to protect against sudden power cuts.
 - **Weekly**: Export a backup `.zip` to an external USB flash drive every Friday afternoon.
 - **Termly**: Upload a copy of the backup archive to official school cloud storage (Google Drive or OneDrive).
 - **Test Restores**: Once per school term, test-restore a backup onto a spare PC to verify backup file integrity.
@@ -825,7 +825,7 @@ Allows other libraries on your school district network to search your catalogue:
 - **Reachable From**: *This computer only* (localhost) or *Other computers* (LAN).
 
 ### 16.7 The local database path
-Displays the exact file path where your active database is stored (`%APPDATA%\Errin\errin-data.json`).
+Displays the exact file path where your active database is stored (`%APPDATA%\Errin\errin-data.db`).
 
 ---
 
@@ -965,8 +965,8 @@ Weeding preserves 100% of the book's history. If a book is permanently deleted, 
 | Component | Standard File System Location |
 |---|---|
 | **Installed Program Binary** | `C:\Program Files (x86)\ErrinILS\ErrinILS.exe` |
-| **Main Library Database** | `%APPDATA%\Errin\errin-data.json` |
-| **Automatic Rollback Backup** | `%APPDATA%\Errin\errin-data.bak` |
+| **Main Library Database** | `%APPDATA%\Errin\errin-data.db` |
+| **Automatic Rollback Backup** | `%APPDATA%\Errin\errin-data.db.bak` |
 | **Security & Remote Config** | `%APPDATA%\Errin\errin-config.json` |
 | **User Backups (Exported)** | Custom location (e.g. `E:\errin-backup-YYYY-MM-DD.zip`) |
 | **Catalogue Exports** | Custom location (e.g. `E:\errin-catalog-YYYY-MM-DD.zip`) |

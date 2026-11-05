@@ -13,7 +13,7 @@ Welcome to **ErrinILS** (School Integrated Library System). This guide provides 
 - **Core Philosophy**:
   - **Zero external dependencies**: Pure C# using only base .NET Framework 4.0 assemblies (`mscorlib`, `System`, `System.Core`, `System.Drawing`, `System.Windows.Forms`). No NuGet packages or third-party DLLs.
   - **Single standalone binary**: `ErrinILS.exe` runs directly without an installation dependency chain.
-  - **Single JSON database**: Data persists in `%APPDATA%\Errin\errin-data.json`. No separate database server required.
+  - **Single SQLite database**: Data persists in `%APPDATA%\Errin\errin-data.db`. High-performance ACID storage with WAL journaling, relational tables, and automatic backward-compatible migration from legacy JSON databases (`errin-data.json`).
   - **Low-resource footprint**: Optimized for low-end school PCs (1 GB RAM, ~10 MB disk).
   - **Localized for schools**: Supports Malaysian IC / MyKid student identification numbers (`YYMMDD-PB-###G`), Ringgit Malaysia (RM) fines calculation, and child-friendly UI phrasing.
 
@@ -52,6 +52,7 @@ d:/errin/
     │   ├── Program.cs            # Single-instance mutex & application entry point
     │   ├── SelfTest.cs           # Automated self-tests (MARC, Z39.50, circulation rules, JSON)
     │   ├── Simple.cs             # Simplified circulation view (Simplified View)
+    │   ├── Sqlite.cs             # Zero-dependency SQLite interface and high-performance persistence store
     │   ├── Ui.cs                 # UI controls, styles, layout, and rendering helpers
     │   ├── Web.cs                # Remote access HTTP server, device pairing, and web SPA
     │   ├── Z3950.cs              # ASN.1 BER encoding/decoding and Z39.50 v3 client & server
@@ -66,12 +67,15 @@ d:/errin/
 
 ## 3. Architecture & Subsystems
 
-### 3.1 Data Model & Persistence (`Models.cs`, `Json.cs`)
+### 3.1 Data Model & Persistence (`Models.cs`, `Sqlite.cs`, `Json.cs`)
 - All data models (`Item`, `Patron`, `Loan`, `Hold`, `Fine`, `Settings`, `Db`) are plain C# objects.
-- `Db.ToJson()` / `Db.FromJson()` preserves exact schema compatibility with previous Electron versions of Errin.
+- Primary storage engine is SQLite (`Sqlite.cs`), persisting data to `%APPDATA%\Errin\errin-data.db` with relational tables (`items`, `patrons`, `loans`, `holds`, `fines`, `settings`, `class_history`, `archived_patrons`), indexed lookups, WAL journal mode, and atomic transactions.
+- Zero-dependency native SQLite loading dynamically binds to Windows' built-in `winsqlite3.dll` (Windows 10/11) or `sqlite3.dll` without NuGet dependencies.
+- Automatic Migration: On first launch without `errin-data.db`, existing `errin-data.json` files are automatically parsed and migrated into the SQLite database, preserving a `.migrated` copy.
+- `Db.ToJson()` / `Db.FromJson()` preserves exact schema compatibility with previous Electron versions of Errin for Web API responses and JSON export/import.
 - Data directory default:
-  - Windows: `%APPDATA%\Errin\errin-data.json`
-- Backup / Restore: Handled via `Zip.cs` generating standard ZIP archives containing JSON records and catalog data.
+  - Windows: `%APPDATA%\Errin\errin-data.db`
+- Backup / Restore: Supports native SQLite database backups (`.db`) and JSON exports (`.json`).
 - Configuration: `%APPDATA%\Errin\errin-config.json` stores administrator password hash, Z39.50 settings, and paired device tokens.
 - **Admin Password**: Protects Settings, record deletion, and database restoration. Stored as salted PBKDF2/SHA-256 (`Auth.cs`). Factory default password is `admin123` (SHA-256 hash `f16959ae2d027f8562807b5d1dbbef305556f3fd4caaac6ac82679b33397ad72`). Deleting `errin-config.json` resets the password to `admin123`.
 
@@ -81,7 +85,9 @@ d:/errin/
 - **Blocking**: Patrons are blocked from borrowing if overdue items exist or unpaid fines exceed `Set.block` (default RM 5.00).
 - **Holds**: Held items cannot be renewed or checked out to other patrons.
 - **Weeding / Collection Maintenance**: Items can be marked as weeded/withdrawn with reason (condition/damage, obsolete, lost, duplicate) and date. Weeded copies are blocked from checkout and hold requests, while preserving full bibliographic and circulation history. Can be restored to active status at any time or permanently deleted.
-- **Data Retention**: `Lib.Purge()` clears patron activity older than 5 years (`Lib.RET_YEARS`).
+- **Data Retention & Archive**: `Lib.Purge()` moves patron activity older than 5 years (`Lib.RET_YEARS`) into a password-protected Archive section under Reports, preserving student names, registration dates, past borrowing history, and fines rather than permanently destroying them. Archived students can be restored to active status at any time.
+- **Academic Class Year Archiving**: Captures snapshots of class rosters and borrowing counts on December 31st (and anytime via manual snapshot), accessible under the Previous Years tab in Reports to preserve historical class cohorts.
+- **Batch Student Registration**: Imports students from Excel (`.xlsx`) or delimited files (`.csv`, `.tsv`, `.txt`) using a zero-dependency OpenXML parser (`ExcelReader`). Primary key is IC number: duplicate IC numbers update existing student details (name, class, contact) rather than creating duplicates.
 - **Malaysian IC / MyKid Validation**:
   - `Lib.NormIc(string)`: Normalizes 12-digit strings into `YYMMDD-PB-###G`.
   - `Lib.IcOk(string)`: Validates birth month (01–12) and day valid for the given month.
@@ -95,6 +101,8 @@ d:/errin/
   3. Google Books (HTTP JSON API)
   4. HathiTrust (HTTP JSON / MARCXML)
   5. K10plus German union catalogue (SRU MARCXML)
+- **Batch ISBN Lookup**: High-throughput multi-ISBN copy cataloguing designed for book donations and bulk cataloguing (`BatchLookupDialog`). Supports pasting ISBN lists, scanning barcodes continuously, or loading files, with live multithreaded lookups and bulk catalog additions.
+- **Item Circulation History**: Full historical borrowing lens for any item (`ItemHistoryDialog`), detailing which students borrowed it, loan dates, due dates, return timestamps, and overdue metrics.
 
 ### 3.5 Remote Access, QR Code Pairing & Device Pairing (`Web.cs`, `Qr.cs`)
 - **Device Pairing Model**: Zero-password access control using temporary 6-digit pairing codes (5-minute expiry, 3-attempt lockout) and persistent 32-byte cryptographically secure device tokens (`X-Errin-Token`).
@@ -107,13 +115,17 @@ d:/errin/
 - **Circulation Trends & Rankings**: Checkouts per month over the last 6 months, top 10/25 borrowed titles, and Reading Champions (Top student reader leaderboard by books read).
 - **Collection Classification**: Breakdown of cataloged books by Dewey Decimal Classification (DDC) 100s and fiction/subject categories.
 - **Dormant & Weeding Analysis**: Tracks titles with zero circulation (dormant collection) and categorizes weeded items by withdrawal reason (condition/damage, obsolete, lost, duplicate).
+- **Reports Sub-views**:
+  - **Analytics**: Real-time executive metrics, circulation trends, reader leaderboard, and Dewey breakdown.
+  - **Previous Years (Classes)**: Historical class rosters and borrowing stats captured annually on December 31st or on demand.
+  - **Inactive Archive**: Secure, password-protected archive housing student borrowing records preserved beyond the 5-year retention limit.
 - **Export Full Report (CSV)**: One-click export of an executive summary spreadsheet containing all analytics, overdue notices, unpaid fines, and reading champions.
 
 ### 3.4 User Interface & High-DPI Sharpness (`MainForm.cs`, `Simple.cs`, `Ui.cs`, `Dialogs.cs`)
 - Standard WinForms application with custom styling and flat controls in `Ui.cs`.
 - **High-DPI Sharpness**: Native PerMonitorV2 awareness via `Program.cs` and `app.manifest`. Prevents blurry DWM bitmap scaling on modern displays (125%, 150%, 200%), rendering razor-sharp ClearType text and proportional layouts without extra GPU/CPU consumption.
 - **Main View**: Tabbed librarian interface with Circulation, Catalog (with Active/Weeded filters and Weeding dialog), Patrons, Overdue Notices, Inventory, Reports, and System Settings.
-- **Simplified View (`Simple.cs`)**: Simplified view tailored for young children with large touch/mouse targets, barcode scanner focus, and friendly error dialogs (`Lib.Friendly(...)`).
+- **Simplified View (`Simple.cs`)**: Child-friendly circulation kiosk tailored for young students with large colorful touch/mouse targets, cheerful emoji badges, high-contrast friendly banner boxes, barcode scanner focus, and friendly error dialogs (`Lib.Friendly(...)`).
 
 ---
 
@@ -139,6 +151,7 @@ C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe
     /out:dist\ErrinILS.exe `
     ErrinILS-source\src\Json.cs `
     ErrinILS-source\src\Models.cs `
+    ErrinILS-source\src\Sqlite.cs `
     ErrinILS-source\src\Marc.cs `
     ErrinILS-source\src\Z3950.cs `
     ErrinILS-source\src\Lib.cs `
@@ -166,6 +179,7 @@ C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe
     /out:selftest.exe `
     ErrinILS-source\src\Json.cs `
     ErrinILS-source\src\Models.cs `
+    ErrinILS-source\src\Sqlite.cs `
     ErrinILS-source\src\Marc.cs `
     ErrinILS-source\src\Z3950.cs `
     ErrinILS-source\src\Lib.cs `
@@ -193,7 +207,7 @@ Requires `mono-mcs`, `mono-devel`, and `nsis`.
 
 ### 4.3 Building NSIS Installer
 ```cmd
-makensis -V2 -DVERSION=1.2.3 ErrinILS-source\installer.nsi
+makensis -V2 -DVERSION=1.3.2 ErrinILS-source\installer.nsi
 ```
 
 ---

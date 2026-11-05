@@ -1,4 +1,4 @@
-; ErrinILS installer (NSIS). Built by build.sh:  makensis -DVERSION=1.1.0 installer.nsi
+; ErrinILS installer (NSIS). Built by build.sh:  makensis -DVERSION=1.3.2 installer.nsi
 Unicode true
 !ifndef VERSION
   !define VERSION "1.3.2"

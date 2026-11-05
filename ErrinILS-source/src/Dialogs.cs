@@ -7,6 +7,7 @@ using System.Drawing.Text;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -240,7 +241,9 @@ namespace Errin
                     foreach (var k in sc.keys) { var tb = Ui.Txt(220); tb.Text = src.Get(k); boxes[k] = tb; fl.Controls.Add(Ui.Field(IF.First(x => x[0] == k)[1], tb, 236)); }
                     root.Controls.Add(fl);
                 }
-                var save = Ui.Btn("Save", 0); var cancel = Ui.Btn("Cancel", 1); var br = Ui.Flow(false); br.Margin = Ui.S(new Padding(0, 14, 0, 0)); br.Controls.Add(save); br.Controls.Add(cancel); root.Controls.Add(br);
+                var save = Ui.Btn("Save", 0); var cancel = Ui.Btn("Cancel", 1); var br = Ui.Flow(false); br.Margin = Ui.S(new Padding(0, 14, 0, 0)); br.Controls.Add(save); br.Controls.Add(cancel);
+                if (existing != null) { var histBtn = Ui.Btn("Circulation history", 1, (s, e) => ItemHistoryDialog(existing)); br.Controls.Add(histBtn); }
+                root.Controls.Add(br);
                 cancel.Click += (s, e) => d.Close();
                 save.Click += (s, e) =>
                 {
@@ -547,6 +550,455 @@ namespace Errin
                 d.Shown += (s, e) => q.Focus(); d.ShowDialog(this);
             }
             if (view == "cat") Render();
+        }
+
+        /* ---------- Item Circulation History ---------- */
+        void ItemHistoryDialog(Item item)
+        {
+            if (item == null) return;
+            var loans = lib.ItemLoans(item.id);
+            var open = lib.OpenLoan(item.id);
+            string statusDesc = "";
+            if (!string.IsNullOrEmpty(item.weeded))
+                statusDesc = "Status: Weeded (" + (string.IsNullOrEmpty(item.weed_reason) ? item.weeded : item.weed_reason) + ")";
+            else if (open != null)
+                statusDesc = "Status: On loan to " + lib.PName(open.pid) + " (due " + open.due + (lib.Overdue(open) ? " - OVERDUE" : "") + ")";
+            else
+                statusDesc = "Status: Available on shelf";
+
+            using (var d = Ui.Dlg("Item circulation history \u00B7 " + item.barcode, 800, 530))
+            {
+                d.Controls.Add(new Label { UseMnemonic = false, Text = "item circulation history", Font = Th.FT, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(14)), ForeColor = Th.Ink });
+                d.Controls.Add(new Label { UseMnemonic = false, Text = item.title + (string.IsNullOrEmpty(item.author) ? "" : " \u00B7 " + item.author) +
+                    "\nBarcode: " + item.barcode + " \u00B7 Call no: " + (string.IsNullOrEmpty(item.call) ? "(none)" : item.call) + " \u00B7 " + statusDesc,
+                    Font = Th.FB, AutoSize = true, ForeColor = Th.Mut, Location = new Point(Ui.S(20), Ui.S(40)) });
+
+                int lateCount = loans.Count(l => l.ret != null && string.CompareOrdinal(l.ret, l.due) > 0);
+                string statSummary = string.Format("Total checkouts: {0} time(s) \u00B7 Returned late: {1} time(s) \u00B7 Currently active: {2}",
+                    loans.Count, lateCount, open != null ? "Yes" : "No");
+                d.Controls.Add(new Label { UseMnemonic = false, Text = statSummary, Font = Th.FB, AutoSize = true, ForeColor = Th.Yel, Location = new Point(Ui.S(20), Ui.S(88)) });
+
+                var rows = loans.Select(l =>
+                {
+                    string retStr = l.ret != null ? l.ret : (lib.Overdue(l) ? "On loan (overdue)" : "On loan");
+                    return new[] { lib.PName(l.pid), l.pid, lib.PClass(l.pid), l.@out, l.due, retStr, l.ren.ToString() };
+                }).ToList();
+
+                var g = MakeGrid(new[] { "Student", "IC / ID", "Class", "Checked Out", "Due Date", "Returned", "Renewals" },
+                    rows, loans.Cast<object>().ToList(), "This item has no circulation history yet.");
+                g.Location = new Point(Ui.S(20), Ui.S(118));
+                g.Size = new Size(Ui.S(755), Ui.S(335));
+                g.Dock = DockStyle.None;
+                g.CellDoubleClick += (s, e) =>
+                {
+                    var l = Ui.Sel<Loan>(g);
+                    if (l != null)
+                    {
+                        var p = lib.PatronById(l.pid);
+                        if (p != null) PatView(p);
+                        else Toast("Student record not found or was deleted");
+                    }
+                };
+                d.Controls.Add(g);
+
+                var btnRow = Ui.Flow(false);
+                btnRow.Location = new Point(Ui.S(20), Ui.S(468));
+                var btnClose = Ui.Btn("Close", 1, (s, e) => d.Close());
+                var btnExport = Ui.Btn("Export history (CSV)", 1, (s, e) =>
+                {
+                    using (var sfd = new SaveFileDialog { FileName = "item-history-" + item.barcode + ".csv", Filter = "CSV (*.csv)|*.csv" })
+                    {
+                        if (sfd.ShowDialog(d) == DialogResult.OK)
+                        {
+                            var sb = new StringBuilder();
+                            sb.AppendLine("Student Name,IC Number,Class,Checked Out,Due Date,Returned,Renewals");
+                            foreach (var r in rows)
+                            {
+                                sb.AppendLine(string.Join(",", r.Select(x => "\"" + (x ?? "").Replace("\"", "\"\"") + "\"").ToArray()));
+                            }
+                            File.WriteAllText(sfd.FileName, sb.ToString(), Encoding.UTF8);
+                            Toast("Item history exported");
+                        }
+                    }
+                });
+                var btnPat = Ui.Btn("View student", 1, (s, e) =>
+                {
+                    var l = Ui.Sel<Loan>(g);
+                    if (l != null)
+                    {
+                        var p = lib.PatronById(l.pid);
+                        if (p != null) PatView(p);
+                        else Toast("Student record not found or was deleted");
+                    }
+                    else Toast("Select a borrowing record first");
+                });
+                btnRow.Controls.Add(btnClose);
+                btnRow.Controls.Add(btnExport);
+                btnRow.Controls.Add(btnPat);
+                d.Controls.Add(btnRow);
+
+                d.ShowDialog(this);
+            }
+        }
+
+        /* ---------- Batch ISBN Lookup ---------- */
+        void BatchLookupDialog()
+        {
+            using (var d = Ui.Dlg("Batch ISBN lookup (Book donations & bulk cataloguing)", 860, 680))
+            {
+                d.Controls.Add(new Label { UseMnemonic = false, Text = "batch isbn copy-cataloguing", Font = Th.FT, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(14)), ForeColor = Th.Ink });
+                d.Controls.Add(new Label { UseMnemonic = false, Text = "Quickly catalogue donated or newly acquired books by ISBN. Paste multiple ISBNs, scan with a barcode scanner, or load a text file.",
+                    Font = Th.F, ForeColor = Th.Mut, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(40)) });
+
+                var tbIsbns = new TextBox { Multiline = true, ScrollBars = ScrollBars.Vertical, Font = new Font("Consolas", 10.5f), BackColor = Th.Bg, ForeColor = Th.Ink, BorderStyle = BorderStyle.FixedSingle, Location = new Point(Ui.S(20), Ui.S(68)), Size = new Size(Ui.S(815), Ui.S(95)) };
+                d.Controls.Add(tbIsbns);
+
+                var topFlow = Ui.Flow(false);
+                topFlow.Location = new Point(Ui.S(20), Ui.S(172));
+                var lkSrc = Ui.Combo(240, new[] { "All sources (best match)" }.Concat(Lookup.SourceNames).ToArray());
+                topFlow.Controls.Add(Ui.Field("Search in", lkSrc, 250));
+
+                var chkSkipExisting = new CheckBox { Text = "Skip titles already in catalog", Checked = false, AutoSize = true, ForeColor = Th.Ink, Margin = Ui.S(new Padding(0, 18, 12, 0)) };
+                topFlow.Controls.Add(chkSkipExisting);
+
+                var btnLoad = Ui.Btn("Load file...", 1);
+                btnLoad.Margin = Ui.S(new Padding(0, 16, 8, 0));
+                btnLoad.Click += (s, e) =>
+                {
+                    using (var ofd = new OpenFileDialog { Filter = "Text/CSV files (*.txt;*.csv)|*.txt;*.csv|All files (*.*)|*.*", Title = "Load ISBN List" })
+                    {
+                        if (ofd.ShowDialog(d) == DialogResult.OK)
+                        {
+                            try
+                            {
+                                string txt = File.ReadAllText(ofd.FileName, Encoding.UTF8);
+                                tbIsbns.Text = (tbIsbns.Text + "\r\n" + txt).Trim();
+                            }
+                            catch { Toast("Could not read file"); }
+                        }
+                    }
+                };
+                topFlow.Controls.Add(btnLoad);
+
+                var btnStart = Ui.Btn("Start lookup", 0);
+                btnStart.Margin = Ui.S(new Padding(0, 16, 8, 0));
+                var btnStop = Ui.Btn("Stop", 1);
+                btnStop.Margin = Ui.S(new Padding(0, 16, 0, 0));
+                btnStop.Enabled = false;
+                topFlow.Controls.Add(btnStart);
+                topFlow.Controls.Add(btnStop);
+                d.Controls.Add(topFlow);
+
+                var stLbl = new Label { UseMnemonic = false, Text = "Ready. Enter ISBNs above (one per line, comma or space separated) and click 'Start lookup'.",
+                    Font = Th.FB, ForeColor = Th.Yel, AutoSize = false, Size = new Size(Ui.S(815), Ui.S(22)), Location = new Point(Ui.S(20), Ui.S(232)) };
+                d.Controls.Add(stLbl);
+
+                var grid = Ui.Grid();
+                grid.Location = new Point(Ui.S(20), Ui.S(258));
+                grid.Size = new Size(Ui.S(815), Ui.S(335));
+                grid.Dock = DockStyle.None;
+                Ui.Fill(grid, new[] { "ISBN", "Title", "Author", "Publisher", "Year", "Call no.", "Status / Source" }, new List<string[]>(), null, "No ISBNs searched yet");
+                d.Controls.Add(grid);
+
+                var botFlow = Ui.Flow(false);
+                botFlow.Location = new Point(Ui.S(20), Ui.S(605));
+                var btnAddAll = Ui.Btn("Add found items to catalog", 0);
+                btnAddAll.Enabled = false;
+                var btnExportCsv = Ui.Btn("Export results (CSV)", 1);
+                var btnClose = Ui.Btn("Close", 1, (s, e) => d.Close());
+                botFlow.Controls.Add(btnAddAll);
+                botFlow.Controls.Add(btnExportCsv);
+                botFlow.Controls.Add(btnClose);
+                d.Controls.Add(botFlow);
+
+                var foundItems = new List<Item>();
+                var displayRows = new List<string[]>();
+                bool cancelRequested = false;
+
+                btnStart.Click += (s, e) =>
+                {
+                    string rawText = tbIsbns.Text.Trim();
+                    if (string.IsNullOrEmpty(rawText)) { Toast("Please enter at least one ISBN"); return; }
+                    var tokens = Regex.Split(rawText, @"[\r\n,;\t]+").Select(x => x.Trim()).Where(x => x.Length > 0).ToList();
+                    if (tokens.Count == 0) { Toast("No valid ISBN strings found"); return; }
+
+                    int srcIdx = lkSrc.SelectedIndex - 1;
+                    bool skipExist = chkSkipExisting.Checked;
+
+                    btnStart.Enabled = false;
+                    btnStop.Enabled = true;
+                    btnAddAll.Enabled = false;
+                    cancelRequested = false;
+                    foundItems.Clear();
+                    displayRows.Clear();
+
+                    var thread = new Thread(new ThreadStart(() =>
+                    {
+                        int total = tokens.Count;
+                        int foundCount = 0;
+
+                        for (int i = 0; i < total; i++)
+                        {
+                            if (cancelRequested) break;
+                            string raw = tokens[i];
+                            string norm = Lookup.NormalizeIsbn(raw);
+
+                            string status = "";
+                            Item item = null;
+
+                            if (norm == null)
+                            {
+                                status = "Invalid ISBN";
+                            }
+                            else
+                            {
+                                string cleanIsbn = Lib.Isb(norm);
+                                var existing = db.Items.Where(it => it.isbn != "" && Lib.Isb(it.isbn) == cleanIsbn).ToList();
+                                if (existing.Count > 0 && skipExist)
+                                {
+                                    status = "Skipped (Already in catalog: " + existing[0].title + ")";
+                                }
+                                else if (existing.Count > 0 && !skipExist)
+                                {
+                                    item = existing[0].Clone();
+                                    status = "Found in local catalog (" + existing.Count + " copies)";
+                                    foundItems.Add(item);
+                                    foundCount++;
+                                }
+                                else
+                                {
+                                    try
+                                    {
+                                        var r = Lookup.Find(norm, srcIdx);
+                                        if (r != null && r.Ok && r.Rec != null && !string.IsNullOrEmpty(r.Rec.title))
+                                        {
+                                            item = r.Rec;
+                                            status = "Found via " + string.Join(" + ", r.Src.ToArray());
+                                            foundItems.Add(item);
+                                            foundCount++;
+                                        }
+                                        else
+                                        {
+                                            status = r != null && r.Err == "offline" ? "Offline (no network)" : "Not found";
+                                        }
+                                    }
+                                    catch
+                                    {
+                                        status = "Lookup failed";
+                                    }
+                                }
+                            }
+
+                            string[] row = new[]
+                            {
+                                norm ?? raw,
+                                item != null ? item.title : "(none)",
+                                item != null ? item.author : "",
+                                item != null ? item.publisher : "",
+                                item != null ? item.year : "",
+                                item != null ? item.call : "",
+                                status
+                            };
+                            displayRows.Add(row);
+
+                            int cur = i + 1;
+                            int fCount = foundCount;
+                            string lastTitle = item != null ? item.title : status;
+
+                            try
+                            {
+                                if (!d.IsDisposed)
+                                {
+                                    d.BeginInvoke(new Action(() =>
+                                    {
+                                        if (d.IsDisposed) return;
+                                        stLbl.Text = string.Format("Processing {0} of {1} \u00B7 Found {2} item(s) \u00B7 Last: {3}", cur, total, fCount, lastTitle);
+                                        Ui.Fill(grid, new[] { "ISBN", "Title", "Author", "Publisher", "Year", "Call no.", "Status / Source" },
+                                            displayRows, null, "Searching...");
+                                        if (grid.Rows.Count > 0) grid.FirstDisplayedScrollingRowIndex = grid.Rows.Count - 1;
+                                    }));
+                                }
+                            }
+                            catch { }
+                        }
+
+                        try
+                        {
+                            if (!d.IsDisposed)
+                            {
+                                d.BeginInvoke(new Action(() =>
+                                {
+                                    if (d.IsDisposed) return;
+                                    btnStart.Enabled = true;
+                                    btnStop.Enabled = false;
+                                    btnAddAll.Enabled = foundItems.Count > 0;
+                                    stLbl.ForeColor = foundItems.Count > 0 ? Th.Green : Th.Red;
+                                    stLbl.Text = string.Format("Finished! Found {0} of {1} items." + (cancelRequested ? " (Stopped early)" : ""), foundItems.Count, tokens.Count);
+                                }));
+                            }
+                        }
+                        catch { }
+                    })) { IsBackground = true };
+                    thread.Start();
+                };
+
+                btnStop.Click += (s, e) =>
+                {
+                    cancelRequested = true;
+                    btnStop.Enabled = false;
+                    stLbl.Text = "Stopping after current request...";
+                };
+
+                btnAddAll.Click += (s, e) =>
+                {
+                    if (foundItems.Count == 0) return;
+                    var dup = lib.DupSet(foundItems);
+                    int skipped;
+                    int added = lib.AddItems(foundItems, "copy", true, dup, out skipped);
+                    Save();
+                    Toast(string.Format("Added {0} items to catalog ({1} skipped)", added, skipped));
+                    d.Close();
+                };
+
+                btnExportCsv.Click += (s, e) =>
+                {
+                    if (displayRows.Count == 0) { Toast("No results to export"); return; }
+                    using (var sfd = new SaveFileDialog { FileName = "isbn-lookup-results-" + Lib.Today() + ".csv", Filter = "CSV (*.csv)|*.csv" })
+                    {
+                        if (sfd.ShowDialog(d) == DialogResult.OK)
+                        {
+                            var sb = new StringBuilder();
+                            sb.AppendLine("ISBN,Title,Author,Publisher,Year,Call Number,Status");
+                            foreach (var r in displayRows)
+                            {
+                                sb.AppendLine(string.Join(",", r.Select(x => "\"" + (x ?? "").Replace("\"", "\"\"") + "\"").ToArray()));
+                            }
+                            File.WriteAllText(sfd.FileName, sb.ToString(), Encoding.UTF8);
+                            Toast("Results exported to CSV");
+                        }
+                    }
+                };
+
+                d.ShowDialog(this);
+            }
+            if (view == "cat") Render();
+        }
+
+        /* ---------- Batch Student Registration (Excel / CSV) ---------- */
+        void BatchPatronDialog()
+        {
+            using (var d = Ui.Dlg("Batch Student Registration (Excel / CSV)", 840, 640))
+            {
+                d.Controls.Add(new Label { UseMnemonic = false, Text = "batch student registration", Font = Th.FT, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(14)), ForeColor = Th.Ink });
+                d.Controls.Add(new Label { UseMnemonic = false,
+                    Text = "Import students from Excel (.xlsx) or CSV spreadsheet (including Malaysian APDM format).\nIC / MyKid number is the primary key: if an IC number already exists, student details will be updated with the new record.",
+                    Font = Th.F, ForeColor = Th.Mut, AutoSize = false, Size = new Size(Ui.S(800), Ui.S(38)), Location = new Point(Ui.S(20), Ui.S(40)) });
+
+                var topRow = Ui.Flow(false);
+                topRow.Location = new Point(Ui.S(20), Ui.S(86));
+                var tbFilePath = Ui.Txt(480);
+                tbFilePath.ReadOnly = true;
+                var btnBrowse = Ui.Btn("Browse Excel / CSV file...", 0);
+                btnBrowse.Margin = Ui.S(new Padding(8, 0, 0, 0));
+                topRow.Controls.Add(tbFilePath);
+                topRow.Controls.Add(btnBrowse);
+                d.Controls.Add(topRow);
+
+                var stLbl = new Label { UseMnemonic = false, Text = "Select an Excel (.xlsx) or CSV file to preview student records.", Font = Th.FB, ForeColor = Th.Yel, AutoSize = false, Size = new Size(Ui.S(800), Ui.S(24)), Location = new Point(Ui.S(20), Ui.S(128)) };
+                d.Controls.Add(stLbl);
+
+                var grid = Ui.Grid();
+                grid.Location = new Point(Ui.S(20), Ui.S(156));
+                grid.Size = new Size(Ui.S(800), Ui.S(410));
+                grid.Dock = DockStyle.None;
+                Ui.Fill(grid, new[] { "Action / Status", "IC Number", "Full Name", "Class / Grade", "Contact" }, new List<string[]>(), null, "No file loaded yet");
+                d.Controls.Add(grid);
+
+                var botRow = Ui.Flow(false);
+                botRow.Location = new Point(Ui.S(20), Ui.S(578));
+                var btnImport = Ui.Btn("Import / Update students", 0);
+                btnImport.Enabled = false;
+                var btnCancel = Ui.Btn("Cancel", 1, (s, e) => d.Close());
+                botRow.Controls.Add(btnImport);
+                botRow.Controls.Add(btnCancel);
+                d.Controls.Add(botRow);
+
+                var parsedList = new List<PatronImportRow>();
+
+                Action<string> loadFile = path =>
+                {
+                    try
+                    {
+                        tbFilePath.Text = path;
+                        var rawRows = ExcelReader.ReadFile(path);
+                        if (rawRows.Count == 0)
+                        {
+                            stLbl.ForeColor = Th.Red;
+                            stLbl.Text = "No data rows found in the selected file.";
+                            return;
+                        }
+
+                        parsedList = lib.ParsePatronSpreadsheet(rawRows);
+                        if (parsedList.Count == 0)
+                        {
+                            stLbl.ForeColor = Th.Red;
+                            stLbl.Text = "No valid student rows could be parsed from the file.";
+                            Ui.Fill(grid, new[] { "Action / Status", "IC Number", "Full Name", "Class / Grade", "Contact" }, new List<string[]>(), null, "No records found");
+                            btnImport.Enabled = false;
+                            return;
+                        }
+
+                        int newCount = parsedList.Count(p => !p.isUpdate && p.isValid);
+                        int updateCount = parsedList.Count(p => p.isUpdate && p.isValid);
+                        int invalidCount = parsedList.Count(p => !p.isValid);
+
+                        var display = parsedList.Select(p => new[] { p.action, p.normIc, p.name, p.cls, p.contact }).ToList();
+                        Ui.Fill(grid, new[] { "Action / Status", "IC Number", "Full Name", "Class / Grade", "Contact" }, display, null, "No records found");
+
+                        stLbl.ForeColor = Th.Green;
+                        stLbl.Text = string.Format("Found {0} student records: {1} new, {2} existing to update, {3} invalid.",
+                            parsedList.Count, newCount, updateCount, invalidCount);
+                        btnImport.Enabled = (newCount + updateCount) > 0;
+                    }
+                    catch (Exception ex)
+                    {
+                        stLbl.ForeColor = Th.Red;
+                        stLbl.Text = "Error reading file: " + ex.Message;
+                    }
+                };
+
+                btnBrowse.Click += (s, e) =>
+                {
+                    using (var ofd = new OpenFileDialog { Filter = "Excel & CSV files (*.xlsx;*.csv;*.tsv;*.txt)|*.xlsx;*.csv;*.tsv;*.txt|Excel (*.xlsx)|*.xlsx|CSV (*.csv)|*.csv|All files (*.*)|*.*", Title = "Select Student Spreadsheet" })
+                    {
+                        if (ofd.ShowDialog(d) == DialogResult.OK)
+                        {
+                            loadFile(ofd.FileName);
+                        }
+                    }
+                };
+
+                btnImport.Click += (s, e) =>
+                {
+                    int added = 0, updated = 0;
+                    foreach (var p in parsedList)
+                    {
+                        if (!p.isValid) continue;
+                        bool wasUpdate;
+                        string err = lib.BatchUpsertPatron(p.normIc, p.name, p.cls, p.contact, out wasUpdate);
+                        if (err == null)
+                        {
+                            if (wasUpdate) updated++;
+                            else added++;
+                        }
+                    }
+                    d.Close();
+                    Commit(string.Format("Batch import finished: {0} new student(s) registered, {1} existing student(s) updated.", added, updated));
+                };
+
+                d.ShowDialog(this);
+            }
+            if (view == "pat") Render();
         }
     }
 }

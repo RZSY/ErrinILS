@@ -51,6 +51,36 @@ static class SelfTest
         var legacy = Db.FromJson("{\"items\":[{\"id\":\"x\",\"title\":\"T\",\"barcode\":\"B1\"}],\"patrons\":[],\"loans\":[{\"id\":\"l\",\"iid\":\"x\",\"pid\":\"p\",\"out\":\"2026-01-01\",\"due\":\"2026-01-08\",\"ret\":null,\"ren\":0}],\"holds\":[],\"fines\":[],\"set\":{\"rate\":0.1,\"maxLoans\":3,\"block\":5}}");
         Ok(legacy.Items[0].title == "T" && legacy.Loans[0].ret == null && legacy.Set.maxLoans == 3, "reads the old Electron data file");
 
+        // SQLite store round trip and migration test
+        Ok(SqliteNative.IsAvailable, "SQLite native library is available");
+        string testStoreDir = Path.Combine(Path.GetTempPath(), "errin_selftest_" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var store = new Store(testStoreDir);
+            Ok(store.DataFile.EndsWith("errin-data.db"), "Store uses SQLite errin-data.db file path");
+            bool saveOk = store.Save(db);
+            Ok(saveOk && File.Exists(store.DataFile), "SQLite store save creates .db file");
+
+            var dbSqlite = store.Load();
+            Ok(dbSqlite != null && dbSqlite.Items.Count == 4 && dbSqlite.Patrons[0].name == "Aisha \"A\" Rahman" &&
+               dbSqlite.Loans[0].ret == null && dbSqlite.Loans[0].ren == 1 && Math.Abs(dbSqlite.Fines[0].amt - 0.7) < 1e-9,
+               "SQLite store load round trip matches all records");
+
+            var snapItems = store.SnapshotItems();
+            Ok(snapItems != null && snapItems.Count == 4 && snapItems[0].title == items[0].title, "SQLite store snapshot items");
+
+            // Test migration from JSON to SQLite
+            File.Delete(store.DataFile);
+            var bak = store.DataFile + ".bak"; if (File.Exists(bak)) File.Delete(bak);
+            File.WriteAllText(store.LegacyJsonFile, db.ToJson(), Encoding.UTF8);
+            var dbMigrated = store.Load();
+            Ok(dbMigrated != null && dbMigrated.Items.Count == 4 && File.Exists(store.DataFile), "automatic migration from JSON to SQLite database");
+        }
+        finally
+        {
+            try { Directory.Delete(testStoreDir, true); } catch { }
+        }
+
 
         // Library rules
         var ldb = Lib.Seed(); var lib = new Lib(ldb); string msg; string S1 = ldb.Patrons[0].id;
@@ -69,7 +99,93 @@ static class SelfTest
         var dups = lib.DupSet(imp); int sk; int added = lib.AddItems(imp, "skip", true, dups, out sk);
         Ok(added == 1 && sk == 2, "import skips duplicates by barcode or ISBN: " + added + "/" + sk);
         Ok(ldb.Items.Select(i => i.ctl).Distinct().Count() == ldb.Items.Count && ldb.Items.Select(i => i.barcode).Distinct().Count() == ldb.Items.Count, "control numbers and barcodes stay unique");
-        ldb.Patrons.Add(new Patron { id = "OLD", name = "Old", reg = "2010-01-01", last = "2010-01-01" }); Ok(lib.Purge() == 1 && lib.PatronById("OLD") == null, "5-year retention purge");
+        ldb.Patrons.Add(new Patron { id = "OLD", name = "Old", reg = "2010-01-01", last = "2010-01-01" });
+        Ok(lib.Purge() == 1 && lib.PatronById("OLD") == null, "5-year retention purge");
+        Ok(ldb.ArchivedPatrons != null && ldb.ArchivedPatrons.Any(p => p.id == "OLD"), "5-year retention preserves data in Archive");
+        Ok(lib.RestoreArchivedPatron("OLD") && lib.PatronById("OLD") != null, "restore archived patron");
+        ldb.Patrons.RemoveAll(p => p.id == "OLD");
+
+        // Item circulation history test
+        var itemHistory = lib.ItemLoans(ldb.Items[0].id);
+        Ok(itemHistory != null && itemHistory.Count > 0, "item circulation history retrieved");
+
+        // Batch patron registration with duplicate IC updates
+        string testCsv = "IC Number,Student Name,Class,Guardian Contact\r\n" + S1 + ",Aisha Updated,Grade 8A,0123456789\r\n080512-14-1234,Chong Wei,Grade 7B,0198765432";
+        var parsedCsv = ExcelReader.ParseCsv(testCsv);
+        Ok(parsedCsv.Count == 3, "csv table parsed correctly");
+        bool wasUpd;
+        lib.BatchUpsertPatron(S1, "Aisha Updated", "Grade 8A", "0123456789", out wasUpd);
+        Ok(wasUpd && lib.PatronById(S1).name == "Aisha Updated" && lib.PatronById(S1).cls == "Grade 8A", "batch registration updates existing patron by IC (primary key)");
+        lib.BatchUpsertPatron("080512-14-1234", "Chong Wei", "Grade 7B", "0198765432", out wasUpd);
+        Ok(!wasUpd && lib.PatronById("080512-14-1234") != null, "batch registration registers new student");
+
+        // Malaysian School Class Formatting tests
+        Ok(Lib.FormatSchoolClass("TAHUN SATU", "AKTIF") == "1 AKTIF", "FormatSchoolClass TAHUN SATU -> 1 AKTIF");
+        Ok(Lib.FormatSchoolClass("TAHUN DUA", "BESTARI") == "2 BESTARI", "FormatSchoolClass TAHUN DUA -> 2 BESTARI");
+        Ok(Lib.FormatSchoolClass("KELAS KHAS RENDAH", "1 BIJAK") == "1 BIJAK", "FormatSchoolClass KELAS KHAS RENDAH 1 BIJAK -> 1 BIJAK");
+        Ok(Lib.FormatSchoolClass("PRASEKOLAH", "CILIK BESTARI") == "PRASEKOLAH CILIK BESTARI", "FormatSchoolClass PRASEKOLAH");
+        Ok(Lib.FormatSchoolClass("TINGKATAN 4", "SAINS") == "4 SAINS", "FormatSchoolClass TINGKATAN 4 -> 4 SAINS");
+
+        // APDM-style multi-row header spreadsheet parsing test (with dummy synthetic data)
+        var apdmRows = new List<List<string>>();
+        apdmRows.Add(new List<string> { "KEMENTERIAN PENDIDIKAN MALAYSIA" });
+        apdmRows.Add(new List<string> { "SENARAI KESELURUHAN MURID" });
+        apdmRows.Add(new List<string> { "NAMA SEKOLAH", "SK CONTOH" });
+        apdmRows.Add(new List<string> { "KOD SEKOLAH", "ABC1234" });
+        apdmRows.Add(new List<string> { "" });
+        var apdmHeader = new List<string>();
+        for (int c = 0; c < 50; c++) apdmHeader.Add("");
+        apdmHeader[0] = "BIL.";
+        apdmHeader[1] = "ID MURID";
+        apdmHeader[2] = "NAMA";
+        apdmHeader[3] = "NO. PENGENALAN";
+        apdmHeader[9] = "TAHUN / TINGKATAN";
+        apdmHeader[10] = "NAMA KELAS";
+        apdmHeader[33] = "PENJAGA 1";
+        apdmHeader[42] = "NO. TEL. BIMBIT PENJAGA 1";
+        apdmRows.Add(apdmHeader);
+
+        var apdmRow1 = new List<string>();
+        for (int c = 0; c < 50; c++) apdmRow1.Add("");
+        apdmRow1[0] = "1";
+        apdmRow1[1] = "M001";
+        apdmRow1[2] = "Aisha Final";
+        apdmRow1[3] = S1.Replace("-", "");
+        apdmRow1[9] = "TAHUN TIGA";
+        apdmRow1[10] = "CEMERLANG";
+        apdmRow1[33] = "Encik Rahman";
+        apdmRow1[42] = "01122334455";
+        apdmRows.Add(apdmRow1);
+
+        var apdmRow2 = new List<string>();
+        for (int c = 0; c < 50; c++) apdmRow2.Add("");
+        apdmRow2[0] = "2";
+        apdmRow2[1] = "M002";
+        apdmRow2[2] = "Muthu Raja";
+        apdmRow2[3] = "140615-08-9999";
+        apdmRow2[9] = "TAHUN SATU";
+        apdmRow2[10] = "AKTIF";
+        apdmRow2[33] = "Encik Raja";
+        apdmRow2[42] = "'0129988776";
+        apdmRows.Add(apdmRow2);
+
+        var parsedApdm = lib.ParsePatronSpreadsheet(apdmRows);
+        Ok(parsedApdm.Count == 2, "APDM-style spreadsheet parsed 2 student records");
+        Ok(parsedApdm[0].isUpdate && parsedApdm[0].normIc == S1 && parsedApdm[0].cls == "3 CEMERLANG", "APDM detects existing student, normalizes IC and formats class");
+        Ok(parsedApdm[0].contact.Contains("01122334455") && parsedApdm[0].contact.Contains("Encik Rahman"), "APDM combines guardian phone and name");
+        Ok(!parsedApdm[1].isUpdate && parsedApdm[1].cls == "1 AKTIF" && parsedApdm[1].contact.StartsWith("0129988776"), "APDM parses new student, trims leading apostrophe from phone");
+
+        // Previous year class records archiving
+        int classSnapCount = lib.ArchiveCurrentYearClasses(2026);
+        Ok(classSnapCount > 0 && ldb.ClassHistory.Any(c => c.year == 2026), "class year snapshot archived");
+        var dbJson = ldb.ToJson();
+        var reloadedDb = Db.FromJson(dbJson);
+        Ok(reloadedDb.ClassHistory.Count > 0 && reloadedDb.ClassHistory.Any(c => c.year == 2026), "class history persists in json");
+
+        // Zip extraction test
+        var testZipOut = new ZipOut(); testZipOut.Add("hello.txt", Encoding.UTF8.GetBytes("zero dependency zip"));
+        var testZipIn = ZipIn.Extract(testZipOut.Finish());
+        Ok(testZipIn.ContainsKey("hello.txt") && Encoding.UTF8.GetString(testZipIn["hello.txt"]) == "zero dependency zip", "ZipIn extracts zip entries");
         Ok(Lookup.NormalizeIsbn("0-547-92822-x") == "054792822X" && Lookup.NormalizeIsbn("0547928228") == null && Lookup.NormalizeIsbn("9780064400558") != null && Lookup.NormalizeIsbn("9780064400559") == null, "ISBN validation");
         var zip = new ZipOut(); zip.Add("a.txt", Encoding.UTF8.GetBytes("hello hello hello hello")); zip.Add("b.mrc", Marc.ToMrcBytes(items));
         string tmpZip = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "t.zip"); System.IO.File.WriteAllBytes(tmpZip, zip.Finish()); try { System.IO.File.Delete(tmpZip); } catch { }
@@ -352,11 +468,11 @@ static class SelfTest
         }
 
         // 11. Auto-updater version comparison tests
-        Ok(Updater.IsNewer("1.4.0", "1.3.1"), "Updater detects 1.4.0 is newer than 1.3.1");
+        Ok(Updater.IsNewer("1.4.0", "1.3.2"), "Updater detects 1.4.0 is newer than 1.3.2");
         Ok(Updater.IsNewer("2.0.0", "1.9.9"), "Updater detects 2.0.0 is newer than 1.9.9");
-        Ok(Updater.IsNewer("v1.5.0", "1.3.1"), "Updater handles leading 'v' in version tag");
-        Ok(!Updater.IsNewer("1.3.1", "1.3.1"), "Updater detects identical version is not newer");
-        Ok(!Updater.IsNewer("1.2.0", "1.3.1"), "Updater detects older version is not newer");
+        Ok(Updater.IsNewer("v1.5.0", "1.3.2"), "Updater handles leading 'v' in version tag");
+        Ok(!Updater.IsNewer("1.3.2", "1.3.2"), "Updater detects identical version is not newer");
+        Ok(!Updater.IsNewer("1.3.1", "1.3.2"), "Updater detects older version is not newer");
 
         // 12. Dashboard active catalog titles count exclusion test
         var weedDb = new Db();

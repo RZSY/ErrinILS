@@ -25,7 +25,8 @@ namespace Errin
         Panel host; Label sbar, toast; Timer toastT, debT; FlowLayoutPanel tabBar;
         string pwSalt = "", pwHash = ""; int pwIter = Auth.Iterations;
         readonly Dictionary<string, Button> tabs = new Dictionary<string, Button>();
-        string catQ = "", patQ = "", catFilter = "active";
+        string catQ = "", patQ = "", catFilter = "active", repSubTab = "analytics";
+        bool archiveUnlocked = false;
         DataGridView catGrid, patGrid; Label catNote, patNote;
         static readonly string[][] NAV = { new[] { "dash", "Dashboard" }, new[] { "circ", "Circulation" }, new[] { "cat", "Catalog" }, new[] { "pat", "Students" }, new[] { "fine", "Fines" }, new[] { "rep", "Reports" }, new[] { "bak", "Backup" }, new[] { "set", "Settings" } };
 
@@ -41,7 +42,7 @@ namespace Errin
             StartPosition = FormStartPosition.CenterScreen; AllowDrop = true;
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
             db = store.Load(); bool fresh = db == null; if (fresh) db = Lib.Seed();
-            lib = new Lib(db); lib.FixItems(); if (db.Set == null) db.Set = new Settings(); lib.Purge();
+            lib = new Lib(db); lib.FixItems(); if (db.Set == null) db.Set = new Settings(); lib.Purge(); lib.CheckDec31ClassArchive();
             BuildFrame(); Save(); LoadCfg(); ApplyZ(); ApplyWeb(); Render();
             if (autoUpdate)
             {
@@ -114,6 +115,7 @@ namespace Errin
         {
             if (v == "set" && !unlocked) { if (!AskPw()) return; unlocked = true; }
             if (v != "set") unlocked = false;
+            if (v != "rep") { archiveUnlocked = false; repSubTab = "analytics"; }
             view = v; Render();
         }
         void Render()
@@ -239,7 +241,7 @@ namespace Errin
             cbSort.SelectedIndexChanged += (s, e) => { catSort = cbSort.SelectedIndex; FilterCat(); };
             bar.Controls.Add(Ui.Field("Sort by", cbSort, 190));
             var bf = Ui.Flow(false); bf.Padding = Ui.S(new Padding(0, 18, 0, 0));
-            bf.Controls.Add(Ui.Btn("+ Add record", 0, (s, e) => ItemForm(null))); bf.Controls.Add(Ui.Btn("Import MARC", 1, (s, e) => PickImport()));
+            bf.Controls.Add(Ui.Btn("+ Add record", 0, (s, e) => ItemForm(null))); bf.Controls.Add(Ui.Btn("Batch ISBN lookup", 1, (s, e) => BatchLookupDialog())); bf.Controls.Add(Ui.Btn("Import MARC", 1, (s, e) => PickImport()));
             bf.Controls.Add(Ui.Btn("Z39.50 search", 1, (s, e) => ZDialog())); bf.Controls.Add(Ui.Btn("Print labels", 1, (s, e) => PrintShown())); bf.Controls.Add(Ui.Btn("Print spine labels", 1, (s, e) => PrintSpines())); bar.Controls.Add(bf);
             var tool = Ui.Card(null, bar);
             catGrid = Ui.Grid(); catNote = Ui.Lbl("", true);
@@ -262,6 +264,7 @@ namespace Errin
                 FilterCat();
             };
             var btns = new[] {
+                Ui.Btn("History", 1, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i == null) Toast("Select a record first"); else ItemHistoryDialog(i); }),
                 Ui.Btn("Edit", 1, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i == null) Toast("Select a record first"); else ItemForm(i); }),
                 Ui.Btn("Weed", 1, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i == null) Toast("Select a record first"); else WeedDialog(i); }),
                 Ui.Btn("MARC", 1, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i == null) Toast("Select a record first"); else MarcView(i); }),
@@ -339,7 +342,10 @@ namespace Errin
             cbSort.SelectedIndex = patSort;
             cbSort.SelectedIndexChanged += (s, e) => { patSort = cbSort.SelectedIndex; FilterPat(); };
             bar.Controls.Add(Ui.Field("Sort by", cbSort, 195));
-            var bf = Ui.Flow(false); bf.Padding = Ui.S(new Padding(0, 18, 0, 0)); bf.Controls.Add(Ui.Btn("+ Register student", 0, (s, e) => PatForm())); bar.Controls.Add(bf);
+            var bf = Ui.Flow(false); bf.Padding = Ui.S(new Padding(0, 18, 0, 0));
+            bf.Controls.Add(Ui.Btn("+ Register student", 0, (s, e) => PatForm()));
+            bf.Controls.Add(Ui.Btn("Batch import (Excel / CSV)", 1, (s, e) => BatchPatronDialog()));
+            bar.Controls.Add(bf);
             patGrid = Ui.Grid(); patNote = Ui.Lbl("", true);
             patGrid.CellDoubleClick += (s, e) => { var p = Ui.Sel<Patron>(patGrid); if (p != null) PatView(p); };
             patGrid.CellFormatting += (s, e) => {
@@ -363,7 +369,7 @@ namespace Errin
                 Ui.Btn("Print library card", 0, (s, e) => { var p = Ui.Sel<Patron>(patGrid); if (p == null) Toast("Select a student first"); else CardDialog(p); }),
                 Ui.Btn("Print cards for list", 1, (s, e) => PrintCards()),
                 Ui.Btn("Delete", 2, (s, e) => { var p = Ui.Sel<Patron>(patGrid); if (p == null) Toast("Select a student first"); else DelPat(p); }));
-            return Ui.Stack(new Control[] { Ui.Heading("Students", "Register students with their IC number, print library cards and manage accounts. Records are deleted after " + Lib.RET_YEARS + " years of inactivity."), Ui.Card(null, bar), patNote, Ui.Card("Students", body, 1) }, 3);
+            return Ui.Stack(new Control[] { Ui.Heading("Students", "Register students with their IC number, print library cards and manage accounts. Inactive records are archived after " + Lib.RET_YEARS + " years."), Ui.Card(null, bar), patNote, Ui.Card("Students", body, 1) }, 3);
         }
         void FilterPat()
         {
@@ -425,6 +431,30 @@ namespace Errin
         /* ---------- Reports ---------- */
         Control RepPage()
         {
+            var subNav = Ui.Flow(false);
+            subNav.Margin = Ui.S(new Padding(0, 0, 0, 14));
+            Func<string, string, Button> subBtn = (id, label) =>
+            {
+                bool active = repSubTab == id;
+                var b = Ui.Btn(label, active ? 0 : 1, (s, e) =>
+                {
+                    if (id == "archive" && !archiveUnlocked)
+                    {
+                        if (!AskPw()) return;
+                        archiveUnlocked = true;
+                    }
+                    repSubTab = id;
+                    Render();
+                });
+                return b;
+            };
+            subNav.Controls.Add(subBtn("analytics", "Circulation & Collection Analytics"));
+            subNav.Controls.Add(subBtn("prev_years", "Previous Years (Classes)"));
+            subNav.Controls.Add(subBtn("archive", "\uD83D\uDD12 Inactive Archive (5-Year Retention)"));
+
+            if (repSubTab == "prev_years") return RepPrevYearsPage(subNav);
+            if (repSubTab == "archive") return RepArchivePage(subNav);
+
             var c = new Dictionary<string, int>(); foreach (var l in db.Loans) c[l.iid] = (c.ContainsKey(l.iid) ? c[l.iid] : 0) + 1;
             var top = c.OrderByDescending(x => x.Value).Take(8).Select(x => new KeyValuePair<string, double>(lib.Title(x.Key), x.Value)).ToList();
             var mo = new List<KeyValuePair<string, double>>();
@@ -507,12 +537,258 @@ namespace Errin
 
             return ScrollPage(
                 Ui.Heading("Reports", "Circulation, collection and fine analytics"),
+                subNav,
                 topRow,
                 st,
                 Cols(230, Ui.Card("Checkouts, last 6 months", chart(mo, true), 1), Ui.Card("Most borrowed titles", chart(top, false), 1)),
                 Cols(250, Ui.Card("Reading champions (top readers)", readerGrid, 1), Ui.Card("Checkouts by class", chart(cl.OrderByDescending(x => x.Value).Take(8).Select(x => new KeyValuePair<string, double>(x.Key, x.Value)).ToList(), false), 1)),
                 Cols(250, Ui.Card("Collection by subject / Dewey range", chart(deweyData, false), 1), Ui.Card("Students with unpaid fines", finesGrid, 1)),
                 Ui.Card("Collection health & weeding maintenance", healthBox));
+        }
+
+        Control RepPrevYearsPage(Control subNav)
+        {
+            int curYear = DateTime.Now.Year;
+            var allYears = (db.ClassHistory != null ? db.ClassHistory.Select(ch => ch.year) : Enumerable.Empty<int>())
+                .Concat(new[] { curYear }).Distinct().OrderByDescending(y => y).ToList();
+
+            var yearCombo = new ComboBox { Width = Ui.S(160), DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat, BackColor = Th.Bg, ForeColor = Th.Ink, Font = Th.F };
+            foreach (var y in allYears) yearCombo.Items.Add(y.ToString());
+            if (yearCombo.Items.Count > 0) yearCombo.SelectedIndex = 0;
+
+            var topBar = Ui.Flow(false);
+            topBar.Controls.Add(Ui.Field("Academic year", yearCombo, 170));
+
+            var btnArchiveNow = Ui.Btn("Archive current year classes (Snapshot)", 0, (s, e) =>
+            {
+                int count = lib.ArchiveCurrentYearClasses(curYear);
+                Save();
+                Toast(string.Format("Snapshot archived for {0} classes in academic year {1}.", count, curYear));
+                Render();
+            });
+            btnArchiveNow.Margin = Ui.S(new Padding(0, 18, 8, 0));
+            topBar.Controls.Add(btnArchiveNow);
+
+            var btnExportYear = Ui.Btn("Export year records (CSV)", 1);
+            btnExportYear.Margin = Ui.S(new Padding(0, 18, 0, 0));
+            topBar.Controls.Add(btnExportYear);
+
+            var classGrid = Ui.Grid();
+            var studentGrid = Ui.Grid();
+
+            Action refreshYear = () =>
+            {
+                int selYear = curYear;
+                if (yearCombo.SelectedIndex >= 0) int.TryParse(yearCombo.SelectedItem.ToString(), out selYear);
+
+                var recs = (db.ClassHistory != null ? db.ClassHistory : new List<ClassYearRecord>())
+                    .Where(ch => ch.year == selYear).OrderBy(ch => ch.cls).ToList();
+                var cRows = recs.Select(r => new[] { r.cls, r.studentCount.ToString(), r.totalLoans.ToString() }).ToList();
+                Ui.Fill(classGrid, new[] { "Class / Grade", "Students", "Total Checkouts" }, cRows, recs.Cast<object>().ToList(), "No class records found for " + selYear);
+
+                Action showStudents = () =>
+                {
+                    var selRec = Ui.Sel<ClassYearRecord>(classGrid);
+                    if (selRec != null && selRec.students != null)
+                    {
+                        var sRows = selRec.students.OrderByDescending(st => st.loans).ThenBy(st => st.name).Select(st => new[] { st.id, st.name, st.loans.ToString() }).ToList();
+                        Ui.Fill(studentGrid, new[] { "IC / Student ID", "Student Name", "Books Borrowed" }, sRows, null, "No students in this class");
+                    }
+                    else
+                    {
+                        Ui.Fill(studentGrid, new[] { "IC / Student ID", "Student Name", "Books Borrowed" }, new List<string[]>(), null, "Select a class to view its students");
+                    }
+                };
+
+                if (recs.Count > 0)
+                {
+                    classGrid.ClearSelection();
+                    if (classGrid.Rows.Count > 0) classGrid.Rows[0].Selected = true;
+                    showStudents();
+                }
+                else
+                {
+                    showStudents();
+                }
+            };
+
+            classGrid.SelectionChanged += (s, e) =>
+            {
+                var selRec = Ui.Sel<ClassYearRecord>(classGrid);
+                if (selRec != null && selRec.students != null)
+                {
+                    var sRows = selRec.students.OrderByDescending(st => st.loans).ThenBy(st => st.name).Select(st => new[] { st.id, st.name, st.loans.ToString() }).ToList();
+                    Ui.Fill(studentGrid, new[] { "IC / Student ID", "Student Name", "Books Borrowed" }, sRows, null, "No students in this class");
+                }
+            };
+
+            yearCombo.SelectedIndexChanged += (s, e) => refreshYear();
+            refreshYear();
+
+            btnExportYear.Click += (s, e) =>
+            {
+                int selYear = curYear;
+                if (yearCombo.SelectedIndex >= 0) int.TryParse(yearCombo.SelectedItem.ToString(), out selYear);
+                var recs = (db.ClassHistory != null ? db.ClassHistory : new List<ClassYearRecord>())
+                    .Where(ch => ch.year == selYear).OrderBy(ch => ch.cls).ToList();
+                if (recs.Count == 0) { Toast("No records to export for " + selYear); return; }
+
+                using (var sfd = new SaveFileDialog { FileName = "class-history-" + selYear + ".csv", Filter = "CSV (*.csv)|*.csv" })
+                {
+                    if (sfd.ShowDialog(this) == DialogResult.OK)
+                    {
+                        var sb = new StringBuilder();
+                        sb.AppendLine("Academic Year,Class,IC Number,Student Name,Books Borrowed");
+                        foreach (var c in recs)
+                        {
+                            foreach (var st in c.students)
+                            {
+                                sb.AppendLine(string.Format("\"{0}\",\"{1}\",\"{2}\",\"{3}\",\"{4}\"",
+                                    selYear, c.cls.Replace("\"", "\"\""), st.id.Replace("\"", "\"\""), st.name.Replace("\"", "\"\""), st.loans));
+                            }
+                        }
+                        File.WriteAllText(sfd.FileName, sb.ToString(), Encoding.UTF8);
+                        Toast("Class history exported successfully");
+                    }
+                }
+            };
+
+            var info = Ui.Lbl("On December 31st each year, student rosters and borrowing records are automatically captured for that academic year, preserving historical records before a new cohort enters each class.", true);
+
+            var split = Cols(360, Ui.Card("Classes for selected year", classGrid, 1), Ui.Card("Students in selected class", studentGrid, 1));
+
+            return ScrollPage(
+                Ui.Heading("Reports", "Circulation analytics, class records, and retention archive"),
+                subNav,
+                info,
+                topBar,
+                split);
+        }
+
+        Control RepArchivePage(Control subNav)
+        {
+            var arch = db.ArchivedPatrons ?? new List<ArchivedPatron>();
+            int totalStudents = arch.Count;
+            int totalLoans = arch.Sum(p => p.loans != null ? p.loans.Count : 0);
+            double totalFines = arch.Sum(p => p.fines != null ? p.fines.Where(f => f.paid == "").Sum(f => f.amt) : 0);
+
+            var st = Ui.Flow();
+            st.Controls.Add(Ui.Stat(totalStudents.ToString(), "Archived students", Th.Mut));
+            st.Controls.Add(Ui.Stat(totalLoans.ToString(), "Preserved loans", Th.Blue));
+            st.Controls.Add(Ui.Stat(Lib.Money(totalFines), "Archived unpaid fines", totalFines > 0 ? Th.Red : Th.Green));
+
+            var topBar = Ui.Flow(false);
+            var btnRestore = Ui.Btn("Restore selected student", 0);
+            var btnCheckPurge = Ui.Btn("Check 5-year retention now", 1, (s, e) =>
+            {
+                int purged = lib.Purge();
+                Save();
+                Toast(purged > 0 ? string.Format("Moved {0} inactive student(s) to archive.", purged) : "All active students have activity within the 5-year retention period.");
+                Render();
+            });
+            var btnExportCsv = Ui.Btn("Export archive (CSV)", 1);
+            topBar.Controls.Add(btnRestore);
+            topBar.Controls.Add(btnCheckPurge);
+            topBar.Controls.Add(btnExportCsv);
+
+            var patGrid = Ui.Grid();
+            var loanGrid = Ui.Grid();
+
+            var rows = arch.OrderByDescending(p => p.archivedDate).Select(p => new[]
+            {
+                p.id, p.name, p.cls, p.reg, p.last, p.archivedDate, (p.loans != null ? p.loans.Count : 0).ToString()
+            }).ToList();
+
+            Ui.Fill(patGrid, new[] { "IC Number", "Name", "Last Class", "Registered", "Last Active", "Archived Date", "Loans" },
+                rows, arch.OrderByDescending(p => p.archivedDate).Cast<object>().ToList(), "No archived students. Inactive records (>5 years) are safely stored here.");
+
+            Action showHistory = () =>
+            {
+                var p = Ui.Sel<ArchivedPatron>(patGrid);
+                if (p != null)
+                {
+                    var lRows = new List<string[]>();
+                    if (p.loans != null)
+                    {
+                        foreach (var l in p.loans)
+                        {
+                            lRows.Add(new[] { "Loan", lib.Title(l.iid), l.@out, l.due, l.ret ?? "(unreturned)" });
+                        }
+                    }
+                    if (p.fines != null)
+                    {
+                        foreach (var f in p.fines)
+                        {
+                            lRows.Add(new[] { "Fine", Lib.Money(f.amt) + " (" + f.days + " days late)", f.date, "", f.paid == "paid" ? "Paid" : f.paid == "waived" ? "Waived" : "Unpaid" });
+                        }
+                    }
+                    Ui.Fill(loanGrid, new[] { "Type", "Details", "Date", "Due", "Status" }, lRows, null, "No circulation history for this archived student");
+                }
+                else
+                {
+                    Ui.Fill(loanGrid, new[] { "Type", "Details", "Date", "Due", "Status" }, new List<string[]>(), null, "Select an archived student to view their borrowing history");
+                }
+            };
+
+            patGrid.SelectionChanged += (s, e) => showHistory();
+            if (arch.Count > 0)
+            {
+                patGrid.ClearSelection();
+                if (patGrid.Rows.Count > 0) patGrid.Rows[0].Selected = true;
+            }
+            showHistory();
+
+            btnRestore.Click += (s, e) =>
+            {
+                var sel = Ui.Sel<ArchivedPatron>(patGrid);
+                if (sel == null) { Toast("Select an archived student first"); return; }
+                if (Ui.Confirm(this, "Restore " + sel.name + " (" + sel.id + ") back to active students?"))
+                {
+                    if (lib.RestoreArchivedPatron(sel.id))
+                    {
+                        Save();
+                        Toast("Student restored to active records");
+                        Render();
+                    }
+                    else
+                    {
+                        Toast("Could not restore: a student with this IC is already active");
+                    }
+                }
+            };
+
+            btnExportCsv.Click += (s, e) =>
+            {
+                if (arch.Count == 0) { Toast("Archive is empty"); return; }
+                using (var sfd = new SaveFileDialog { FileName = "archived-students-" + Lib.Today() + ".csv", Filter = "CSV (*.csv)|*.csv" })
+                {
+                    if (sfd.ShowDialog(this) == DialogResult.OK)
+                    {
+                        var sb = new StringBuilder();
+                        sb.AppendLine("IC Number,Name,Last Class,Contact,Registered Date,Last Active Date,Archived Date,Total Loans");
+                        foreach (var p in arch)
+                        {
+                            sb.AppendLine(string.Format("\"{0}\",\"{1}\",\"{2}\",\"{3}\",\"{4}\",\"{5}\",\"{6}\",\"{7}\"",
+                                p.id, p.name.Replace("\"", "\"\""), p.cls.Replace("\"", "\"\""), p.contact.Replace("\"", "\"\""),
+                                p.reg, p.last, p.archivedDate, (p.loans != null ? p.loans.Count : 0)));
+                        }
+                        File.WriteAllText(sfd.FileName, sb.ToString(), Encoding.UTF8);
+                        Toast("Archive exported to CSV");
+                    }
+                }
+            };
+
+            var note = Ui.Lbl("\uD83D\uDD12 Password-protected archive: Data retention policy preserves student borrowing records after 5 years of inactivity rather than deleting them permanently.", true);
+
+            var split = Cols(360, Ui.Card("Archived students", patGrid, 1), Ui.Card("Borrowing & fine records", loanGrid, 1));
+
+            return ScrollPage(
+                Ui.Heading("Reports", "Circulation analytics, class records, and retention archive"),
+                subNav,
+                st,
+                note,
+                topBar,
+                split);
         }
 
         static string ClassifyDewey(Item it)
@@ -895,18 +1171,61 @@ namespace Errin
         }
         void Backup()
         {
-            using (var d = new SaveFileDialog { FileName = "errin-backup-" + Lib.Today() + ".json", Filter = "Errin backup (*.json)|*.json" })
+            using (var d = new SaveFileDialog { FileName = "errin-backup-" + Lib.Today() + ".db", Filter = "Errin SQLite database (*.db)|*.db|Errin JSON backup (*.json)|*.json|All files|*.*" })
             {
                 if (d.ShowDialog(this) != DialogResult.OK) { Toast("Cancelled"); return; }
-                try { File.WriteAllText(d.FileName, db.ToJson(), new UTF8Encoding(false)); Toast("Backup ready"); } catch { Toast("Backup failed"); }
+                try
+                {
+                    if (d.FileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                    {
+                        File.WriteAllText(d.FileName, db.ToJson(), new UTF8Encoding(false));
+                    }
+                    else if (SqliteNative.IsAvailable)
+                    {
+                        SqliteStore.Save(d.FileName, db);
+                    }
+                    else
+                    {
+                        File.WriteAllText(d.FileName, db.ToJson(), new UTF8Encoding(false));
+                    }
+                    Toast("Backup ready");
+                }
+                catch { Toast("Backup failed"); }
             }
         }
         void Restore()
         {
-            using (var d = new OpenFileDialog { Filter = "Errin backup (*.json)|*.json|All files|*.*" })
+            using (var d = new OpenFileDialog { Filter = "Errin backup (*.db;*.json)|*.db;*.json|Errin SQLite database (*.db)|*.db|Errin JSON backup (*.json)|*.json|All files|*.*" })
             {
                 if (d.ShowDialog(this) != DialogResult.OK) return;
-                Db n; try { var root = Json.Parse(File.ReadAllText(d.FileName, Encoding.UTF8)) as Dictionary<string, object>; if (root == null || !root.ContainsKey("items") || !root.ContainsKey("patrons") || !root.ContainsKey("loans")) throw new Exception(); n = Db.FromJson(File.ReadAllText(d.FileName, Encoding.UTF8)); }
+                Db n = null;
+                try
+                {
+                    if (d.FileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var root = Json.Parse(File.ReadAllText(d.FileName, Encoding.UTF8)) as Dictionary<string, object>;
+                        if (root == null || !root.ContainsKey("items") || !root.ContainsKey("patrons") || !root.ContainsKey("loans")) throw new Exception();
+                        n = Db.FromJson(File.ReadAllText(d.FileName, Encoding.UTF8));
+                    }
+                    else if (SqliteNative.IsAvailable)
+                    {
+                        try { n = SqliteStore.Load(d.FileName); } catch { }
+                        if (n == null || (n.Items.Count == 0 && n.Patrons.Count == 0))
+                        {
+                            try
+                            {
+                                var root = Json.Parse(File.ReadAllText(d.FileName, Encoding.UTF8)) as Dictionary<string, object>;
+                                if (root != null && root.ContainsKey("items")) n = Db.FromJson(File.ReadAllText(d.FileName, Encoding.UTF8));
+                            }
+                            catch { }
+                        }
+                    }
+                    else
+                    {
+                        n = Db.FromJson(File.ReadAllText(d.FileName, Encoding.UTF8));
+                    }
+                    if (n == null) throw new Exception();
+                }
                 catch { Toast("Not a valid Errin backup"); return; }
                 if (!Ui.Confirm(this, "Replace ALL current data with this backup?")) return;
                 db = n; lib = new Lib(db); lib.FixItems(); Commit("Backup restored");

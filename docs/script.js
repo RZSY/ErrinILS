@@ -248,7 +248,7 @@ function initGuideActions() {
           return res.text();
         })
         .then(function (mdText) {
-          triggerBlobDownload(mdText, 'ErrinILS-User-Guide-v1.3.1.md', 'text/markdown;charset=utf-8');
+          triggerBlobDownload(mdText, 'ErrinILS-User-Guide-v1.3.2.md', 'text/markdown;charset=utf-8');
         })
         .catch(function () {
           window.location.href = guidePath;
@@ -265,7 +265,7 @@ function initGuideActions() {
           return res.text();
         })
         .then(function (text) {
-          triggerBlobDownload(text, 'ErrinILS-User-Guide-v1.3.1.txt', 'text/plain;charset=utf-8');
+          triggerBlobDownload(text, 'ErrinILS-User-Guide-v1.3.2.txt', 'text/plain;charset=utf-8');
         })
         .catch(function () {
           window.location.href = guidePath;

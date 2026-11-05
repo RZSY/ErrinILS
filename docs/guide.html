@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ErrinILS User Manual - Comprehensive Operating Guidelines</title>
-  <meta name="description" content="Official, exhaustive user manual and operating handbook for ErrinILS version 1.3.1. Covers installation, circulation, cataloguing, student management, fines, weeding, QR remote pairing, analytics, and administration.">
+  <meta name="description" content="Official, exhaustive user manual and operating handbook for ErrinILS version 1.3.2. Covers installation, circulation, cataloguing, student management, fines, weeding, QR remote pairing, analytics, and administration.">
   <link rel="icon" type="image/png" href="assets/icon.png">
   <link rel="stylesheet" href="styles.css">
   <script>
@@ -25,7 +25,7 @@
       <a href="index.html" class="brand-link">
         <img src="assets/icon.png" alt="ErrinILS Logo" class="brand-icon">
         <span>ErrinILS</span>
-        <span class="brand-badge">v1.3.1</span>
+        <span class="brand-badge">v1.3.2</span>
       </a>
 
       <button class="mobile-menu-btn" aria-label="Toggle navigation" aria-expanded="false">☰</button>
@@ -39,7 +39,7 @@
 
       <div class="nav-actions">
         <button class="theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme"></button>
-        <a href="download.html" class="btn btn-primary btn-sm">Download v1.3.1</a>
+        <a href="download.html" class="btn btn-primary btn-sm">Download v1.3.2</a>
       </div>
     </div>
   </header>
@@ -59,7 +59,7 @@
     <!-- Download / Print Action Bar -->
     <div class="guide-actions-bar">
       <div class="guide-actions-left">
-        <a href="assets/ErrinILS-User-Guide.pdf" download="ErrinILS-User-Guide-v1.3.1.pdf" id="btn-download-guide-pdf" class="btn btn-primary btn-sm">
+        <a href="assets/ErrinILS-User-Guide.pdf" download="ErrinILS-User-Guide-v1.3.2.pdf" id="btn-download-guide-pdf" class="btn btn-primary btn-sm">
           Download PDF Manual (646 KB)
         </a>
         <button id="btn-download-guide-md" class="btn btn-secondary btn-sm">
@@ -73,7 +73,7 @@
         </button>
       </div>
       <div>
-        <span class="badge badge-gold">Official Manual v1.3.1</span>
+        <span class="badge badge-gold">Official Manual v1.3.2</span>
       </div>
     </div>
 
@@ -132,7 +132,7 @@
 
             <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">1.2 Core Philosophy &amp; Zero-Dependency Architecture</h4>
             <p>
-              Unlike traditional enterprise software (such as Koha, SLiMS, or commercial cloud systems) that demand Linux servers, Apache/MySQL configurations, or costly recurring subscriptions, ErrinILS is built on a <strong>strict zero-external-dependency rule</strong>. Written in pure C# using only the base assemblies included with Microsoft .NET Framework 4.0, it requires zero database setup, zero runtime dependencies, and stores everything in a human-readable, portable JSON database (<code>%APPDATA%\Errin\errin-data.json</code>).
+              Unlike traditional enterprise software (such as Koha, SLiMS, or commercial cloud systems) that demand Linux servers, Apache/MySQL configurations, or costly recurring subscriptions, ErrinILS is built on a <strong>strict zero-external-dependency rule</strong>. Written in pure C# using only the base assemblies included with Microsoft .NET Framework 4.0, it requires zero database setup, zero runtime dependencies, and stores everything in a fast, robust SQLite database (<code>%APPDATA%\Errin\errin-data.db</code>).
             </p>
 
             <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">1.3 What you can do with it</h4>
@@ -277,7 +277,7 @@
           <div class="chapter-body">
             <h4 style="color: var(--accent-gold); margin: 16px 0 8px 0;">3.1 Installing with the Setup program</h4>
             <ol class="step-list">
-              <li>Download <code>ErrinILS-Setup-1.3.1.exe</code> from the official website or GitHub release.</li>
+              <li>Download <code>ErrinILS-Setup-1.3.2.exe</code> from the official website or GitHub release.</li>
               <li>Double-click the installer. If Windows UAC prompts *"Do you want to allow this app to make changes?"*, click <strong>Yes</strong>.</li>
               <li>If a blue *"Windows protected your PC"* box appears, click <strong>More info</strong> and then <strong>Run anyway</strong>. This occurs because open-source educational software is released without costly commercial certificates.</li>
               <li>Follow the setup wizard, keep the default directory (<code>C:\Program Files (x86)\ErrinILS</code>), click <strong>Install</strong>, and click <strong>Finish</strong>.</li>
@@ -308,12 +308,12 @@
                 </thead>
                 <tbody>
                   <tr>
-                    <td><code>errin-data.json</code></td>
-                    <td>Main database: entire catalogue, students, loans, holds, fines, and policy settings.</td>
+                    <td><code>errin-data.db</code></td>
+                    <td>Main SQLite database: entire catalogue, students, loans, holds, fines, class history, and policy settings.</td>
                   </tr>
                   <tr>
-                    <td><code>errin-data.bak</code></td>
-                    <td>Automatic rollback copy: saved before every write. Automatically recovers if a power loss occurs.</td>
+                    <td><code>errin-data.db.bak</code></td>
+                    <td>Automatic rollback copy: saved before writes. Automatically recovers if needed.</td>
                   </tr>
                   <tr>
                     <td><code>errin-config.json</code></td>
@@ -763,7 +763,7 @@
             <p><strong>What is the default administrator password?</strong><br>The factory default administrator password is <code>admin123</code>. You can change it to any password of 4 or more characters in <strong>Settings → Admin Password</strong>.</p>
             <p style="margin-top: 12px;"><strong>Can multiple devices access the system at once?</strong><br>Yes. Enable the built-in Remote Web Server in Settings to let smartphones and tablets perform circulation and cataloguing over school Wi-Fi.</p>
             <p style="margin-top: 12px;"><strong>Are student records private?</strong><br>Yes. All database files remain strictly on your local PC. ErrinILS transmits no personal student data over the internet.</p>
-            <p style="margin-top: 12px;"><strong>Can we change the 7-day loan duration?</strong><br>In v1.3.1, the loan duration is fixed at 7 days with up to 2 renewals (21 days max). Fine rates and block thresholds can be customized at any time in Settings.</p>
+            <p style="margin-top: 12px;"><strong>Can we change the 7-day loan duration?</strong><br>In v1.3.2, the loan duration is fixed at 7 days with up to 2 renewals (21 days max). Fine rates and block thresholds can be customized at any time in Settings.</p>
           </div>
         </article>
 
@@ -870,11 +870,11 @@
                   </tr>
                   <tr>
                     <td><strong>Main Database</strong></td>
-                    <td><code>%APPDATA%\Errin\errin-data.json</code></td>
+                    <td><code>%APPDATA%\Errin\errin-data.db</code></td>
                   </tr>
                   <tr>
                     <td><strong>Automatic Rollback File</strong></td>
-                    <td><code>%APPDATA%\Errin\errin-data.bak</code></td>
+                    <td><code>%APPDATA%\Errin\errin-data.db.bak</code></td>
                   </tr>
                   <tr>
                     <td><strong>Config &amp; Auth Tokens</strong></td>
@@ -933,7 +933,7 @@
             <li><a href="download.html#requirements">System Requirements</a></li>
             <li><a href="guide.html#circ">Circulation Desk Guide</a></li>
             <li><a href="guide.html#simple">Simplified View Setup</a></li>
-            <li><a href="assets/ErrinILS-User-Guide.pdf" download="ErrinILS-User-Guide-v1.3.1.pdf">Official Manual (PDF)</a></li>
+            <li><a href="assets/ErrinILS-User-Guide.pdf" download="ErrinILS-User-Guide-v1.3.2.pdf">Official Manual (PDF)</a></li>
             <li><a href="assets/ErrinILS-User-Guide.md" download>Download Manual (.md)</a></li>
           </ul>
         </div>
@@ -941,9 +941,9 @@
         <div>
           <div class="footer-col-title">Releases</div>
           <ul class="footer-links">
-            <li><a href="https://github.com/RZSY/ErrinILS/releases/tag/v1.3.1" target="_blank" rel="noopener">ErrinILS v1.3.1 on GitHub</a></li>
-            <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.3.1/ErrinILS-Setup-1.3.1.exe">Setup Installer (.exe)</a></li>
-            <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.3.1/ErrinILS-Windows.zip">Portable Package (.zip)</a></li>
+            <li><a href="https://github.com/RZSY/ErrinILS/releases/tag/v1.3.2" target="_blank" rel="noopener">ErrinILS v1.3.2 on GitHub</a></li>
+            <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.3.2/ErrinILS-Setup-1.3.2.exe">Setup Installer (.exe)</a></li>
+            <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.3.2/ErrinILS-Windows.zip">Portable Package (.zip)</a></li>
             <li><a href="https://github.com/RZSY/ErrinILS" target="_blank" rel="noopener">GitHub Repository</a></li>
           </ul>
         </div>

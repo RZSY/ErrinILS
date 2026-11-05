@@ -49,7 +49,7 @@ It covers everyday school library operations: barcode checkouts and returns, cop
 - **Simplified View**: Interface designed for students and young readers. Features oversized buttons, clear visual status banners, and a dedicated exit button back to librarian controls.
 - **Mobile Access and QR Pairing**: Built-in HTTP server (`0.0.0.0:8080`) serving a mobile web app. Pair a phone or tablet by scanning an on-screen QR code for cable-free shelf audits and inventory checks.
 - **School Localization**: Built-in Malaysian IC and MyKid validation (`YYMMDD-PB-###G`) with birthdate calendar checks, overdue fines calculated in Ringgit Malaysia (RM 0.10/day default), and Nilam reading reports.
-- **JSON Database and ZIP Backups**: All data persists in `%APPDATA%\Errin\errin-data.json`. Includes a pure C# DEFLATE backup writer to create timestamped ZIP archives on USB flash drives.
+- **SQLite Database and Backups**: All data persists in `%APPDATA%\Errin\errin-data.db` using high-performance ACID SQLite storage with WAL journaling, relational tables, and automatic backward-compatible migration from legacy JSON databases. Includes 1-click SQLite database and JSON backups.
 - **MARC21 and Z39.50 Protocols**: Built-in parsers and generators for binary ISO 2709 (`.mrc`), MARCXML (`.xml`), and MRK mnemonic (`.mrk`), with MARC-8 diacritic conversion and an ASN.1 BER Z39.50 v3 client and server.
 - **High-DPI Display Support**: Native PerMonitorV2 awareness for sharp ClearType text and proper scaling at 125%, 150%, and 200% zoom.
 - **Weeding and Collection Maintenance**: Track withdrawn copies with status reasons (condition/damage, obsolete, lost, duplicate) while retaining circulation statistics.
@@ -97,7 +97,7 @@ It covers everyday school library operations: barcode checkouts and returns, cop
 | **Installation** | Single EXE or NSIS installer | Linux server + Perl modules | Apache + PHP + MySQL stack | Spreadsheet file only |
 | **Dependencies** | 0 (.NET 4.0 runtime only) | Hundreds of CPAN packages | PHP, Apache/Nginx, MariaDB | Office suite |
 | **RAM Footprint** | Under 30 MB RAM | 4 GB – 8 GB dedicated | 2 GB – 4 GB RAM | 200 MB – 500 MB |
-| **Database** | Single JSON file (`errin-data.json`) | MariaDB / MySQL + Zebra | MySQL / MariaDB | None (Flat tabular) |
+| **Database** | Single SQLite database (`errin-data.db`) | MariaDB / MySQL + Zebra | MySQL / MariaDB | None (Flat tabular) |
 | **ISBN Cataloguing** | Built-in 5-source lookup | Z39.50 (server configuration needed) | P2P service / plugins | Manual typing |
 | **Simplified View** | Built-in simplified student view | Separate self-checkout module | Third-party web plugin | None |
 | **Malaysian IC / MyKid** | Native validation and birthdate check | Custom regex required | Custom script required | Manual formulas |
@@ -134,8 +134,9 @@ flowchart TD
     end
 
     subgraph Storage["Storage and Security"]
-        JSON["JSON Engine\n(Json.cs, Models.cs)"]
-        DB[("%APPDATA%\\Errin\\errin-data.json")]
+        SQLITE["SQLite Storage Engine\n(Sqlite.cs, Models.cs)"]
+        DB[("%APPDATA%\\Errin\\errin-data.db")]
+        JSON["JSON Engine\n(Json.cs - Web API & Migrations)"]
         ZIP["ZIP Writer\nDEFLATE (Zip.cs)"]
         AUTH["PBKDF2 / SHA-256 Auth\n(Auth.cs, errin-config.json)"]
     end
@@ -144,6 +145,7 @@ flowchart TD
     UI --> Protocols
     Core --> Storage
     Protocols --> Storage
+    SQLITE --> DB
     JSON --> DB
     ZIP --> DB
 ```
@@ -191,7 +193,7 @@ flowchart TD
 - **Password Reset**: Close ErrinILS, delete `%APPDATA%\Errin\errin-config.json`, and restart the app. The password resets to `admin123`.
 
 ### File Locations
-- `%APPDATA%\Errin\errin-data.json` — Main database (catalog items, patrons, active loans, holds, fines).
+- `%APPDATA%\Errin\errin-data.db` — Main SQLite database (catalog items, patrons, active loans, holds, fines, class history, settings).
 - `%APPDATA%\Errin\errin-config.json` — Configuration, password hash, and authorized mobile device tokens.
 
 ---

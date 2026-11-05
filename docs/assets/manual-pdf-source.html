@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ErrinILS School Library System - User Manual (Version 1.3.1)</title>
+  <title>ErrinILS School Library System - User Manual (Version 1.3.2)</title>
   <style>
     /* Strict Sharp Corners & Professional Print Typography */
     *, *::before, *::after {
@@ -346,7 +346,7 @@
 
     <div class="cover-center">
       <img src="icon.png" alt="ErrinILS Logo" class="cover-logo">
-      <div style="font-weight: bold; font-size: 14pt; color: #1a1b1e;">Version 1.3.1 (Windows Edition)</div>
+      <div style="font-weight: bold; font-size: 14pt; color: #1a1b1e;">Version 1.3.2 (Windows Edition)</div>
       <div style="font-size: 9.5pt; color: #6b6f7c; margin-top: 4px;">Zero-Dependency Architecture &bull; Standalone C# Executable</div>
     </div>
 
@@ -354,7 +354,7 @@
       <div class="cover-meta-grid">
         <div class="cover-meta-item"><strong>Target OS:</strong> Windows 7, 8, 8.1, 10, 11 (32/64-bit)</div>
         <div class="cover-meta-item"><strong>Runtime:</strong> Microsoft .NET Framework 4.0+</div>
-        <div class="cover-meta-item"><strong>Database:</strong> Single JSON File (<code>errin-data.json</code>)</div>
+        <div class="cover-meta-item"><strong>Database:</strong> Single SQLite Database (<code>errin-data.db</code>)</div>
         <div class="cover-meta-item"><strong>Release Date:</strong> November 2026</div>
         <div class="cover-meta-item"><strong>License:</strong> MIT Open Source License</div>
         <div class="cover-meta-item"><strong>Web Portal:</strong> https://rzsy.github.io/ErrinILS/</div>
@@ -367,7 +367,7 @@
        ============================================================= -->
   <div class="toc-container page-break">
     <div class="header-rule">
-      <span>ErrinILS v1.3.1 User Manual</span>
+      <span>ErrinILS v1.3.2 User Manual</span>
       <span>Contents Overview</span>
     </div>
 
@@ -411,7 +411,7 @@
   <!-- =============================================================
        CHAPTER 1: ABOUT ERRINILS
        ============================================================= -->
-  <div class="header-rule"><span>ErrinILS v1.3.1 User Manual</span><span>Chapter 1: About ErrinILS</span></div>
+  <div class="header-rule"><span>ErrinILS v1.3.2 User Manual</span><span>Chapter 1: About ErrinILS</span></div>
   <h2 class="chapter-heading">1. About ErrinILS</h2>
   
   <h3 class="subheading">1.1 What ErrinILS is</h3>
@@ -429,13 +429,13 @@
 
   <h3 class="subheading">1.2 Core Philosophy &amp; Zero-Dependency Architecture</h3>
   <p>
-    Traditional library systems (such as Koha or SLiMS) require heavy server stacks: Apache, PHP, MySQL, and Linux administration. ErrinILS runs on a <strong>zero-external-dependency rule</strong>. Built with pure C# on base .NET Framework 4.0 assemblies (`mscorlib`, `System`, `System.Drawing`, `System.Windows.Forms`), it compiles into a standalone ~200 KB executable (`ErrinILS.exe`) storing all data in human-readable JSON (`%APPDATA%\Errin\errin-data.json`).
+    Traditional library systems (such as Koha or SLiMS) require heavy server stacks: Apache, PHP, MySQL, and Linux administration. ErrinILS runs on a <strong>zero-external-dependency rule</strong>. Built with pure C# on base .NET Framework 4.0 assemblies (`mscorlib`, `System`, `System.Drawing`, `System.Windows.Forms`), it compiles into a standalone ~200 KB executable (`ErrinILS.exe`) storing all data in a high-performance SQLite database (`%APPDATA%\Errin\errin-data.db`).
   </p>
 
   <!-- =============================================================
        CHAPTER 2: SYSTEM REQUIREMENTS
        ============================================================= -->
-  <div class="header-rule"><span>ErrinILS v1.3.1 User Manual</span><span>Chapter 2: System Requirements</span></div>
+  <div class="header-rule"><span>ErrinILS v1.3.2 User Manual</span><span>Chapter 2: System Requirements</span></div>
   <h2 class="chapter-heading">2. System Requirements &amp; Hardware Guidelines</h2>
   <p>ErrinILS is deliberately light, running smoothly on older classroom PCs without servers or database daemons.</p>
 
@@ -457,11 +457,11 @@
   <!-- =============================================================
        CHAPTER 3: INSTALLING & STARTING
        ============================================================= -->
-  <div class="header-rule"><span>ErrinILS v1.3.1 User Manual</span><span>Chapter 3: Installation &amp; Storage</span></div>
+  <div class="header-rule"><span>ErrinILS v1.3.2 User Manual</span><span>Chapter 3: Installation &amp; Storage</span></div>
   <h2 class="chapter-heading">3. Installing, Updating and Starting ErrinILS</h2>
 
   <h3 class="subheading">3.1 Installing with Setup program</h3>
-  <p>Download <code>ErrinILS-Setup-1.3.1.exe</code>. Double-click it, click <strong>Yes</strong> at the UAC prompt, and if Windows SmartScreen appears, click <strong>More info</strong> then <strong>Run anyway</strong>. Follow the wizard and click <strong>Finish</strong>.</p>
+  <p>Download <code>ErrinILS-Setup-1.3.2.exe</code>. Double-click it, click <strong>Yes</strong> at the UAC prompt, and if Windows SmartScreen appears, click <strong>More info</strong> then <strong>Run anyway</strong>. Follow the wizard and click <strong>Finish</strong>.</p>
 
   <h3 class="subheading">3.2 Running without installing (portable copy)</h3>
   <p>Extract <code>ErrinILS-Windows.zip</code> to any folder or USB flash drive and double-click <code>ErrinILS.exe</code>. It runs portably and keeps data in the same user profile directory.</p>
@@ -471,8 +471,8 @@
   <table>
     <thead><tr><th>File Name</th><th>Purpose and Contents</th></tr></thead>
     <tbody>
-      <tr><td><code>errin-data.json</code></td><td>Main database: catalog, patrons, loans, holds, fines, and policy rules.</td></tr>
-      <tr><td><code>errin-data.bak</code></td><td>Automatic rollback copy: saved before every write. Recovers if sudden power loss occurs.</td></tr>
+      <tr><td><code>errin-data.db</code></td><td>Main SQLite database: catalog, patrons, loans, holds, fines, class history, and policy rules.</td></tr>
+      <tr><td><code>errin-data.db.bak</code></td><td>Automatic rollback copy: saved before writes. Recovers if needed.</td></tr>
       <tr><td><code>errin-config.json</code></td><td>Administrator password hash (PBKDF2/SHA-256), Z39.50 settings, and paired device tokens.</td></tr>
     </tbody>
   </table>
@@ -481,7 +481,7 @@
        CHAPTER 6: THE DASHBOARD & FIGURE 1
        ============================================================= -->
   <div class="page-break"></div>
-  <div class="header-rule"><span>ErrinILS v1.3.1 User Manual</span><span>Chapter 6: The Dashboard</span></div>
+  <div class="header-rule"><span>ErrinILS v1.3.2 User Manual</span><span>Chapter 6: The Dashboard</span></div>
   <h2 class="chapter-heading">6. The Dashboard &amp; Daily Overview</h2>
   <p>
     The Dashboard is the first page you see upon launching ErrinILS. It provides an immediate overview of active operations without requiring any manual data entry.
@@ -504,7 +504,7 @@
        CHAPTER 7: DAILY CIRCULATION & FIGURE 2
        ============================================================= -->
   <div class="page-break"></div>
-  <div class="header-rule"><span>ErrinILS v1.3.1 User Manual</span><span>Chapter 7: Daily Circulation Desk</span></div>
+  <div class="header-rule"><span>ErrinILS v1.3.2 User Manual</span><span>Chapter 7: Daily Circulation Desk</span></div>
   <h2 class="chapter-heading">7. Circulation: Check Out, Return, Renew and Holds</h2>
   <p>
     Circulation is the busiest desk in the library. Click the <strong>Circulation</strong> tab; the cursor is automatically placed in the active scan box.
@@ -532,7 +532,7 @@
        CHAPTER 8: SIMPLIFIED VIEW & FIGURE 3
        ============================================================= -->
   <div class="page-break"></div>
-  <div class="header-rule"><span>ErrinILS v1.3.1 User Manual</span><span>Chapter 8: The Simplified View</span></div>
+  <div class="header-rule"><span>ErrinILS v1.3.2 User Manual</span><span>Chapter 8: The Simplified View</span></div>
   <h2 class="chapter-heading">8. The Simplified View</h2>
   <p>
     A calm, high-contrast, large-print desk screen with only Check Out and Return, tailored for young students. Administrative toolbars are hidden.
@@ -559,7 +559,7 @@
        CHAPTER 9: THE CATALOG & FIGURE 4
        ============================================================= -->
   <div class="page-break"></div>
-  <div class="header-rule"><span>ErrinILS v1.3.1 User Manual</span><span>Chapter 9: Catalog &amp; Copy-Cataloguing</span></div>
+  <div class="header-rule"><span>ErrinILS v1.3.2 User Manual</span><span>Chapter 9: Catalog &amp; Copy-Cataloguing</span></div>
   <h2 class="chapter-heading">9. The Catalog &amp; 5-Source ISBN Copy-Cataloguing</h2>
   <p>
     The Catalog tab manages all bibliographic records and physical copies.
@@ -587,7 +587,7 @@
        CHAPTER 10: STUDENTS & FIGURE 5
        ============================================================= -->
   <div class="page-break"></div>
-  <div class="header-rule"><span>ErrinILS v1.3.1 User Manual</span><span>Chapter 10: Student Management</span></div>
+  <div class="header-rule"><span>ErrinILS v1.3.2 User Manual</span><span>Chapter 10: Student Management</span></div>
   <h2 class="chapter-heading">10. Students &amp; Patron Management</h2>
   <p>
     Manage registered students, track class allocations, and print scannable library cards.
@@ -606,7 +606,7 @@
   <!-- =============================================================
        CHAPTER 11: FINES & FIGURE 6
        ============================================================= -->
-  <div class="header-rule"><span>ErrinILS v1.3.1 User Manual</span><span>Chapter 11: Fines Management</span></div>
+  <div class="header-rule"><span>ErrinILS v1.3.2 User Manual</span><span>Chapter 11: Fines Management</span></div>
   <h2 class="chapter-heading">11. Fines Management &amp; Lost Books</h2>
   <p>
     Fines are assessed when late books are returned: <code>Days Overdue × Daily Rate (RM 0.10)</code>.
@@ -623,7 +623,7 @@
        CHAPTER 13: REMOTE ACCESS & FIGURE 8
        ============================================================= -->
   <div class="page-break"></div>
-  <div class="header-rule"><span>ErrinILS v1.3.1 User Manual</span><span>Chapter 13: Remote Access &amp; Settings</span></div>
+  <div class="header-rule"><span>ErrinILS v1.3.2 User Manual</span><span>Chapter 13: Remote Access &amp; Settings</span></div>
   <h2 class="chapter-heading">13. Remote Access, QR Code Pairing &amp; Settings</h2>
   <p>
     ErrinILS features a built-in pure C# HTTP server (`0.0.0.0`) enabling wireless access from smartphones and tablets across school Wi-Fi and hotspots.
@@ -646,7 +646,7 @@
        CHAPTER 14: REPORTS & FIGURE 7
        ============================================================= -->
   <div class="page-break"></div>
-  <div class="header-rule"><span>ErrinILS v1.3.1 User Manual</span><span>Chapter 14: Reports &amp; Analytics</span></div>
+  <div class="header-rule"><span>ErrinILS v1.3.2 User Manual</span><span>Chapter 14: Reports &amp; Analytics</span></div>
   <h2 class="chapter-heading">14. Reports, Reading Champions &amp; Collection Analytics</h2>
   <p>
     Open the <strong>Reports</strong> tab for executive library intelligence and Nilam reading program tracking.
@@ -669,7 +669,7 @@
        CHAPTER 15, 17, 18: BACKUP, ROUTINES, TROUBLESHOOTING
        ============================================================= -->
   <div class="page-break"></div>
-  <div class="header-rule"><span>ErrinILS v1.3.1 User Manual</span><span>Chapter 15 &amp; 18: Backup &amp; Troubleshooting</span></div>
+  <div class="header-rule"><span>ErrinILS v1.3.2 User Manual</span><span>Chapter 15 &amp; 18: Backup &amp; Troubleshooting</span></div>
   <h2 class="chapter-heading">15. Backup &amp; Disaster Recovery</h2>
   <p>In the <strong>Backup</strong> tab, click <strong>Export Backup (ZIP)</strong>. Save the file to an external USB flash drive every Friday afternoon. To restore on a new PC, install ErrinILS, open the Backup tab, and click <strong>Restore from backup</strong>.</p>
 
@@ -694,7 +694,7 @@
        APPENDICES
        ============================================================= -->
   <div class="page-break"></div>
-  <div class="header-rule"><span>ErrinILS v1.3.1 User Manual</span><span>Appendices</span></div>
+  <div class="header-rule"><span>ErrinILS v1.3.2 User Manual</span><span>Appendices</span></div>
   <h2 class="chapter-heading">Appendix A. Quick Task Reference Guide</h2>
   <table>
     <thead><tr><th>Goal</th><th>Tab</th><th>Action</th></tr></thead>
@@ -716,8 +716,8 @@
     <thead><tr><th>Component</th><th>Standard File System Location</th></tr></thead>
     <tbody>
       <tr><td><strong>Program Binary</strong></td><td><code>C:\Program Files (x86)\ErrinILS\ErrinILS.exe</code></td></tr>
-      <tr><td><strong>Main Database</strong></td><td><code>%APPDATA%\Errin\errin-data.json</code></td></tr>
-      <tr><td><strong>Automatic Rollback File</strong></td><td><code>%APPDATA%\Errin\errin-data.bak</code></td></tr>
+      <tr><td><strong>Main Database</strong></td><td><code>%APPDATA%\Errin\errin-data.db</code></td></tr>
+      <tr><td><strong>Automatic Rollback File</strong></td><td><code>%APPDATA%\Errin\errin-data.db.bak</code></td></tr>
       <tr><td><strong>Config &amp; Auth Tokens</strong></td><td><code>%APPDATA%\Errin\errin-config.json</code></td></tr>
       <tr><td><strong>Online Documentation</strong></td><td>https://rzsy.github.io/ErrinILS/guide.html</td></tr>
       <tr><td><strong>Official Repository</strong></td><td>https://github.com/RZSY/ErrinILS</td></tr>

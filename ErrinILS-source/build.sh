@@ -10,7 +10,7 @@ set -e
 VERSION=1.3.2
 cd "$(dirname "$0")"
 REF=/usr/lib/mono/4.0-api
-CORE="src/Json.cs src/Models.cs src/Marc.cs src/Z3950.cs src/Lib.cs src/Lookup.cs src/Zip.cs src/Auth.cs src/NetHelper.cs src/Qr.cs src/CertHelper.cs src/Updater.cs src/Web.cs"
+CORE="src/Json.cs src/Models.cs src/Sqlite.cs src/Marc.cs src/Z3950.cs src/Lib.cs src/Lookup.cs src/Zip.cs src/Auth.cs src/NetHelper.cs src/Qr.cs src/CertHelper.cs src/Updater.cs src/Web.cs"
 FLAGS="-nostdlib -lib:$REF -r:mscorlib.dll,System.dll,System.Core.dll"
 
 echo "== self-test (MARC, Z39.50, circulation rules) =="

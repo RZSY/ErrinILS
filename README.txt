@@ -23,8 +23,8 @@ Key Specifications:
   * Zero external dependencies: Pure C# using base .NET Framework 4.0.
     No NuGet packages, no third-party DLLs, no database server required.
   * Low resource footprint: Runs smoothly on older classroom PCs (1 GB RAM).
-  * Offline persistence: All library records reside in a single JSON file
-    (%APPDATA%\Errin\errin-data.json) with built-in ZIP backups.
+  * Offline persistence: All library records reside in a single SQLite database
+    (%APPDATA%\Errin\errin-data.db) with built-in backups and automatic migration.
   * High-DPI support: Native PerMonitorV2 awareness for clear text and
     proper layout scaling at 125%, 150%, and 200%.
 
@@ -95,27 +95,27 @@ Emergency Password Reset:
   If you ever forget the administrator password:
   1. Close ErrinILS completely.
   2. Press Win+R, type:  %APPDATA%\Errin  and press Enter.
-  3. Delete the file:  errin-config.json  (Do NOT delete errin-data.json).
+  3. Delete the file:  errin-config.json  (Do NOT delete errin-data.db).
   4. Restart ErrinILS. The password resets to default: admin123.
 
 
 [5] DATA PERSISTENCE & BACKUPS
 ------------------------------------------------------------------------------
-ErrinILS does not use complicated SQL servers. Your entire library resides
-in standard files inside:
+ErrinILS does not use complicated client-server database engines. Your entire library
+resides in standard local files inside:
 
   %APPDATA%\Errin\
-    ├── errin-data.json    Master library database (items, patrons, loans,
-    │                      holds, fines, weeding history).
+    ├── errin-data.db      Master SQLite database (items, patrons, loans,
+    │                      holds, fines, weeding history, class history).
     └── errin-config.json  Security credentials, Z39.50 client preferences,
                            and authenticated paired device tokens.
 
 Backing Up Your Library:
   * Backup Tab: In ErrinILS, open the Backup tab and click "Download backup"
-    to save a timestamped JSON backup. Keep a copy on a USB flash drive regularly.
+    to save a timestamped .db SQLite backup or .json export. Keep a copy on a USB flash drive regularly.
   * Catalog Transfer: In Catalog, click "Transfer catalog" to export full MARC21
     records and spreadsheets (.zip / .csv) for external archives or migration.
-  * Manual Backup: Simply copy the file %APPDATA%\Errin\errin-data.json to
+  * Manual Backup: Simply copy the file %APPDATA%\Errin\errin-data.db to
     any safe backup location or cloud drive.
 
 
