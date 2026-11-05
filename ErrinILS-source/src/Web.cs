@@ -5,8 +5,11 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Security;
 using System.Net.Sockets;
+using System.Security.Authentication;
 using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -59,6 +62,8 @@ namespace Errin
 
             public int Port { get; private set; }
             public bool LocalOnly { get; private set; }
+            public X509Certificate2 ServerCert { get; set; }
+            public bool UseTls { get { return ServerCert != null; } }
             public List<Device> Devices { get; set; }
             public PairSession ActivePair { get; private set; }
             public Device LastPairedDevice { get; private set; }
@@ -76,10 +81,11 @@ namespace Errin
                 Devices = new List<Device>();
             }
 
-            public void Start(int port, bool localOnly)
+            public void Start(int port, bool localOnly, X509Certificate2 serverCert = null)
             {
                 Port = port;
                 LocalOnly = localOnly;
+                ServerCert = serverCert;
                 lis = new TcpListener(localOnly ? IPAddress.Loopback : IPAddress.Any, port);
                 lis.Start();
                 running = true;
@@ -140,7 +146,21 @@ namespace Errin
                     {
                         client.ReceiveTimeout = 15000;
                         client.SendTimeout = 15000;
-                        var stream = client.GetStream();
+                        Stream stream = client.GetStream();
+
+                        if (ServerCert != null)
+                        {
+                            try
+                            {
+                                var ssl = new SslStream(stream, false);
+                                ssl.AuthenticateAsServer(ServerCert, false, (SslProtocols)(192 | 768 | 3072), false);
+                                stream = ssl;
+                            }
+                            catch
+                            {
+                                return;
+                            }
+                        }
 
                         // Read request headers
                         var ms = new MemoryStream();
@@ -244,7 +264,7 @@ namespace Errin
                 }
             }
 
-            void HandleApi(NetworkStream stream, string method, string path, Dictionary<string, string> query, Dictionary<string, string> headers, string body)
+            void HandleApi(Stream stream, string method, string path, Dictionary<string, string> query, Dictionary<string, string> headers, string body)
             {
                 // QR code image endpoint (no token required)
                 if (path == "/api/qr" || path == "/qr.png")
@@ -253,7 +273,8 @@ namespace Errin
                     if (string.IsNullOrEmpty(text))
                     {
                         string host = headers.ContainsKey("Host") ? headers["Host"] : ("127.0.0.1:" + Port);
-                        text = "http://" + host;
+                        string proto = UseTls ? "https://" : "http://";
+                        text = proto + host;
                     }
                     try
                     {
@@ -393,7 +414,7 @@ namespace Errin
                 }
             }
 
-            void HandlePair(NetworkStream stream, string body)
+            void HandlePair(Stream stream, string body)
             {
                 Dictionary<string, object> json = null;
                 try { json = Json.Parse(body) as Dictionary<string, object>; } catch { }
@@ -476,7 +497,7 @@ namespace Errin
                 }
             }
 
-            void HandleDashboard(NetworkStream stream)
+            void HandleDashboard(Stream stream)
             {
                 Dictionary<string, object> res = null;
                 ExecuteOnUi(() =>
@@ -528,10 +549,11 @@ namespace Errin
                 SendJson(stream, 200, res);
             }
 
-            void HandleGetItems(NetworkStream stream, Dictionary<string, string> query)
+            void HandleGetItems(Stream stream, Dictionary<string, string> query)
             {
                 string q = (query.ContainsKey("q") ? query["q"] : "").Trim().ToLowerInvariant();
                 string status = (query.ContainsKey("status") ? query["status"] : "active").ToLowerInvariant();
+                string sort = (query.ContainsKey("sort") ? query["sort"] : "title").ToLowerInvariant();
                 int limit = 150;
                 if (query.ContainsKey("limit")) int.TryParse(query["limit"], out limit);
                 if (limit <= 0) limit = 150;
@@ -559,6 +581,16 @@ namespace Errin
                             (i.subject != null && i.subject.ToLowerInvariant().Contains(q)));
                     }
 
+                    switch (sort)
+                    {
+                        case "title_desc": items = items.OrderByDescending(i => i.title ?? "", StringComparer.OrdinalIgnoreCase); break;
+                        case "author": items = items.OrderBy(i => i.author ?? "", StringComparer.OrdinalIgnoreCase).ThenBy(i => i.title ?? "", StringComparer.OrdinalIgnoreCase); break;
+                        case "barcode": items = items.OrderBy(i => i.barcode ?? "", StringComparer.OrdinalIgnoreCase); break;
+                        case "call": items = items.OrderBy(i => i.call ?? "", StringComparer.OrdinalIgnoreCase); break;
+                        case "newest": items = items.Reverse(); break;
+                        default: items = items.OrderBy(i => i.title ?? "", StringComparer.OrdinalIgnoreCase); break;
+                    }
+
                     foreach (var i in items.Take(limit))
                     {
                         var d = i.ToJ();
@@ -575,7 +607,7 @@ namespace Errin
                 SendJson(stream, 200, new Dictionary<string, object> { { "ok", true }, { "items", list } });
             }
 
-            void HandleGetItem(NetworkStream stream, Dictionary<string, string> query)
+            void HandleGetItem(Stream stream, Dictionary<string, string> query)
             {
                 string id = query.ContainsKey("id") ? query["id"] : "";
                 string bc = query.ContainsKey("barcode") ? query["barcode"] : "";
@@ -607,7 +639,7 @@ namespace Errin
                 else SendJson(stream, 200, new Dictionary<string, object> { { "ok", true }, { "item", d } });
             }
 
-            void HandleSaveItem(NetworkStream stream, string body)
+            void HandleSaveItem(Stream stream, string body)
             {
                 var json = Json.Parse(body) as Dictionary<string, object>;
                 if (json == null) { SendJson(stream, 400, new Dictionary<string, object> { { "ok", false }, { "error", "Bad JSON" } }); return; }
@@ -645,7 +677,7 @@ namespace Errin
                 SendJson(stream, 200, new Dictionary<string, object> { { "ok", true }, { "item", result } });
             }
 
-            void HandleDeleteItem(NetworkStream stream, string body)
+            void HandleDeleteItem(Stream stream, string body)
             {
                 var json = Json.Parse(body) as Dictionary<string, object>;
                 string id = Json.Str(json, "id");
@@ -668,7 +700,7 @@ namespace Errin
                 else SendJson(stream, 200, new Dictionary<string, object> { { "ok", true } });
             }
 
-            void HandleWeedItem(NetworkStream stream, string body)
+            void HandleWeedItem(Stream stream, string body)
             {
                 var json = Json.Parse(body) as Dictionary<string, object>;
                 string id = Json.Str(json, "id");
@@ -691,7 +723,7 @@ namespace Errin
                 else SendJson(stream, 200, new Dictionary<string, object> { { "ok", true } });
             }
 
-            void HandleUnweedItem(NetworkStream stream, string body)
+            void HandleUnweedItem(Stream stream, string body)
             {
                 var json = Json.Parse(body) as Dictionary<string, object>;
                 string id = Json.Str(json, "id");
@@ -711,9 +743,10 @@ namespace Errin
                 else SendJson(stream, 200, new Dictionary<string, object> { { "ok", true } });
             }
 
-            void HandleGetPatrons(NetworkStream stream, Dictionary<string, string> query)
+            void HandleGetPatrons(Stream stream, Dictionary<string, string> query)
             {
                 string q = (query.ContainsKey("q") ? query["q"] : "").Trim().ToLowerInvariant();
+                string sort = (query.ContainsKey("sort") ? query["sort"] : "name").ToLowerInvariant();
                 var list = new List<object>();
 
                 ExecuteOnUi(() =>
@@ -732,7 +765,16 @@ namespace Errin
                             (p.contact != null && p.contact.ToLowerInvariant().Contains(q)));
                     }
 
-                    foreach (var p in patrons.OrderBy(p => p.name))
+                    switch (sort)
+                    {
+                        case "name_desc": patrons = patrons.OrderByDescending(p => p.name ?? "", StringComparer.OrdinalIgnoreCase); break;
+                        case "cls": patrons = patrons.OrderBy(p => p.cls ?? "", StringComparer.OrdinalIgnoreCase).ThenBy(p => p.name ?? "", StringComparer.OrdinalIgnoreCase); break;
+                        case "id": patrons = patrons.OrderBy(p => p.id ?? "", StringComparer.OrdinalIgnoreCase); break;
+                        case "reg": patrons = patrons.OrderByDescending(p => p.reg ?? ""); break;
+                        default: patrons = patrons.OrderBy(p => p.name ?? "", StringComparer.OrdinalIgnoreCase); break;
+                    }
+
+                    foreach (var p in patrons)
                     {
                         int loansCount = db.Loans.Count(l => l.pid == p.id && l.ret == null);
                         double unpaid = lib.Unpaid(p.id);
@@ -755,7 +797,7 @@ namespace Errin
                 SendJson(stream, 200, new Dictionary<string, object> { { "ok", true }, { "patrons", list } });
             }
 
-            void HandleGetPatron(NetworkStream stream, Dictionary<string, string> query)
+            void HandleGetPatron(Stream stream, Dictionary<string, string> query)
             {
                 string id = query.ContainsKey("id") ? query["id"] : "";
                 Dictionary<string, object> res = null;
@@ -818,7 +860,7 @@ namespace Errin
                 else SendJson(stream, 200, new Dictionary<string, object> { { "ok", true }, { "patron", res } });
             }
 
-            void HandleSavePatron(NetworkStream stream, string body)
+            void HandleSavePatron(Stream stream, string body)
             {
                 var json = Json.Parse(body) as Dictionary<string, object>;
                 if (json == null) { SendJson(stream, 400, new Dictionary<string, object> { { "ok", false }, { "error", "Bad JSON" } }); return; }
@@ -868,7 +910,7 @@ namespace Errin
                 SendJson(stream, 200, new Dictionary<string, object> { { "ok", true }, { "patron", result } });
             }
 
-            void HandleDeletePatron(NetworkStream stream, string body)
+            void HandleDeletePatron(Stream stream, string body)
             {
                 var json = Json.Parse(body) as Dictionary<string, object>;
                 string id = Json.Str(json, "id");
@@ -894,7 +936,7 @@ namespace Errin
                 else SendJson(stream, 200, new Dictionary<string, object> { { "ok", true } });
             }
 
-            void HandleCheckout(NetworkStream stream, string body)
+            void HandleCheckout(Stream stream, string body)
             {
                 var json = Json.Parse(body) as Dictionary<string, object>;
                 string patron = Json.Str(json, "patron").Trim();
@@ -923,7 +965,7 @@ namespace Errin
                 }
             }
 
-            void HandleReturn(NetworkStream stream, string body)
+            void HandleReturn(Stream stream, string body)
             {
                 var json = Json.Parse(body) as Dictionary<string, object>;
                 string barcode = Json.Str(json, "barcode").Trim();
@@ -951,7 +993,7 @@ namespace Errin
                 }
             }
 
-            void HandleRenew(NetworkStream stream, string body)
+            void HandleRenew(Stream stream, string body)
             {
                 var json = Json.Parse(body) as Dictionary<string, object>;
                 string barcode = Json.Str(json, "barcode").Trim();
@@ -979,7 +1021,7 @@ namespace Errin
                 }
             }
 
-            void HandleHold(NetworkStream stream, string body)
+            void HandleHold(Stream stream, string body)
             {
                 var json = Json.Parse(body) as Dictionary<string, object>;
                 string patron = Json.Str(json, "patron").Trim();
@@ -998,7 +1040,7 @@ namespace Errin
                 else SendJson(stream, 200, new Dictionary<string, object> { { "ok", true }, { "msg", msg } });
             }
 
-            void HandleCancelHold(NetworkStream stream, string body)
+            void HandleCancelHold(Stream stream, string body)
             {
                 var json = Json.Parse(body) as Dictionary<string, object>;
                 string holdId = Json.Str(json, "holdId").Trim();
@@ -1016,7 +1058,7 @@ namespace Errin
                 else SendJson(stream, 200, new Dictionary<string, object> { { "ok", true } });
             }
 
-            void HandleGetLoans(NetworkStream stream, Dictionary<string, string> query)
+            void HandleGetLoans(Stream stream, Dictionary<string, string> query)
             {
                 string q = (query.ContainsKey("q") ? query["q"] : "").Trim().ToLowerInvariant();
                 var list = new List<object>();
@@ -1067,7 +1109,7 @@ namespace Errin
                 SendJson(stream, 200, new Dictionary<string, object> { { "ok", true }, { "loans", list } });
             }
 
-            void HandleGetFines(NetworkStream stream, Dictionary<string, string> query)
+            void HandleGetFines(Stream stream, Dictionary<string, string> query)
             {
                 string status = (query.ContainsKey("status") ? query["status"] : "all").ToLowerInvariant();
                 var list = new List<object>();
@@ -1104,7 +1146,7 @@ namespace Errin
                 SendJson(stream, 200, new Dictionary<string, object> { { "ok", true }, { "fines", list } });
             }
 
-            void HandlePayFine(NetworkStream stream, string body)
+            void HandlePayFine(Stream stream, string body)
             {
                 var json = Json.Parse(body) as Dictionary<string, object>;
                 string id = Json.Str(json, "id");
@@ -1123,7 +1165,7 @@ namespace Errin
                 else SendJson(stream, 200, new Dictionary<string, object> { { "ok", true } });
             }
 
-            void HandleWaiveFine(NetworkStream stream, string body)
+            void HandleWaiveFine(Stream stream, string body)
             {
                 var json = Json.Parse(body) as Dictionary<string, object>;
                 string id = Json.Str(json, "id");
@@ -1142,7 +1184,7 @@ namespace Errin
                 else SendJson(stream, 200, new Dictionary<string, object> { { "ok", true } });
             }
 
-            void HandleReports(NetworkStream stream)
+            void HandleReports(Stream stream)
             {
                 Dictionary<string, object> res = null;
                 ExecuteOnUi(() =>
@@ -1342,7 +1384,7 @@ namespace Errin
             }
 
             // HTTP helpers
-            void SendCorsHeaders(NetworkStream stream)
+            void SendCorsHeaders(Stream stream)
             {
                 string header = "HTTP/1.1 204 No Content\r\n" +
                     "Connection: close\r\n" +
@@ -1354,7 +1396,7 @@ namespace Errin
                 stream.Write(b, 0, b.Length);
             }
 
-            void SendJson(NetworkStream stream, int statusCode, object data)
+            void SendJson(Stream stream, int statusCode, object data)
             {
                 string json = Json.Write(data);
                 byte[] body = Encoding.UTF8.GetBytes(json);
@@ -1365,13 +1407,13 @@ namespace Errin
                 SendResponse(stream, statusText, "application/json; charset=utf-8", body);
             }
 
-            void SendHtml(NetworkStream stream, string html)
+            void SendHtml(Stream stream, string html)
             {
                 byte[] body = Encoding.UTF8.GetBytes(html);
                 SendResponse(stream, "200 OK", "text/html; charset=utf-8", body);
             }
 
-            void SendResponse(NetworkStream stream, string statusText, string contentType, byte[] body)
+            void SendResponse(Stream stream, string statusText, string contentType, byte[] body)
             {
                 string header = "HTTP/1.1 " + statusText + "\r\n" +
                     "Content-Type: " + contentType + "\r\n" +
@@ -1433,7 +1475,8 @@ namespace Errin
             Action<Action> runOnUi,
             Action<string> onRemoteWrite,
             Action<Device> onDevicePaired,
-            Action<string> log)
+            Action<string> log,
+            X509Certificate2 serverCert = null)
         {
             var s = new Server
             {
@@ -1446,7 +1489,7 @@ namespace Errin
                 OnDevicePaired = onDevicePaired,
                 Log = log ?? (m => { })
             };
-            s.Start(port, localOnly);
+            s.Start(port, localOnly, serverCert);
             return s;
         }
 
@@ -1515,11 +1558,11 @@ td { padding: 10px 12px; border-bottom: 1px solid #38393e; color: #f1efe8; verti
 tr:hover td { background: rgba(255,255,255,0.02); }
 
 /* Badges */
-.badge { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
-.badge-ok { background: #1b3d29; color: #2fb36b; }
-.badge-err { background: #3d1b1b; color: #e8392f; }
-.badge-warn { background: #3d341b; color: #f6c61b; }
-.badge-dim { background: #33343a; color: #9a9a94; }
+.badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; letter-spacing: 0.3px; }
+.badge-ok { background: #153c20; color: #4ade80; border: 1px solid #22c55e; }
+.badge-err { background: #4a1d1d; color: #fca5a5; border: 1px solid #ef4444; }
+.badge-warn { background: #453512; color: #fde047; border: 1px solid #eab308; }
+.badge-dim { background: #33343a; color: #b0b0a8; border: 1px solid #52545c; }
 
 /* Banners / Notifications */
 .notice { padding: 12px 16px; border-radius: 6px; font-size: 14px; font-weight: 600; margin-bottom: 14px; }
@@ -1660,11 +1703,19 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         <div style=""display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: space-between;"">
           <div style=""display: flex; gap: 8px; flex: 1; min-width: 260px;"">
             <input type=""text"" id=""catQ"" class=""input-text"" placeholder=""Search titles, authors, barcode, ISBN..."" oninput=""debouncedLoadCat()"" />
-            <select id=""catStatus"" class=""select-box"" style=""width: 130px;"" onchange=""loadCatalog()"">
+            <select id=""catStatus"" class=""select-box"" style=""width: 120px;"" onchange=""loadCatalog()"">
               <option value=""active"">Active</option>
               <option value=""weeded"">Weeded</option>
               <option value=""onloan"">On Loan</option>
               <option value=""all"">All</option>
+            </select>
+            <select id=""catSort"" class=""select-box"" style=""width: 135px;"" onchange=""loadCatalog()"">
+              <option value=""title"">Sort: Title (A-Z)</option>
+              <option value=""title_desc"">Sort: Title (Z-A)</option>
+              <option value=""author"">Sort: Author</option>
+              <option value=""barcode"">Sort: Barcode</option>
+              <option value=""call"">Sort: Call No</option>
+              <option value=""newest"">Sort: Newest</option>
             </select>
           </div>
           <button class=""btn btn-primary"" onclick=""openItemModal()"">+ Add Book</button>
@@ -1687,7 +1738,14 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     <div id=""tab-pat"" class=""tab-pane"" style=""display: none;"">
       <div class=""card"">
         <div style=""display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: space-between;"">
-          <input type=""text"" id=""patQ"" class=""input-text"" style=""flex: 1; min-width: 240px;"" placeholder=""Search students by name, IC/ID, class..."" oninput=""debouncedLoadPatrons()"" />
+          <input type=""text"" id=""patQ"" class=""input-text"" style=""flex: 1; min-width: 200px;"" placeholder=""Search students by name, IC/ID, class..."" oninput=""debouncedLoadPatrons()"" />
+          <select id=""patSort"" class=""select-box"" style=""width: 135px;"" onchange=""loadPatrons()"">
+            <option value=""name"">Sort: Name (A-Z)</option>
+            <option value=""name_desc"">Sort: Name (Z-A)</option>
+            <option value=""cls"">Sort: Class</option>
+            <option value=""id"">Sort: IC / ID</option>
+            <option value=""reg"">Sort: Newest</option>
+          </select>
           <button class=""btn btn-primary"" onclick=""openPatronModal()"">+ Add Student</button>
         </div>
       </div>
@@ -2119,7 +2177,8 @@ function debouncedLoadCat() {
 async function loadCatalog() {
   const q = document.getElementById('catQ').value.trim();
   const st = document.getElementById('catStatus').value;
-  const res = await api(`/api/items?q=${encodeURIComponent(q)}&status=${st}`);
+  const sort = document.getElementById('catSort') ? document.getElementById('catSort').value : 'title';
+  const res = await api(`/api/items?q=${encodeURIComponent(q)}&status=${st}&sort=${encodeURIComponent(sort)}`);
   if (!res.ok) return;
 
   const tbody = document.querySelector('#catTable tbody');
@@ -2222,7 +2281,8 @@ function debouncedLoadPatrons() {
 
 async function loadPatrons() {
   const q = document.getElementById('patQ').value.trim();
-  const res = await api('/api/patrons?q=' + encodeURIComponent(q));
+  const sort = document.getElementById('patSort') ? document.getElementById('patSort').value : 'name';
+  const res = await api('/api/patrons?q=' + encodeURIComponent(q) + '&sort=' + encodeURIComponent(sort));
   if (!res.ok) return;
 
   const tbody = document.querySelector('#patTable tbody');

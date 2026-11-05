@@ -163,11 +163,19 @@ namespace Errin
                 ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.DisableResizing, ColumnHeadersHeight = S(32), ColumnHeadersBorderStyle = DataGridViewHeaderBorderStyle.Single,
                 Font = Th.F, ShowCellToolTips = true, ScrollBars = ScrollBars.Vertical
             };
-            g.RowTemplate.Height = S(28);
+            g.RowTemplate.Height = S(32);
             g.DefaultCellStyle.BackColor = Th.Card; g.DefaultCellStyle.ForeColor = Th.Ink; g.DefaultCellStyle.SelectionBackColor = Th.Blue; g.DefaultCellStyle.SelectionForeColor = Color.White;
-            g.DefaultCellStyle.Padding = S(new Padding(4, 0, 4, 0));
-            g.ColumnHeadersDefaultCellStyle.BackColor = Th.Card; g.ColumnHeadersDefaultCellStyle.ForeColor = Th.Mut; g.ColumnHeadersDefaultCellStyle.SelectionBackColor = Th.Card;
-            g.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 8.5f, FontStyle.Bold); g.ColumnHeadersDefaultCellStyle.Padding = S(new Padding(4, 0, 4, 0));
+            g.DefaultCellStyle.Padding = S(new Padding(6, 0, 6, 0));
+            g.AlternatingRowsDefaultCellStyle.BackColor = Color.FromArgb(0x32, 0x33, 0x38);
+            g.AlternatingRowsDefaultCellStyle.ForeColor = Th.Ink;
+            g.AlternatingRowsDefaultCellStyle.SelectionBackColor = Th.Blue;
+            g.AlternatingRowsDefaultCellStyle.SelectionForeColor = Color.White;
+            g.AlternatingRowsDefaultCellStyle.Padding = S(new Padding(6, 0, 6, 0));
+            g.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(0x27, 0x28, 0x2b);
+            g.ColumnHeadersDefaultCellStyle.ForeColor = Color.FromArgb(0xca, 0xca, 0xd4);
+            g.ColumnHeadersDefaultCellStyle.SelectionBackColor = Color.FromArgb(0x27, 0x28, 0x2b);
+            g.ColumnHeadersDefaultCellStyle.Font = new Font("Segoe UI", 9f, FontStyle.Bold);
+            g.ColumnHeadersDefaultCellStyle.Padding = S(new Padding(6, 0, 6, 0));
             try { typeof(DataGridView).GetProperty("DoubleBuffered", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).SetValue(g, true, null); } catch { }
             return g;
         }

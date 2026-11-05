@@ -312,29 +312,62 @@ namespace Errin
         }
 
         /* ---------- students ---------- */
-        void PatForm()
+        void PatForm(Patron edit = null)
         {
-            using (var d = Ui.Dlg("Register student", 560, 310))
+            bool isEdit = edit != null;
+            using (var d = Ui.Dlg(isEdit ? "Edit student \u00B7 " + edit.name : "Register student", 560, 320))
             {
                 var ic = Ui.Txt(240); var nm = Ui.Txt(240); var cl = Ui.Txt(240); var ct = Ui.Txt(240);
+                if (isEdit)
+                {
+                    ic.Text = edit.id;
+                    nm.Text = edit.name;
+                    cl.Text = edit.cls;
+                    ct.Text = edit.contact;
+                }
                 var f1 = Ui.Field("IC number", ic, 250); f1.Location = new Point(Ui.S(20), Ui.S(20)); var f2 = Ui.Field("Full name", nm, 250); f2.Location = new Point(Ui.S(286), Ui.S(20));
                 var f3 = Ui.Field("Class / grade", cl, 250); f3.Location = new Point(Ui.S(20), Ui.S(102)); var f4 = Ui.Field("Guardian contact", ct, 250); f4.Location = new Point(Ui.S(286), Ui.S(102));
                 d.Controls.Add(f1); d.Controls.Add(f2); d.Controls.Add(f3); d.Controls.Add(f4);
-                d.Controls.Add(new Label { UseMnemonic = false, Text = "Type the 12 digits from the student's IC or MyKid. The dashes are added for you. The IC number is the student's library ID and is printed on the library card.",
+                string helpText = isEdit
+                    ? "Update student details. If you change the IC number, all borrowing history and fines will automatically follow the new IC."
+                    : "Type the 12 digits from the student's IC or MyKid. The dashes are added for you. The IC number is the student's library ID and is printed on the library card.";
+                d.Controls.Add(new Label { UseMnemonic = false, Text = helpText,
                     ForeColor = Th.Mut, Font = Th.FS, AutoSize = false, Size = new Size(Ui.S(510), Ui.S(42)), Location = new Point(Ui.S(20), Ui.S(184)) });
                 ic.Leave += (s, e) => { var n = Lib.NormIc(ic.Text); if (n != null) ic.Text = n; };
-                var ok = Ui.Btn("Register", 0); ok.Location = new Point(Ui.S(20), Ui.S(246)); var ca = Ui.Btn("Cancel", 1); ca.Location = new Point(Ui.S(124), Ui.S(246)); ca.Click += (s, e) => d.Close();
+                var ok = Ui.Btn(isEdit ? "Save changes" : "Register", 0); ok.Location = new Point(Ui.S(20), Ui.S(246)); var ca = Ui.Btn("Cancel", 1); ca.Location = new Point(Ui.S(134), Ui.S(246)); ca.Click += (s, e) => d.Close();
                 ok.Click += (s, e) =>
                 {
                     string n = Lib.NormIc(ic.Text), name = nm.Text.Trim();
                     if (n == null || !Lib.IcOk(n)) { MessageBox.Show(d, "Please type a valid IC number with 12 digits.", "ErrinILS", MessageBoxButtons.OK, MessageBoxIcon.Information); ic.Focus(); return; }
                     if (name == "") { MessageBox.Show(d, "Please type the student's full name.", "ErrinILS", MessageBoxButtons.OK, MessageBoxIcon.Information); nm.Focus(); return; }
-                    if (lib.PatronById(n) != null) { MessageBox.Show(d, "This IC number is already registered.", "ErrinILS", MessageBoxButtons.OK, MessageBoxIcon.Information); ic.Focus(); return; }
-                    var p = new Patron { id = n, name = name, cls = cl.Text.Trim(), contact = ct.Text.Trim(), reg = Lib.Today(), last = Lib.Today() };
-                    db.Patrons.Add(p); d.Close(); Commit(name + " registered");
-                    if (Ui.Confirm(this, "Print a library card for " + name + " now?")) CardDialog(p);
+
+                    if (isEdit)
+                    {
+                        string oldId = edit.id;
+                        if (n != oldId && lib.PatronById(n) != null) { MessageBox.Show(d, "Another student is already registered with IC number " + n + ".", "ErrinILS", MessageBoxButtons.OK, MessageBoxIcon.Information); ic.Focus(); return; }
+                        edit.name = name;
+                        edit.cls = cl.Text.Trim();
+                        edit.contact = ct.Text.Trim();
+                        edit.last = Lib.Today();
+                        if (n != oldId)
+                        {
+                            edit.id = n;
+                            foreach (var l in db.Loans) if (l.pid == oldId) l.pid = n;
+                            foreach (var f in db.Fines) if (f.pid == oldId) f.pid = n;
+                            foreach (var h in db.Holds) if (h.pid == oldId) h.pid = n;
+                        }
+                        d.Close();
+                        Commit("Student " + name + " updated");
+                    }
+                    else
+                    {
+                        if (lib.PatronById(n) != null) { MessageBox.Show(d, "This IC number is already registered.", "ErrinILS", MessageBoxButtons.OK, MessageBoxIcon.Information); ic.Focus(); return; }
+                        var p = new Patron { id = n, name = name, cls = cl.Text.Trim(), contact = ct.Text.Trim(), reg = Lib.Today(), last = Lib.Today() };
+                        db.Patrons.Add(p); d.Close(); Commit(name + " registered");
+                        if (Ui.Confirm(this, "Print a library card for " + name + " now?")) CardDialog(p);
+                    }
                 };
-                d.Controls.Add(ok); d.Controls.Add(ca); d.Shown += (s, e) => ic.Focus(); d.ShowDialog(this);
+                d.Controls.Add(ok); d.Controls.Add(ca); d.Shown += (s, e) => { if (isEdit) nm.Focus(); else ic.Focus(); }; d.ShowDialog(this);
             }
         }
         void CardDialog(Patron p)
@@ -371,6 +404,7 @@ namespace Errin
                 g.Location = new Point(Ui.S(20), Ui.S(116)); g.Size = new Size(Ui.S(695), Ui.S(330)); g.Dock = DockStyle.None; d.Controls.Add(g);
                 var c = Ui.Btn("Close", 1); c.Location = new Point(Ui.S(20), Ui.S(458)); c.Click += (s, e) => d.Close(); d.Controls.Add(c);
                 var pc = Ui.Btn("Print library card", 0); pc.Location = new Point(Ui.S(114), Ui.S(458)); pc.Click += (s, e) => CardDialog(p); d.Controls.Add(pc);
+                var pe = Ui.Btn("Edit student", 1); pe.Location = new Point(Ui.S(270), Ui.S(458)); pe.Click += (s, e) => { d.Close(); PatForm(p); }; d.Controls.Add(pe);
                 d.ShowDialog(this);
             }
         }

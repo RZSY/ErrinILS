@@ -1,6 +1,7 @@
 // ErrinILS main window: header tabs, status bar and the eight pages.
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Globalization;
@@ -8,9 +9,12 @@ using System.IO;
 using System.Linq;
 using System.Net.Sockets;
 using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Windows.Forms;
+using Timer = System.Windows.Forms.Timer;
 
 namespace Errin
 {
@@ -39,6 +43,21 @@ namespace Errin
             db = store.Load(); bool fresh = db == null; if (fresh) db = Lib.Seed();
             lib = new Lib(db); lib.FixItems(); if (db.Set == null) db.Set = new Settings(); lib.Purge();
             BuildFrame(); Save(); LoadCfg(); ApplyZ(); ApplyWeb(); Render();
+            if (autoUpdate)
+            {
+                ThreadPool.QueueUserWorkItem(stObj =>
+                {
+                    try
+                    {
+                        var info = Updater.CheckForUpdate();
+                        if (info != null && info.HasUpdate)
+                        {
+                            BeginInvoke(new Action(() => ShowUpdateBanner(info)));
+                        }
+                    }
+                    catch { }
+                });
+            }
             DragEnter += (s, e) => { if (e.Data.GetDataPresent(DataFormats.FileDrop)) e.Effect = DragDropEffects.Copy; };
             DragDrop += (s, e) =>
             {
@@ -144,13 +163,16 @@ namespace Errin
             var o = db.Loans.Where(l => l.ret == null).ToList(); var od = o.Where(lib.Overdue).ToList(); double un = db.Fines.Where(f => f.paid == "").Sum(f => f.amt);
             var stats = Ui.Flow(); var cl = new[] { Th.Blue, Th.Yel, Th.Red };
             int act = db.Items.Count(i => string.IsNullOrEmpty(i.weeded));
-            int wdd = db.Items.Count(i => !string.IsNullOrEmpty(i.weeded));
-            string titStat = wdd > 0 ? act + " (" + wdd + " weeded)" : act.ToString();
+            string titStat = act.ToString();
             var vals = new[] { new[] { titStat, "Active catalog titles" }, new[] { db.Patrons.Count.ToString(), "Registered students" }, new[] { o.Count.ToString(), "Items on loan now" }, new[] { db.Loans.Count.ToString(), "Checkouts, all time" },
                 new[] { od.Count.ToString(), "Overdue items" }, new[] { Mn(un), "Unpaid fines" }, new[] { db.Holds.Count(h => h.st != "done").ToString(), "Active holds" } };
             for (int k = 0; k < vals.Length; k++) stats.Controls.Add(Ui.Stat(vals[k][0], vals[k][1], cl[k % 3]));
             var rows = od.Select(l => new[] { lib.PName(l.pid), lib.PClass(l.pid), lib.Title(l.iid), l.due, Lib.Diff(Lib.Today(), l.due).ToString(), Mn(Lib.Diff(Lib.Today(), l.due) * db.Set.rate), Mn(lib.Owed(l.pid)) }).ToList();
             var og = MakeGrid(new[] { "Student", "Class", "Title", "Due", "Days late", "Fine on item", "Total owed" }, rows, null, "Nothing overdue \U0001F389");
+            og.CellFormatting += (s, e) => {
+                if (e.RowIndex < 0) return;
+                if (e.ColumnIndex == 4 || e.ColumnIndex == 5) { e.CellStyle.ForeColor = Th.Red; e.CellStyle.Font = Th.FB; }
+            };
             Func<string, Control> top = pre =>
             {
                 var c = new Dictionary<string, int>(); foreach (var l in db.Loans.Where(l => pre == "" || l.@out.StartsWith(pre))) c[l.pid] = (c.ContainsKey(l.pid) ? c[l.pid] : 0) + 1;
@@ -197,11 +219,12 @@ namespace Errin
         }
 
         /* ---------- Catalog ---------- */
+        int catSort = 0;
         Control CatPage()
         {
-            var q = Ui.Txt(280); q.Text = catQ; q.Margin = Ui.S(new Padding(0, 0, 14, 0)); q.TextChanged += (s, e) => { catQ = q.Text; debT.Stop(); debT.Start(); };
-            var bar = Ui.Flow(false); bar.Controls.Add(Ui.Field("Search", q, 300));
-            var cbFilt = Ui.Combo(160, "Active records", "Weeded records", "All records");
+            var q = Ui.Txt(240); q.Text = catQ; q.Margin = Ui.S(new Padding(0, 0, 14, 0)); q.TextChanged += (s, e) => { catQ = q.Text; debT.Stop(); debT.Start(); };
+            var bar = Ui.Flow(false); bar.Controls.Add(Ui.Field("Search", q, 260));
+            var cbFilt = Ui.Combo(150, "Active records", "Weeded records", "All records");
             if (catFilter == "weeded") cbFilt.SelectedIndex = 1;
             else if (catFilter == "all") cbFilt.SelectedIndex = 2;
             else cbFilt.SelectedIndex = 0;
@@ -210,13 +233,34 @@ namespace Errin
                 catFilter = cbFilt.SelectedIndex == 1 ? "weeded" : cbFilt.SelectedIndex == 2 ? "all" : "active";
                 FilterCat();
             };
-            bar.Controls.Add(Ui.Field("Status", cbFilt, 175));
+            bar.Controls.Add(Ui.Field("Status", cbFilt, 165));
+            var cbSort = Ui.Combo(175, "Title (A-Z)", "Title (Z-A)", "Author (A-Z)", "Barcode", "Call Number", "Acq. No.", "Newest Added");
+            cbSort.SelectedIndex = catSort;
+            cbSort.SelectedIndexChanged += (s, e) => { catSort = cbSort.SelectedIndex; FilterCat(); };
+            bar.Controls.Add(Ui.Field("Sort by", cbSort, 190));
             var bf = Ui.Flow(false); bf.Padding = Ui.S(new Padding(0, 18, 0, 0));
             bf.Controls.Add(Ui.Btn("+ Add record", 0, (s, e) => ItemForm(null))); bf.Controls.Add(Ui.Btn("Import MARC", 1, (s, e) => PickImport()));
             bf.Controls.Add(Ui.Btn("Z39.50 search", 1, (s, e) => ZDialog())); bf.Controls.Add(Ui.Btn("Print labels", 1, (s, e) => PrintShown())); bf.Controls.Add(Ui.Btn("Print spine labels", 1, (s, e) => PrintSpines())); bar.Controls.Add(bf);
             var tool = Ui.Card(null, bar);
             catGrid = Ui.Grid(); catNote = Ui.Lbl("", true);
             catGrid.CellDoubleClick += (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i != null) ItemForm(i); };
+            catGrid.CellFormatting += (s, e) => {
+                if (e.RowIndex < 0 || e.ColumnIndex != 6 || e.Value == null) return;
+                string st = e.Value.ToString();
+                if (st.StartsWith("Available")) { e.CellStyle.ForeColor = Th.Green; e.CellStyle.Font = Th.FB; }
+                else if (st.StartsWith("Due")) { e.CellStyle.ForeColor = Th.Yel; e.CellStyle.Font = Th.FB; }
+                else if (st.StartsWith("Overdue")) { e.CellStyle.ForeColor = Th.Red; e.CellStyle.Font = Th.FB; }
+                else if (st.StartsWith("Weeded")) { e.CellStyle.ForeColor = Th.Mut; }
+            };
+            catGrid.ColumnHeaderMouseClick += (s, e) => {
+                if (e.ColumnIndex == 0) catSort = 3;
+                else if (e.ColumnIndex == 2) catSort = 5;
+                else if (e.ColumnIndex == 3) catSort = catSort == 0 ? 1 : 0;
+                else if (e.ColumnIndex == 4) catSort = 2;
+                else if (e.ColumnIndex == 5) catSort = 4;
+                if (cbSort.SelectedIndex != catSort && catSort < cbSort.Items.Count) cbSort.SelectedIndex = catSort;
+                FilterCat();
+            };
             var btns = new[] {
                 Ui.Btn("Edit", 1, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i == null) Toast("Select a record first"); else ItemForm(i); }),
                 Ui.Btn("Weed", 1, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i == null) Toast("Select a record first"); else WeedDialog(i); }),
@@ -238,6 +282,18 @@ namespace Errin
             else if (catFilter == "all") shown = all.ToList();
             else shown = all.Where(i => string.IsNullOrEmpty(i.weeded)).ToList();
 
+            switch (catSort)
+            {
+                case 0: shown = shown.OrderBy(i => i.title ?? "", StringComparer.OrdinalIgnoreCase).ToList(); break;
+                case 1: shown = shown.OrderByDescending(i => i.title ?? "", StringComparer.OrdinalIgnoreCase).ToList(); break;
+                case 2: shown = shown.OrderBy(i => i.author ?? "", StringComparer.OrdinalIgnoreCase).ThenBy(i => i.title ?? "", StringComparer.OrdinalIgnoreCase).ToList(); break;
+                case 3: shown = shown.OrderBy(i => i.barcode ?? "", StringComparer.OrdinalIgnoreCase).ToList(); break;
+                case 4: shown = shown.OrderBy(i => i.call ?? "", StringComparer.OrdinalIgnoreCase).ToList(); break;
+                case 5: shown = shown.OrderBy(i => i.acq ?? "", StringComparer.OrdinalIgnoreCase).ToList(); break;
+                case 6: shown.Reverse(); break;
+                default: break;
+            }
+
             var rows = shown.Take(LIM).Select(i => {
                 string status;
                 if (!string.IsNullOrEmpty(i.weeded)) status = "Weeded (" + (string.IsNullOrEmpty(i.weed_reason) ? i.weeded : i.weed_reason) + ")";
@@ -245,7 +301,10 @@ namespace Errin
                 return new[] { i.barcode, i.ctl, i.acq, i.title, i.author, i.call, status };
             }).ToList();
             Ui.Fill(catGrid, new[] { "Barcode", "Control no.", "Acq. no.", "Title", "Author", "Call no.", "Status" }, rows, shown.Take(LIM).Cast<object>().ToList(), "No records found");
-            string countMsg = shown.Count > LIM ? "Showing the first " + LIM + " of " + shown.Count + ". Use the search box to narrow down." : shown.Count + " record(s)";
+            string countMsg = shown.Count > LIM ? "Showing the first " + LIM + " of " + shown.Count + " record(s)" : shown.Count + " record(s)";
+            int onLoanCount = shown.Count(i => string.IsNullOrEmpty(i.weeded) && lib.OpenLoan(i.id) != null);
+            int availCount = shown.Count(i => string.IsNullOrEmpty(i.weeded) && lib.OpenLoan(i.id) == null);
+            countMsg += " \u00B7 " + availCount + " available \u00B7 " + onLoanCount + " on loan";
             int weededTotal = db.Items.Count(i => !string.IsNullOrEmpty(i.weeded));
             if (catFilter == "active" && weededTotal > 0) countMsg += " \u00B7 " + weededTotal + " weeded item(s) hidden";
             else if (catFilter == "weeded") countMsg += " (weeded / withdrawn from circulation)";
@@ -271,14 +330,36 @@ namespace Errin
         }
 
         /* ---------- Students ---------- */
+        int patSort = 0;
         Control PatPage()
         {
-            var q = Ui.Txt(300); q.Text = patQ; q.Margin = Ui.S(new Padding(0, 0, 14, 0)); q.TextChanged += (s, e) => { patQ = q.Text; debT.Stop(); debT.Start(); };
-            var bar = Ui.Flow(false); bar.Controls.Add(Ui.Field("Search", q, 330));
+            var q = Ui.Txt(240); q.Text = patQ; q.Margin = Ui.S(new Padding(0, 0, 14, 0)); q.TextChanged += (s, e) => { patQ = q.Text; debT.Stop(); debT.Start(); };
+            var bar = Ui.Flow(false); bar.Controls.Add(Ui.Field("Search", q, 260));
+            var cbSort = Ui.Combo(180, "Name (A-Z)", "Name (Z-A)", "Class / Grade", "IC / ID Number", "Recently Registered", "Most Loans", "Highest Fines");
+            cbSort.SelectedIndex = patSort;
+            cbSort.SelectedIndexChanged += (s, e) => { patSort = cbSort.SelectedIndex; FilterPat(); };
+            bar.Controls.Add(Ui.Field("Sort by", cbSort, 195));
             var bf = Ui.Flow(false); bf.Padding = Ui.S(new Padding(0, 18, 0, 0)); bf.Controls.Add(Ui.Btn("+ Register student", 0, (s, e) => PatForm())); bar.Controls.Add(bf);
             patGrid = Ui.Grid(); patNote = Ui.Lbl("", true);
             patGrid.CellDoubleClick += (s, e) => { var p = Ui.Sel<Patron>(patGrid); if (p != null) PatView(p); };
-            var body = WithButtons(patGrid, Ui.Btn("Account", 1, (s, e) => { var p = Ui.Sel<Patron>(patGrid); if (p == null) Toast("Select a student first"); else PatView(p); }),
+            patGrid.CellFormatting += (s, e) => {
+                if (e.RowIndex < 0 || e.Value == null) return;
+                if (e.ColumnIndex == 4 && e.Value.ToString() != "0") { e.CellStyle.ForeColor = Th.Yel; e.CellStyle.Font = Th.FB; }
+                if (e.ColumnIndex == 5 && e.Value.ToString() != Mn(0)) { e.CellStyle.ForeColor = Th.Red; e.CellStyle.Font = Th.FB; }
+            };
+            patGrid.ColumnHeaderMouseClick += (s, e) => {
+                if (e.ColumnIndex == 0) patSort = 3;
+                else if (e.ColumnIndex == 1) patSort = patSort == 0 ? 1 : 0;
+                else if (e.ColumnIndex == 2) patSort = 2;
+                else if (e.ColumnIndex == 3) patSort = 4;
+                else if (e.ColumnIndex == 4) patSort = 5;
+                else if (e.ColumnIndex == 5) patSort = 6;
+                if (cbSort.SelectedIndex != patSort && patSort < cbSort.Items.Count) cbSort.SelectedIndex = patSort;
+                FilterPat();
+            };
+            var body = WithButtons(patGrid,
+                Ui.Btn("Account", 1, (s, e) => { var p = Ui.Sel<Patron>(patGrid); if (p == null) Toast("Select a student first"); else PatView(p); }),
+                Ui.Btn("Edit", 1, (s, e) => { var p = Ui.Sel<Patron>(patGrid); if (p == null) Toast("Select a student first"); else PatForm(p); }),
                 Ui.Btn("Print library card", 0, (s, e) => { var p = Ui.Sel<Patron>(patGrid); if (p == null) Toast("Select a student first"); else CardDialog(p); }),
                 Ui.Btn("Print cards for list", 1, (s, e) => PrintCards()),
                 Ui.Btn("Delete", 2, (s, e) => { var p = Ui.Sel<Patron>(patGrid); if (p == null) Toast("Select a student first"); else DelPat(p); }));
@@ -287,7 +368,21 @@ namespace Errin
         void FilterPat()
         {
             if (patGrid == null || patGrid.IsDisposed) return; string q = (patQ ?? "").ToLowerInvariant();
-            var r = db.Patrons.Where(p => (p.id + p.name + p.cls).ToLowerInvariant().Contains(q) || (Lib.NormIc(q) != null && Lib.NormIc(p.id) == Lib.NormIc(q))).ToList(); shownPat = r;
+            var r = db.Patrons.Where(p => (p.id + p.name + p.cls).ToLowerInvariant().Contains(q) || (Lib.NormIc(q) != null && Lib.NormIc(p.id) == Lib.NormIc(q))).ToList();
+
+            switch (patSort)
+            {
+                case 0: r = r.OrderBy(p => p.name ?? "", StringComparer.OrdinalIgnoreCase).ToList(); break;
+                case 1: r = r.OrderByDescending(p => p.name ?? "", StringComparer.OrdinalIgnoreCase).ToList(); break;
+                case 2: r = r.OrderBy(p => p.cls ?? "", StringComparer.OrdinalIgnoreCase).ThenBy(p => p.name ?? "", StringComparer.OrdinalIgnoreCase).ToList(); break;
+                case 3: r = r.OrderBy(p => p.id ?? "", StringComparer.OrdinalIgnoreCase).ToList(); break;
+                case 4: r = r.OrderByDescending(p => p.reg ?? "").ToList(); break;
+                case 5: r = r.OrderByDescending(p => db.Loans.Count(l => l.pid == p.id && l.ret == null)).ThenBy(p => p.name ?? "").ToList(); break;
+                case 6: r = r.OrderByDescending(p => lib.Unpaid(p.id)).ThenBy(p => p.name ?? "").ToList(); break;
+                default: break;
+            }
+
+            shownPat = r;
             Ui.Fill(patGrid, new[] { "IC number", "Name", "Class", "Registered", "On loan", "Fines" }, r.Take(LIM).Select(p => new[] { p.id, p.name, p.cls, p.reg, db.Loans.Count(l => l.pid == p.id && l.ret == null).ToString(), Mn(lib.Unpaid(p.id)) }).ToList(), r.Take(LIM).Cast<object>().ToList(), "No students");
             patNote.Text = r.Count > LIM ? "Showing the first " + LIM + " of " + r.Count + ". Use the search box to narrow down." : r.Count + " student(s)";
         }
@@ -313,6 +408,15 @@ namespace Errin
             var f = db.Fines.AsEnumerable().Reverse().ToList(); double un = f.Where(x => x.paid == "").Sum(x => x.amt), pd = f.Where(x => x.paid == "paid").Sum(x => x.amt);
             var st = Ui.Flow(); st.Controls.Add(Ui.Stat(Mn(un), "Outstanding", Th.Blue)); st.Controls.Add(Ui.Stat(Mn(pd), "Collected", Th.Yel));
             var g = MakeGrid(new[] { "Date", "Student", "Title", "Days", "Amount", "Status" }, f.Take(LIM).Select(x => new[] { x.date, lib.PName(x.pid), lib.Title(x.iid), x.days.ToString(), Mn(x.amt), x.paid == "paid" ? "Paid" : x.paid == "waived" ? "Waived" : "Unpaid" }).ToList(), f.Take(LIM).Cast<object>().ToList(), "No fines recorded");
+            g.CellFormatting += (s, e) => {
+                if (e.RowIndex < 0 || e.Value == null) return;
+                if (e.ColumnIndex == 5) {
+                    string fineStatus = e.Value.ToString();
+                    if (fineStatus == "Unpaid") { e.CellStyle.ForeColor = Th.Red; e.CellStyle.Font = Th.FB; }
+                    else if (fineStatus == "Paid") { e.CellStyle.ForeColor = Th.Green; e.CellStyle.Font = Th.FB; }
+                    else if (fineStatus == "Waived") { e.CellStyle.ForeColor = Th.Mut; }
+                }
+            };
             Action<string> mark = s => { var x = Ui.Sel<Fine>(g); if (x == null) { Toast("Select a fine first"); return; } if (x.paid != "") { Toast("Already settled"); return; } x.paid = s; Commit(s == "paid" ? "Payment recorded" : "Fine waived"); };
             var body = WithButtons(g, Ui.Btn("Pay", 0, (s, e) => mark("paid")), Ui.Btn("Waive", 1, (s, e) => mark("waived")));
             return Ui.Stack(new Control[] { Ui.Heading("Fine tracker", "Fines accrue at " + Mn(db.Set.rate) + " per day late, charged on return."), st, Ui.Card("All fines", body, 1) }, 2);
@@ -398,7 +502,8 @@ namespace Errin
                     weedTot, wDamaged, wObsolete, wLost, wDup, wOther > 0 ? " \u00B7 Other: " + wOther : ""), 38));
 
             var topRow = Ui.Flow(false);
-            topRow.Controls.Add(Ui.Btn("Export full report (CSV)", 0, (s, e) => ExportReportsCsv()));
+            topRow.Controls.Add(Ui.Btn("Export executive report (HTML)", 0, (s, e) => ExportReportsHtml()));
+            topRow.Controls.Add(Ui.Btn("Export spreadsheet (CSV)", 1, (s, e) => ExportReportsCsv()));
 
             return ScrollPage(
                 Ui.Heading("Reports", "Circulation, collection and fine analytics"),
@@ -434,6 +539,212 @@ namespace Errin
                 call.IndexOf("novel", StringComparison.OrdinalIgnoreCase) >= 0)
                 return "Fiction";
             return "Other";
+        }
+
+        static string HtmlEscape(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return "";
+            return s.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\"", "&quot;");
+        }
+
+        void ExportReportsHtml()
+        {
+            using (var d = new SaveFileDialog { FileName = "errin-report-" + Lib.Today() + ".html", Filter = "HTML document (*.html)|*.html" })
+            {
+                if (d.ShowDialog(this) != DialogResult.OK) return;
+                try
+                {
+                    int activeLoans = db.Loans.Count(l => l.ret == null);
+                    int overdueLoans = db.Loans.Count(lib.Overdue);
+                    int activeCopies = db.Items.Count(i => !lib.IsWeeded(i));
+                    int weedTot = db.Items.Count(i => !string.IsNullOrEmpty(i.weeded));
+                    var borrowedPids = new HashSet<string>(db.Loans.Select(l => l.pid));
+                    int activeBorrowers = borrowedPids.Count;
+                    int totStudents = db.Patrons.Count;
+                    double totFines = db.Fines.Sum(f => f.amt);
+                    double paidFines = db.Fines.Where(f => f.paid == "paid").Sum(f => f.amt);
+                    double unpaidFines = db.Fines.Where(f => f.paid == "").Sum(f => f.amt);
+
+                    var sb = new StringBuilder();
+                    sb.AppendLine("<!DOCTYPE html>");
+                    sb.AppendLine("<html lang=\"en\">");
+                    sb.AppendLine("<head>");
+                    sb.AppendLine("<meta charset=\"utf-8\">");
+                    sb.AppendLine("<title>ErrinILS Library Executive Report - " + HtmlEscape(db.Set.school) + "</title>");
+                    sb.AppendLine("<style>");
+                    sb.AppendLine("body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background: #f1f5f9; color: #1e293b; margin: 0; padding: 28px; line-height: 1.5; }");
+                    sb.AppendLine(".wrap { max-width: 1060px; margin: 0 auto; background: #ffffff; padding: 36px 40px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.07); border: 1px solid #e2e8f0; }");
+                    sb.AppendLine(".header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; margin-bottom: 24px; }");
+                    sb.AppendLine(".title { font-size: 26px; font-weight: 800; color: #0f172a; margin: 0 0 6px 0; }");
+                    sb.AppendLine(".sub { font-size: 13.5px; color: #64748b; margin: 0; }");
+                    sb.AppendLine(".school-badge { background: #eff6ff; color: #1d4ed8; padding: 6px 14px; border-radius: 9999px; font-weight: 700; font-size: 13px; border: 1px solid #bfdbfe; }");
+                    sb.AppendLine(".kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; margin-bottom: 30px; }");
+                    sb.AppendLine(".kpi-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 18px 16px; text-align: center; position: relative; overflow: hidden; }");
+                    sb.AppendLine(".kpi-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px; background: #3b82f6; }");
+                    sb.AppendLine(".kpi-card.warn::before { background: #f59e0b; }");
+                    sb.AppendLine(".kpi-card.danger::before { background: #ef4444; }");
+                    sb.AppendLine(".kpi-card.success::before { background: #10b981; }");
+                    sb.AppendLine(".kpi-val { font-size: 26px; font-weight: 800; color: #0f172a; margin-bottom: 4px; }");
+                    sb.AppendLine(".kpi-lbl { font-size: 11.5px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }");
+                    sb.AppendLine("h2 { font-size: 17px; font-weight: 700; color: #0f172a; margin: 30px 0 12px 0; padding-bottom: 8px; border-bottom: 1px solid #e2e8f0; }");
+                    sb.AppendLine("table { width: 100%; border-collapse: collapse; font-size: 13.5px; margin-bottom: 22px; }");
+                    sb.AppendLine("th { background: #f1f5f9; color: #475569; font-weight: 700; text-align: left; padding: 10px 12px; border: 1px solid #e2e8f0; }");
+                    sb.AppendLine("td { padding: 9px 12px; border: 1px solid #e2e8f0; vertical-align: middle; }");
+                    sb.AppendLine("tr:nth-child(even) td { background: #f8fafc; }");
+                    sb.AppendLine(".badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }");
+                    sb.AppendLine(".badge-rank1 { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }");
+                    sb.AppendLine(".badge-rank2 { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }");
+                    sb.AppendLine(".badge-rank3 { background: #ffedd5; color: #c2410c; border: 1px solid #fed7aa; }");
+                    sb.AppendLine(".badge-danger { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }");
+                    sb.AppendLine(".badge-ok { background: #d1fae5; color: #047857; border: 1px solid #a7f3d0; }");
+                    sb.AppendLine(".bar-container { display: flex; align-items: center; gap: 8px; }");
+                    sb.AppendLine(".bar-bg { flex: 1; height: 10px; background: #e2e8f0; border-radius: 5px; overflow: hidden; }");
+                    sb.AppendLine(".bar-fill { height: 100%; background: #3b82f6; border-radius: 5px; }");
+                    sb.AppendLine(".no-print { margin-bottom: 18px; }");
+                    sb.AppendLine(".btn-print { background: #0f172a; color: #ffffff; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 14px; }");
+                    sb.AppendLine("@media print { body { background: #ffffff; padding: 0; } .wrap { border: none; box-shadow: none; padding: 0; max-width: 100%; } .no-print { display: none !important; } }");
+                    sb.AppendLine("</style>");
+                    sb.AppendLine("</head>");
+                    sb.AppendLine("<body>");
+                    sb.AppendLine("<div class=\"wrap\">");
+                    sb.AppendLine("<div class=\"no-print\"><button class=\"btn-print\" onclick=\"window.print()\">Print Report / Save as PDF</button></div>");
+
+                    // Header
+                    sb.AppendLine("<div class=\"header\">");
+                    sb.AppendLine("<div><div class=\"title\">Library Circulation & Collection Report</div><div class=\"sub\">Generated on " + DateTime.Now.ToString("dddd, MMMM dd, yyyy \u00B7 HH:mm:ss") + "</div></div>");
+                    sb.AppendLine("<div class=\"school-badge\">" + HtmlEscape(string.IsNullOrEmpty(db.Set.school) ? "ErrinILS School Library" : db.Set.school) + "</div>");
+                    sb.AppendLine("</div>");
+
+                    // KPIs
+                    sb.AppendLine("<div class=\"kpi-grid\">");
+                    sb.AppendLine("<div class=\"kpi-card\"><div class=\"kpi-val\">" + activeCopies + "</div><div class=\"kpi-lbl\">Active Copies (" + weedTot + " weeded)</div></div>");
+                    sb.AppendLine("<div class=\"kpi-card\"><div class=\"kpi-val\">" + totStudents + "</div><div class=\"kpi-lbl\">Registered Students</div></div>");
+                    sb.AppendLine("<div class=\"kpi-card success\"><div class=\"kpi-val\">" + activeBorrowers + (totStudents > 0 ? " (" + (activeBorrowers * 100 / totStudents) + "%)" : "") + "</div><div class=\"kpi-lbl\">Active Readers</div></div>");
+                    sb.AppendLine("<div class=\"kpi-card warn\"><div class=\"kpi-val\">" + activeLoans + "</div><div class=\"kpi-lbl\">Books on Loan</div></div>");
+                    sb.AppendLine("<div class=\"kpi-card danger\"><div class=\"kpi-val\">" + overdueLoans + (activeLoans > 0 ? " (" + (overdueLoans * 100 / activeLoans) + "%)" : "") + "</div><div class=\"kpi-lbl\">Overdue Items</div></div>");
+                    sb.AppendLine("<div class=\"kpi-card danger\"><div class=\"kpi-val\">" + Lib.Money(unpaidFines) + "</div><div class=\"kpi-lbl\">Unpaid Fines</div></div>");
+                    sb.AppendLine("</div>");
+
+                    // Checkouts by month
+                    sb.AppendLine("<h2>Checkouts by Month (Last 6 Months)</h2>");
+                    sb.AppendLine("<table><thead><tr><th>Month</th><th style=\"width:60%;\">Checkouts Trend</th><th>Total</th></tr></thead><tbody>");
+                    int maxMo = 1;
+                    var moData = new List<KeyValuePair<string, int>>();
+                    for (int i = 5; i >= 0; i--)
+                    {
+                        var dt = new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1).AddMonths(-i);
+                        string k = dt.ToString("yyyy-MM", CultureInfo.InvariantCulture);
+                        int count = db.Loans.Count(l => l.@out != null && l.@out.StartsWith(k));
+                        if (count > maxMo) maxMo = count;
+                        moData.Add(new KeyValuePair<string, int>(dt.ToString("MMMM yyyy", CultureInfo.InvariantCulture), count));
+                    }
+                    foreach (var kv in moData)
+                    {
+                        int pct = maxMo > 0 ? (kv.Value * 100 / maxMo) : 0;
+                        sb.AppendLine(string.Format("<tr><td><strong>{0}</strong></td><td><div class=\"bar-container\"><div class=\"bar-bg\"><div class=\"bar-fill\" style=\"width:{1}%;\"></div></div><span>{2}</span></div></td><td><strong>{2}</strong></td></tr>",
+                            HtmlEscape(kv.Key), pct, kv.Value));
+                    }
+                    sb.AppendLine("</tbody></table>");
+
+                    // Reading champions
+                    sb.AppendLine("<h2>Reading Champions (Top Students)</h2>");
+                    sb.AppendLine("<table><thead><tr><th>Rank</th><th>Student Name</th><th>Class</th><th>IC / Student ID</th><th>Books Borrowed</th></tr></thead><tbody>");
+                    var pLoans = new Dictionary<string, int>();
+                    foreach (var l in db.Loans) pLoans[l.pid] = (pLoans.ContainsKey(l.pid) ? pLoans[l.pid] : 0) + 1;
+                    int rnk = 1;
+                    foreach (var kv in pLoans.OrderByDescending(x => x.Value).Take(20))
+                    {
+                        var p = lib.PatronById(kv.Key);
+                        string rankBadge = rnk == 1 ? "<span class=\"badge badge-rank1\">#1 Gold</span>" :
+                                          rnk == 2 ? "<span class=\"badge badge-rank2\">#2 Silver</span>" :
+                                          rnk == 3 ? "<span class=\"badge badge-rank3\">#3 Bronze</span>" : "#" + rnk;
+                        sb.AppendLine(string.Format("<tr><td>{0}</td><td><strong>{1}</strong></td><td>{2}</td><td><code>{3}</code></td><td><strong>{4} books</strong></td></tr>",
+                            rankBadge, HtmlEscape(p != null ? p.name : "(removed)"), HtmlEscape(p != null ? p.cls : ""), HtmlEscape(kv.Key), kv.Value));
+                        rnk++;
+                    }
+                    sb.AppendLine("</tbody></table>");
+
+                    // Top borrowed books
+                    sb.AppendLine("<h2>Most Borrowed Books</h2>");
+                    sb.AppendLine("<table><thead><tr><th>#</th><th>Title</th><th>Author</th><th>Call No.</th><th>Barcode</th><th>Checkouts</th></tr></thead><tbody>");
+                    var c = new Dictionary<string, int>();
+                    foreach (var l in db.Loans) c[l.iid] = (c.ContainsKey(l.iid) ? c[l.iid] : 0) + 1;
+                    rnk = 1;
+                    foreach (var kv in c.OrderByDescending(x => x.Value).Take(20))
+                    {
+                        var it = db.Items.FirstOrDefault(i => i.id == kv.Key);
+                        sb.AppendLine(string.Format("<tr><td>{0}</td><td><strong>{1}</strong></td><td>{2}</td><td><code>{3}</code></td><td><code>{4}</code></td><td><strong>{5}</strong></td></tr>",
+                            rnk++, HtmlEscape(it != null ? it.title : "(deleted)"), HtmlEscape(it != null ? it.author : ""), HtmlEscape(it != null ? it.call : ""), HtmlEscape(it != null ? it.barcode : ""), kv.Value));
+                    }
+                    sb.AppendLine("</tbody></table>");
+
+                    // Circulation by class
+                    sb.AppendLine("<h2>Circulation by Class</h2>");
+                    sb.AppendLine("<table><thead><tr><th>Class / Grade</th><th>Registered Students</th><th>Total Checkouts</th><th>Active Loans</th></tr></thead><tbody>");
+                    var classGroups = db.Patrons.GroupBy(p => string.IsNullOrEmpty(p.cls) ? "(No class)" : p.cls).OrderBy(g => g.Key);
+                    foreach (var g in classGroups)
+                    {
+                        var pids = new HashSet<string>(g.Select(p => p.id));
+                        int totL = db.Loans.Count(l => pids.Contains(l.pid));
+                        int actL = db.Loans.Count(l => l.ret == null && pids.Contains(l.pid));
+                        sb.AppendLine(string.Format("<tr><td><strong>{0}</strong></td><td>{1}</td><td>{2}</td><td>{3}</td></tr>",
+                            HtmlEscape(g.Key), g.Count(), totL, actL));
+                    }
+                    sb.AppendLine("</tbody></table>");
+
+                    // Current overdue items
+                    sb.AppendLine("<h2>Current Overdue Items (" + overdueLoans + ")</h2>");
+                    if (overdueLoans == 0)
+                    {
+                        sb.AppendLine("<p style=\"color: #047857; font-weight: 600;\">No overdue items currently! All borrowed books are on time.</p>");
+                    }
+                    else
+                    {
+                        sb.AppendLine("<table><thead><tr><th>Student</th><th>Class</th><th>Contact</th><th>Title</th><th>Barcode</th><th>Due Date</th><th>Days Late</th><th>Accrued Fine</th></tr></thead><tbody>");
+                        foreach (var l in db.Loans.Where(lib.Overdue).OrderBy(l => l.due))
+                        {
+                            var it = db.Items.FirstOrDefault(x => x.id == l.iid);
+                            var p = lib.PatronById(l.pid);
+                            int lateDays = Lib.Diff(Lib.Today(), l.due);
+                            double fineAmt = lateDays * db.Set.rate;
+                            sb.AppendLine(string.Format("<tr><td><strong>{0}</strong></td><td>{1}</td><td>{2}</td><td>{3}</td><td><code>{4}</code></td><td>{5}</td><td><span class=\"badge badge-danger\">{6} days</span></td><td><strong>{7}</strong></td></tr>",
+                                HtmlEscape(p != null ? p.name : "(removed)"), HtmlEscape(p != null ? p.cls : ""), HtmlEscape(p != null ? p.contact : ""), HtmlEscape(it != null ? it.title : ""), HtmlEscape(it != null ? it.barcode : ""), l.due, lateDays, Lib.Money(fineAmt)));
+                        }
+                        sb.AppendLine("</tbody></table>");
+                    }
+
+                    // Unpaid fines
+                    var debtors = db.Patrons.Select(x => new { pat = x, owed = lib.Unpaid(x.id) }).Where(x => x.owed > 0).OrderByDescending(x => x.owed).ToList();
+                    sb.AppendLine("<h2>Outstanding Unpaid Fines (" + Lib.Money(unpaidFines) + ")</h2>");
+                    if (debtors.Count == 0)
+                    {
+                        sb.AppendLine("<p style=\"color: #047857; font-weight: 600;\">All library fines have been settled.</p>");
+                    }
+                    else
+                    {
+                        sb.AppendLine("<table><thead><tr><th>Student Name</th><th>Class</th><th>Contact</th><th>Outstanding Fine</th></tr></thead><tbody>");
+                        foreach (var p in debtors)
+                        {
+                            sb.AppendLine(string.Format("<tr><td><strong>{0}</strong></td><td>{1}</td><td>{2}</td><td><strong style=\"color:#b91c1c;\">{3}</strong></td></tr>",
+                                HtmlEscape(p.pat.name), HtmlEscape(p.pat.cls), HtmlEscape(p.pat.contact), Lib.Money(p.owed)));
+                        }
+                        sb.AppendLine("</tbody></table>");
+                    }
+
+                    sb.AppendLine("<div style=\"text-align: center; color: #94a3b8; font-size: 12px; margin-top: 36px; border-top: 1px solid #e2e8f0; padding-top: 16px;\">Generated by ErrinILS Library Management System \u00B7 Open Source School ILS</div>");
+                    sb.AppendLine("</div>");
+                    sb.AppendLine("</body>");
+                    sb.AppendLine("</html>");
+
+                    File.WriteAllText(d.FileName, sb.ToString(), Encoding.UTF8);
+                    Toast("Report exported successfully");
+                    try { Process.Start(d.FileName); } catch { }
+                }
+                catch (Exception ex)
+                {
+                    Toast("Export failed: " + ex.Message);
+                }
+            }
         }
 
         void ExportReportsCsv()
@@ -555,7 +866,10 @@ namespace Errin
                         sb.AppendLine(EscapeCsv(p.pat.name) + "," + EscapeCsv(p.pat.cls) + "," + EscapeCsv(p.pat.contact) + "," + Lib.Money(p.owed));
                     }
 
-                    File.WriteAllText(d.FileName, sb.ToString(), Encoding.UTF8);
+                    byte[] preamble = new UTF8Encoding(true).GetPreamble();
+                    byte[] bytes = Encoding.UTF8.GetBytes(sb.ToString());
+                    byte[] full = preamble.Concat(bytes).ToArray();
+                    File.WriteAllBytes(d.FileName, full);
                     Toast("Report exported successfully");
                 }
                 catch (Exception ex)
@@ -617,11 +931,39 @@ namespace Errin
             var pf = Ui.Flow(); pf.Controls.Add(Ui.Field("Current password", pc, 260)); pf.Controls.Add(Ui.Field("New password", pn, 260)); pf.Controls.Add(Ui.Field("Type the new password again", pn2, 260));
             var pwBody = Vbox(para("The password protects Settings, deleting records and restoring backups. Use at least 4 characters and keep it somewhere safe.", 44), pf,
                 Ui.Btn("Change password", 0, (a, b) => { if (ChangePw(pc.Text, pn.Text, pn2.Text)) { pc.Text = ""; pn.Text = ""; pn2.Text = ""; } }));
-            var wE = Ui.Combo(150, "Off", "On"); var wP = Ui.Num(110, 1, 65535, wc.port); var wB = Ui.Combo(170, "Other computers", "This computer only");
-            wE.SelectedIndex = wc.enabled ? 1 : 0; wB.SelectedIndex = wc.bind == "local" ? 1 : 0;
+            var wE = Ui.Combo(140, "Off", "On"); var wP = Ui.Num(110, 1, 65535, wc.port); var wB = Ui.Combo(160, "Other computers", "This computer only");
+            var wSsl = Ui.Combo(170, "HTTP (Standard)", "HTTPS (TLS/SSL)");
+            wE.SelectedIndex = wc.enabled ? 1 : 0; wB.SelectedIndex = wc.bind == "local" ? 1 : 0; wSsl.SelectedIndex = wc.ssl ? 1 : 0;
             var ws = new Label { UseMnemonic = false, AutoSize = false, Size = new Size(Ui.S(820), Ui.S(54)), ForeColor = Th.Mut, Margin = Ui.S(new Padding(0, 10, 0, 0)) };
             wStatusLabel = ws; WebShow();
-            var wf = Ui.Flow(); wf.Controls.Add(Ui.Field("Server", wE, 160)); wf.Controls.Add(Ui.Field("Port", wP, 120)); wf.Controls.Add(Ui.Field("Reachable from", wB, 190));
+            var wf = Ui.Flow(); wf.Controls.Add(Ui.Field("Server", wE, 150)); wf.Controls.Add(Ui.Field("Port", wP, 120)); wf.Controls.Add(Ui.Field("Reachable from", wB, 170)); wf.Controls.Add(Ui.Field("Security", wSsl, 180));
+            var certBtns = Ui.Flow(false); certBtns.Margin = Ui.S(new Padding(0, 4, 0, 0));
+            certBtns.Controls.Add(Ui.Btn("Regenerate TLS Cert", 1, (a, b) => {
+                try {
+                    var c = CertHelper.GenerateSelfSigned("CN=ErrinILS", 10, "errin");
+                    byte[] pfx = c.Export(X509ContentType.Pfx, "errin");
+                    File.WriteAllBytes(Path.Combine(store.Dir, "errin-ssl.pfx"), pfx);
+                    wc.certPath = ""; wc.certPass = ""; SaveCfg(); ApplyWeb(); WebShow();
+                    Toast("New self-signed TLS certificate generated");
+                } catch (Exception ex) { Toast("Cert generation failed: " + ex.Message); }
+            }));
+            certBtns.Controls.Add(Ui.Btn("Choose Custom PFX...", 1, (a, b) => {
+                using (var ofd = new OpenFileDialog { Filter = "PKCS#12 / PFX Certificate (*.pfx;*.p12)|*.pfx;*.p12|All files (*.*)|*.*", Title = "Choose TLS Certificate" }) {
+                    if (ofd.ShowDialog(this) == DialogResult.OK) {
+                        wc.certPath = ofd.FileName; SaveCfg(); ApplyWeb(); WebShow();
+                        Toast("Custom certificate loaded");
+                    }
+                }
+            }));
+            certBtns.Controls.Add(Ui.Btn("Export Public Cert (.cer)", 1, (a, b) => {
+                if (wsrv == null || wsrv.ServerCert == null) { Toast("TLS server is not active"); return; }
+                using (var sfd = new SaveFileDialog { FileName = "errin-library.cer", Filter = "X.509 Certificate (*.cer)|*.cer" }) {
+                    if (sfd.ShowDialog(this) == DialogResult.OK) {
+                        try { CertHelper.ExportCer(wsrv.ServerCert, sfd.FileName); Toast("Public certificate exported"); }
+                        catch (Exception ex) { Toast("Export failed: " + ex.Message); }
+                    }
+                }
+            }));
             wGrid = Ui.Grid(); wGrid.Height = Ui.S(130); wGrid.Width = Ui.S(820); WebRefreshGrid();
             var wBtns = Ui.Flow(false);
             wBtns.Controls.Add(Ui.Btn("+ Pair new device", 0, (a, b) => PairNewDeviceDialog()));
@@ -630,14 +972,44 @@ namespace Errin
             var webBody = Vbox(
                 para("Allows phones, tablets, iPads, and other computers to access ErrinILS over the network using secure device pairing. Paired devices have full circulation, catalog, and student access.", 44),
                 wf,
-                Ui.Btn("Apply", 0, (a, b) => WebApply(wE.SelectedIndex == 1, (int)wP.Value, wB.SelectedIndex == 1 ? "local" : "network")),
+                Ui.Btn("Apply", 0, (a, b) => WebApply(wE.SelectedIndex == 1, (int)wP.Value, wB.SelectedIndex == 1 ? "local" : "network", wSsl.SelectedIndex == 1)),
                 ws,
+                certBtns,
                 new Label { UseMnemonic = false, Text = "Paired Devices", Font = Th.FT, AutoSize = true, ForeColor = Th.Ink, Margin = Ui.S(new Padding(0, 10, 0, 4)) },
                 wGrid,
                 wBtns,
                 Ui.Lbl("Clicking 'Pair new device' shows a code. Type it on the other device's screen to connect it.", true));
+
+            var autoUpdCheck = new CheckBox { Text = "Automatically check for updates on startup", Checked = autoUpdate, AutoSize = true, ForeColor = Th.Ink, BackColor = Color.Transparent };
+            autoUpdCheck.CheckedChanged += (chkSender, chkArgs) => { autoUpdate = autoUpdCheck.Checked; SaveCfg(); };
+            var updStatus = new Label { UseMnemonic = false, Text = "Current version: v" + Updater.GetCurrentVersion(), Font = Th.F, ForeColor = Th.Mut, AutoSize = true, Margin = Ui.S(new Padding(0, 4, 0, 8)) };
+            var chkUpdBtn = Ui.Btn("Check for updates now", 0);
+            chkUpdBtn.Click += (btnSender, btnArgs) => {
+                chkUpdBtn.Enabled = false;
+                updStatus.Text = "Checking GitHub for updates...";
+                ThreadPool.QueueUserWorkItem(stObj => {
+                    var info = Updater.CheckForUpdate();
+                    BeginInvoke(new Action(() => {
+                        chkUpdBtn.Enabled = true;
+                        if (!string.IsNullOrEmpty(info.Error)) {
+                            updStatus.ForeColor = Th.Red;
+                            updStatus.Text = "Could not check for updates: " + info.Error;
+                        } else if (info.HasUpdate) {
+                            updStatus.ForeColor = Th.Yel;
+                            updStatus.Text = "New version v" + info.LatestVersion + " is available! (Current: v" + info.CurrentVersion + ")";
+                            ShowUpdateDialog(info);
+                        } else {
+                            updStatus.ForeColor = Th.Green;
+                            updStatus.Text = "You are using the latest version (v" + info.CurrentVersion + ").";
+                        }
+                    }));
+                });
+            };
+            var updateBody = Vbox(para("ErrinILS is updated regularly with new features, bug fixes, and security enhancements. Keep your system up to date.", 44), autoUpdCheck, Spacer(6), chkUpdBtn, updStatus);
+
             return ScrollPage(Ui.Heading("Settings", "Policies and data management"), Ui.Card("Policies", polBody), Ui.Card("Admin password", pwBody),
                 Ui.Card("Remote Access", webBody),
+                Ui.Card("Software updates", updateBody),
                 Ui.Card("Data retention", para("Student records (with their loan and fine history) are deleted " + Lib.RET_YEARS + " years after their last activity, provided they have no unreturned items or unpaid fines. This happens automatically when ErrinILS starts.", 44)),
                 Ui.Card("Switching systems?", Vbox(para("Export every catalogued item as MARC 21, MARCXML, MarcEdit text, JSON and CSV to move to another ILS. To bring records in, use Import MARC on the Catalog page.", 44), Ui.Btn("Export catalog", 0, (a, b) => ExportDialog()))),
                 Ui.Card("z39.50 server", zBody),
@@ -645,8 +1017,8 @@ namespace Errin
         }
 
         /* ---------- Remote Access (Web server settings + lifecycle) ---------- */
-        class WebCfg { public bool enabled; public int port = 8585; public string bind = "network"; public List<Web.Device> devices = new List<Web.Device>(); }
-        WebCfg wc = new WebCfg(); Web.Server wsrv; string werr = ""; Label wStatusLabel; DataGridView wGrid;
+        class WebCfg { public bool enabled; public int port = 8585; public string bind = "network"; public bool ssl = false; public string certPath = ""; public string certPass = ""; public List<Web.Device> devices = new List<Web.Device>(); }
+        WebCfg wc = new WebCfg(); Web.Server wsrv; string werr = ""; Label wStatusLabel; DataGridView wGrid; bool autoUpdate = true;
         void ApplyWeb()
         {
             if (wsrv != null) { wsrv.Stop(); wsrv = null; }
@@ -654,6 +1026,12 @@ namespace Errin
             NetHelper.EnsureFirewallRule();
             try
             {
+                X509Certificate2 serverCert = null;
+                if (wc.ssl)
+                {
+                    try { serverCert = CertHelper.GetOrCreateCertificate(wc.certPath, wc.certPass, store.Dir); }
+                    catch (Exception ex) { werr = "TLS cert error: " + ex.Message; return; }
+                }
                 wsrv = Web.StartServer(wc.port, wc.bind == "local", wc.devices,
                     getDb: () => db,
                     getLib: () => lib,
@@ -673,7 +1051,8 @@ namespace Errin
                         if (InvokeRequired) BeginInvoke(new Action(() => { WebRefreshGrid(); Toast("Device paired: " + dev.name); }));
                         else { WebRefreshGrid(); Toast("Device paired: " + dev.name); }
                     },
-                    log: null);
+                    log: null,
+                    serverCert: serverCert);
             }
             catch (SocketException e)
             {
@@ -682,10 +1061,10 @@ namespace Errin
             }
             catch (Exception e) { werr = e.Message; }
         }
-        void WebApply(bool on, int port, string bind)
+        void WebApply(bool on, int port, string bind, bool ssl)
         {
-            wc.enabled = on; wc.port = port; wc.bind = bind; SaveCfg(); ApplyWeb(); WebShow();
-            Toast(werr != "" ? werr : wsrv != null ? "Remote Access server is running" : "Remote Access server is off");
+            wc.enabled = on; wc.port = port; wc.bind = bind; wc.ssl = ssl; SaveCfg(); ApplyWeb(); WebShow();
+            Toast(werr != "" ? werr : wsrv != null ? (wc.ssl ? "Secure HTTPS Remote Access server is running" : "Remote Access server is running") : "Remote Access server is off");
         }
         void WebShow()
         {
@@ -693,11 +1072,12 @@ namespace Errin
             if (werr != "") { wStatusLabel.ForeColor = Th.Red; wStatusLabel.Text = "Problem: " + werr; return; }
             if (wsrv != null)
             {
+                string scheme = (wsrv != null && wsrv.UseTls) ? "https://" : "http://";
                 var addrs = wc.bind == "local" ? new List<string> { "127.0.0.1" } : Z.LanAddresses().Concat(new[] { "127.0.0.1" }).ToList();
                 wStatusLabel.ForeColor = Th.Yel;
-                wStatusLabel.Text = "\u25CF Running on http://" + (addrs.Count > 0 ? addrs[0] : "127.0.0.1") + ":" + wc.port +
-                    (addrs.Count > 1 ? "  (also http://" + string.Join(":" + wc.port + ", http://", addrs.Skip(1).ToArray()) + ":" + wc.port + ")" : "") +
-                    "\nShare this address with devices on the school network or remote devices.";
+                wStatusLabel.Text = "\u25CF Running on " + scheme + (addrs.Count > 0 ? addrs[0] : "127.0.0.1") + ":" + wc.port +
+                    (addrs.Count > 1 ? "  (also " + scheme + string.Join(":" + wc.port + ", " + scheme, addrs.Skip(1).ToArray()) + ":" + wc.port + ")" : "") +
+                    (wsrv.UseTls ? "\n\U0001F512 Encrypted with TLS/SSL: " + CertHelper.GetSummary(wsrv.ServerCert) : "\n\u26A0 Standard HTTP (not encrypted)");
             }
             else { wStatusLabel.ForeColor = Th.Mut; wStatusLabel.Text = "\u25CB Off. Remote access is disabled."; }
         }
@@ -745,7 +1125,7 @@ namespace Errin
             var ips = NetHelper.GetReachableIpAddresses();
             var addrs = wc.bind == "local" ? new List<string> { "127.0.0.1" } : (ips.Count > 0 ? ips : new List<string> { "127.0.0.1" });
             string selectedIp = addrs.Count > 0 ? addrs[0] : "127.0.0.1";
-            Func<string, string> getPairUrl = ip => "http://" + ip + ":" + wc.port + "/?code=" + codeClean;
+            Func<string, string> getPairUrl = ip => ((wsrv != null && wsrv.UseTls) ? "https://" : "http://") + ip + ":" + wc.port + "/?code=" + codeClean;
 
             using (var d = Ui.Dlg("Pair a device (QR Code)", 480, 590))
             {
@@ -903,7 +1283,7 @@ namespace Errin
             var ips = NetHelper.GetReachableIpAddresses();
             var addrs = wc.bind == "local" ? new List<string> { "127.0.0.1" } : (ips.Count > 0 ? ips : new List<string> { "127.0.0.1" });
             string selectedIp = addrs.Count > 0 ? addrs[0] : "127.0.0.1";
-            Func<string, string> getUrl = ip => "http://" + ip + ":" + wc.port;
+            Func<string, string> getUrl = ip => ((wsrv != null && wsrv.UseTls) ? "https://" : "http://") + ip + ":" + wc.port;
 
             using (var d = Ui.Dlg("Remote Access QR Code", 460, 490))
             {
@@ -1013,6 +1393,92 @@ namespace Errin
             }
         }
 
+        void ShowUpdateBanner(UpdateInfo info)
+        {
+            if (Ui.Confirm(this, "A new version of ErrinILS (v" + info.LatestVersion + ") is available!\n(You are currently running v" + info.CurrentVersion + ")\n\nWould you like to review and update now?"))
+            {
+                ShowUpdateDialog(info);
+            }
+        }
+
+        void ShowUpdateDialog(UpdateInfo info)
+        {
+            using (var d = Ui.Dlg("Software Update \u00B7 ErrinILS v" + info.LatestVersion, 580, 410))
+            {
+                d.Controls.Add(new Label { UseMnemonic = false, Text = "new version available", Font = Th.FT, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(14)) });
+                d.Controls.Add(new Label { UseMnemonic = false, Text = "ErrinILS v" + info.LatestVersion + " is now available (current: v" + info.CurrentVersion + ").",
+                    Font = Th.FB, ForeColor = Th.Yel, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(44)) });
+
+                var rtb = new TextBox {
+                    Multiline = true,
+                    ReadOnly = true,
+                    ScrollBars = ScrollBars.Vertical,
+                    BackColor = Th.Bg,
+                    ForeColor = Th.Ink,
+                    Font = Th.FS,
+                    Location = new Point(Ui.S(20), Ui.S(74)),
+                    Size = new Size(Ui.S(540), Ui.S(230)),
+                    Text = string.IsNullOrEmpty(info.ReleaseNotes) ? "No release notes provided." : info.ReleaseNotes.Replace("\n", "\r\n")
+                };
+                d.Controls.Add(rtb);
+
+                var prog = new ProgressBar {
+                    Location = new Point(Ui.S(20), Ui.S(314)),
+                    Size = new Size(Ui.S(540), Ui.S(16)),
+                    Visible = false,
+                    Minimum = 0,
+                    Maximum = 100
+                };
+                d.Controls.Add(prog);
+
+                var btnRow = Ui.Flow(false);
+                btnRow.Location = new Point(Ui.S(20), Ui.S(340));
+                var bUpd = Ui.Btn("Update and Restart", 0);
+                var bWeb = Ui.Btn("View on GitHub", 1, (s, e) => {
+                    if (!string.IsNullOrEmpty(info.ReleaseUrl)) Process.Start(info.ReleaseUrl);
+                });
+                var bClose = Ui.Btn("Remind Me Later", 1, (s, e) => d.Close());
+
+                bUpd.Click += (s, e) => {
+                    if (string.IsNullOrEmpty(info.DownloadUrl)) {
+                        if (!string.IsNullOrEmpty(info.ReleaseUrl)) Process.Start(info.ReleaseUrl);
+                        d.Close();
+                        return;
+                    }
+                    bUpd.Enabled = false;
+                    bWeb.Enabled = false;
+                    bClose.Enabled = false;
+                    prog.Visible = true;
+                    string dest = Path.Combine(Path.GetTempPath(), "ErrinILS-v" + info.LatestVersion + ".exe");
+                    ThreadPool.QueueUserWorkItem(stateObj => {
+                        try {
+                            Updater.DownloadFile(info.DownloadUrl, dest, pct => {
+                                BeginInvoke(new Action(() => { prog.Value = Math.Min(100, Math.Max(0, pct)); }));
+                            });
+                            BeginInvoke(new Action(() => {
+                                Toast("Update downloaded, restarting...");
+                                Updater.ApplyUpdateAndRestart(dest);
+                            }));
+                        } catch (Exception ex) {
+                            BeginInvoke(new Action(() => {
+                                prog.Visible = false;
+                                bUpd.Enabled = true;
+                                bWeb.Enabled = true;
+                                bClose.Enabled = true;
+                                MessageBox.Show(d, "Download failed: " + ex.Message + "\nYou can download the update manually from GitHub.", "Update", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                            }));
+                        }
+                    });
+                };
+
+                btnRow.Controls.Add(bUpd);
+                btnRow.Controls.Add(bWeb);
+                btnRow.Controls.Add(bClose);
+                d.Controls.Add(btnRow);
+                d.ShowDialog(this);
+            }
+        }
+
         /* ---------- Z39.50 server (settings + lifecycle) ---------- */
         class ZCfg { public bool enabled; public int port = 210; public string db = "errin"; public string bind = "network"; }
         ZCfg zc = new ZCfg(); Z.Server zsrv; string zerr = ""; Label zStatusLabel; List<Item> zCache; int zCacheVer = -1; readonly object zLock = new object();
@@ -1026,9 +1492,13 @@ namespace Errin
                 var pw = Json.Obj(root, "pw"); pwSalt = Json.Str(pw, "s"); pwHash = Json.Str(pw, "h"); pwIter = pw.ContainsKey("i") ? (int)Json.Num(pw, "i") : Auth.Iterations;
 
                 var w = Json.Obj(root, "web");
+                if (root.ContainsKey("autoUpdate")) autoUpdate = root["autoUpdate"] is bool && (bool)root["autoUpdate"];
                 if (w.ContainsKey("enabled")) wc.enabled = w["enabled"] is bool && (bool)w["enabled"];
                 if (w.ContainsKey("port")) wc.port = (int)Json.Num(w, "port");
                 if (w.ContainsKey("bind")) wc.bind = Json.Str(w, "bind") == "local" ? "local" : "network";
+                if (w.ContainsKey("ssl")) wc.ssl = w["ssl"] is bool && (bool)w["ssl"];
+                if (w.ContainsKey("certPath")) wc.certPath = Json.Str(w, "certPath");
+                if (w.ContainsKey("certPass")) wc.certPass = Json.Str(w, "certPass");
                 wc.devices = new List<Web.Device>();
                 foreach (var dObj in Json.Arr(w, "devices"))
                 {
@@ -1045,6 +1515,7 @@ namespace Errin
                 Directory.CreateDirectory(store.Dir);
                 var cfg = new Dictionary<string, object> { { "z", new Dictionary<string, object> { { "enabled", zc.enabled }, { "port", (double)zc.port }, { "db", zc.db }, { "bind", zc.bind } } } };
                 if (pwHash != "") cfg["pw"] = new Dictionary<string, object> { { "s", pwSalt }, { "h", pwHash }, { "i", (double)pwIter } };
+                cfg["autoUpdate"] = autoUpdate;
 
                 var wDevs = new List<object>();
                 foreach (var d in wc.devices) wDevs.Add(d.ToJ());
@@ -1053,6 +1524,9 @@ namespace Errin
                     { "enabled", wc.enabled },
                     { "port", (double)wc.port },
                     { "bind", wc.bind },
+                    { "ssl", wc.ssl },
+                    { "certPath", wc.certPath },
+                    { "certPass", wc.certPass },
                     { "devices", wDevs }
                 };
 

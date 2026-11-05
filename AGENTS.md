@@ -147,6 +147,8 @@ C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe
     ErrinILS-source\src\Auth.cs `
     ErrinILS-source\src\NetHelper.cs `
     ErrinILS-source\src\Qr.cs `
+    ErrinILS-source\src\CertHelper.cs `
+    ErrinILS-source\src\Updater.cs `
     ErrinILS-source\src\AssemblyInfo.cs `
     ErrinILS-source\src\Ui.cs `
     ErrinILS-source\src\Simple.cs `
@@ -172,6 +174,8 @@ C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe
     ErrinILS-source\src\Auth.cs `
     ErrinILS-source\src\NetHelper.cs `
     ErrinILS-source\src\Qr.cs `
+    ErrinILS-source\src\CertHelper.cs `
+    ErrinILS-source\src\Updater.cs `
     ErrinILS-source\src\Web.cs `
     ErrinILS-source\src\SelfTest.cs
 

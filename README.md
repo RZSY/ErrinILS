@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/RZSY/ErrinILS/releases"><img src="https://img.shields.io/badge/version-1.3.1-blue.svg?style=flat-square" height="20" alt="Version 1.3.1" /></a>
+  <a href="https://github.com/RZSY/ErrinILS/releases"><img src="https://img.shields.io/badge/version-1.3.2-blue.svg?style=flat-square" height="20" alt="Version 1.3.2" /></a>
   <a href="#system-requirements"><img src="https://img.shields.io/badge/platform-Windows%207%20|%208%20|%2010%20|%2011-0078D6.svg?style=flat-square&logo=windows" height="20" alt="Platform: Windows" /></a>
   <a href="#system-requirements"><img src="https://img.shields.io/badge/runtime-.NET%20Framework%204.0%2B-512BD4.svg?style=flat-square&logo=dotnet" height="20" alt=".NET 4.0+" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg?style=flat-square" height="20" alt="MIT License" /></a>
@@ -92,7 +92,7 @@ It covers everyday school library operations: barcode checkouts and returns, cop
 
 ## Comparison
 
-| Feature / Metric | ErrinILS v1.3.1 | Koha ILS | SLiMS (Senayan) | Excel / Spreadsheets |
+| Feature / Metric | ErrinILS v1.3.2 | Koha ILS | SLiMS (Senayan) | Excel / Spreadsheets |
 | :--- | :--- | :--- | :--- | :--- |
 | **Installation** | Single EXE or NSIS installer | Linux server + Perl modules | Apache + PHP + MySQL stack | Spreadsheet file only |
 | **Dependencies** | 0 (.NET 4.0 runtime only) | Hundreds of CPAN packages | PHP, Apache/Nginx, MariaDB | Office suite |
@@ -171,7 +171,7 @@ flowchart TD
 ## Quick Start
 
 ### Option 1: Windows Installer
-1. Download `ErrinILS-Setup-1.3.1.exe` from [Releases](https://github.com/RZSY/ErrinILS/releases).
+1. Download `ErrinILS-Setup-1.3.2.exe` from [Releases](https://github.com/RZSY/ErrinILS/releases).
 2. Double-click the installer and follow the wizard steps.
    *(If Windows SmartScreen appears, click "More info", then "Run anyway".)*
 3. Open ErrinILS from the Start menu or desktop icon.
@@ -261,7 +261,7 @@ chmod +x build.sh
 ### Windows Installer (NSIS)
 
 ```cmd
-makensis -V2 -DVERSION=1.3.1 ErrinILS-source\installer.nsi
+makensis -V2 -DVERSION=1.3.2 ErrinILS-source\installer.nsi
 ```
 
 ---
@@ -281,7 +281,7 @@ d:/errin/
 │   ├── download.html             # Downloads and checksums
 │   └── assets/                   # Screenshots and PDF manual
 ├── dist/                         # Compiled packages
-│   ├── ErrinILS-Setup-1.3.1.exe  # Windows installer
+│   ├── ErrinILS-Setup-1.3.2.exe  # Windows installer
 │   ├── ErrinILS-Windows.zip      # Portable ZIP archive
 │   └── ErrinILS.exe              # Standalone executable
 └── ErrinILS-source/              # Source code

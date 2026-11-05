@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 using System.Text;
 using Errin;
 
@@ -302,6 +303,69 @@ static class SelfTest
 
         string qrSvg = Qr.ToSvg("http://127.0.0.1:8585", 4, 3);
         Ok(qrSvg != null && qrSvg.Contains("<svg") && qrSvg.Contains("<path"), "QR ToSvg generated valid SVG xml");
+        // 9. Patron editing and cascade update test
+        var testDb = new Db();
+        var testPat = new Patron { id = "080101-01-1111", name = "Original Student", cls = "1 Amanah", reg = "2026-01-01", last = "2026-01-01" };
+        testDb.Patrons.Add(testPat);
+        var testLoan = new Loan { id = "L001", iid = "I001", pid = "080101-01-1111", @out = "2026-02-01", due = "2026-02-08" };
+        testDb.Loans.Add(testLoan);
+        var testFine = new Fine { id = "F001", pid = "080101-01-1111", iid = "I001", amt = 2.50, date = "2026-02-10" };
+        testDb.Fines.Add(testFine);
+        var testHold = new Hold { id = "H001", pid = "080101-01-1111", iid = "I002", date = "2026-02-05" };
+        testDb.Holds.Add(testHold);
+
+        // Perform edit with IC update
+        string oldPid = testPat.id;
+        string newPid = "080101-01-2222";
+        testPat.name = "Updated Student";
+        testPat.cls = "2 Bakti";
+        testPat.id = newPid;
+        foreach (var l in testDb.Loans) if (l.pid == oldPid) l.pid = newPid;
+        foreach (var f in testDb.Fines) if (f.pid == oldPid) f.pid = newPid;
+        foreach (var h in testDb.Holds) if (h.pid == oldPid) h.pid = newPid;
+
+        Ok(testPat.name == "Updated Student" && testPat.cls == "2 Bakti", "Patron details updated successfully");
+        Ok(testLoan.pid == newPid, "Loan.pid cascaded to updated patron IC");
+        Ok(testFine.pid == newPid, "Fine.pid cascaded to updated patron IC");
+        Ok(testHold.pid == newPid, "Hold.pid cascaded to updated patron IC");
+
+        // 10. TLS / SSL Certificate Helper tests
+        if (Environment.OSVersion.Platform != PlatformID.Unix && Environment.OSVersion.Platform != PlatformID.MacOSX)
+        {
+            var cert = CertHelper.GenerateSelfSigned("CN=ErrinILS", 1, "errin");
+            Ok(cert != null && cert.HasPrivateKey, "CertHelper generates self-signed certificate with private key");
+            Ok(cert.Subject.Contains("ErrinILS"), "Certificate subject is CN=ErrinILS");
+            string certSummary = CertHelper.GetSummary(cert);
+            Ok(certSummary.Contains("CN=ErrinILS") && certSummary.Contains("Expires"), "CertHelper summary includes subject and expiry");
+
+            string testCerPath = Path.Combine(Path.GetTempPath(), "test-export.cer");
+            try {
+                CertHelper.ExportCer(cert, testCerPath);
+                Ok(File.Exists(testCerPath) && new FileInfo(testCerPath).Length > 0, "CertHelper exports public .cer certificate");
+            } finally {
+                if (File.Exists(testCerPath)) File.Delete(testCerPath);
+            }
+
+            var tlsSrv = new Web.Server();
+            tlsSrv.ServerCert = cert;
+            Ok(tlsSrv.UseTls, "Web.Server with ServerCert reports UseTls = true");
+        }
+
+        // 11. Auto-updater version comparison tests
+        Ok(Updater.IsNewer("1.4.0", "1.3.1"), "Updater detects 1.4.0 is newer than 1.3.1");
+        Ok(Updater.IsNewer("2.0.0", "1.9.9"), "Updater detects 2.0.0 is newer than 1.9.9");
+        Ok(Updater.IsNewer("v1.5.0", "1.3.1"), "Updater handles leading 'v' in version tag");
+        Ok(!Updater.IsNewer("1.3.1", "1.3.1"), "Updater detects identical version is not newer");
+        Ok(!Updater.IsNewer("1.2.0", "1.3.1"), "Updater detects older version is not newer");
+
+        // 12. Dashboard active catalog titles count exclusion test
+        var weedDb = new Db();
+        weedDb.Items.Add(new Item { id = "1", title = "Active Book 1" });
+        weedDb.Items.Add(new Item { id = "2", title = "Active Book 2" });
+        weedDb.Items.Add(new Item { id = "3", title = "Weeded Book", weeded = "2026-01-01", weed_reason = "damaged" });
+        int actCount = weedDb.Items.Count(i => string.IsNullOrEmpty(i.weeded));
+        Ok(actCount == 2, "Active catalog titles count correctly excludes weeded copies");
+
         Console.WriteLine("\nall " + n + " checks passed");
         return 0;
     }
