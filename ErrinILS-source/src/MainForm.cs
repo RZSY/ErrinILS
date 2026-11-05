@@ -153,9 +153,9 @@ namespace Errin
         static Control WithButtons(Control grid, params Button[] btns)
         {
             var t = new TableLayoutPanel { ColumnCount = 1, RowCount = 2, BackColor = Color.Transparent, Margin = new Padding(0) };
-            t.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); t.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); t.RowStyles.Add(new RowStyle(SizeType.Absolute, Ui.S(44)));
+            t.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100)); t.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); t.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             grid.Dock = DockStyle.Fill; t.Controls.Add(grid, 0, 0);
-            var f = Ui.Flow(false); f.Padding = Ui.S(new Padding(0, 8, 0, 0)); f.Dock = DockStyle.Fill; foreach (var b in btns) f.Controls.Add(b); t.Controls.Add(f, 0, 1); return t;
+            var f = Ui.Flow(true); f.Padding = Ui.S(new Padding(0, 8, 0, 0)); f.Dock = DockStyle.Fill; foreach (var b in btns) f.Controls.Add(b); t.Controls.Add(f, 0, 1); return t;
         }
         static Control Vbox(params Control[] c) { var f = Ui.Flow(false, FlowDirection.TopDown); foreach (var x in c) f.Controls.Add(x); return f; }
         string Mn(double v) { return Lib.Money(v); }
@@ -225,8 +225,18 @@ namespace Errin
         int catSort = 0;
         Control CatPage()
         {
-            var q = Ui.Txt(240); q.Text = catQ; q.Margin = Ui.S(new Padding(0, 0, 14, 0)); q.TextChanged += (s, e) => { catQ = q.Text; debT.Stop(); debT.Start(); };
-            var bar = Ui.Flow(false); bar.Controls.Add(Ui.Field("Search", q, 260));
+            var q = Ui.Txt(240); q.Text = catQ; q.Margin = Ui.S(new Padding(0, 0, 8, 0));
+            q.TextChanged += (s, e) => { catQ = q.Text; debT.Stop(); debT.Start(); };
+            q.KeyDown += (s, e) => {
+                if (e.KeyCode == Keys.Enter) { e.SuppressKeyPress = true; debT.Stop(); FilterCat(); }
+                else if (e.KeyCode == Keys.Escape) { e.SuppressKeyPress = true; q.Text = ""; }
+            };
+
+            var btnClear = Ui.Btn("✕ Clear", 1, (s, e) => { q.Text = ""; q.Focus(); });
+            btnClear.Margin = Ui.S(new Padding(0, 18, 14, 0));
+            btnClear.Visible = !string.IsNullOrEmpty(catQ);
+            q.TextChanged += (s, e) => { btnClear.Visible = !string.IsNullOrEmpty(q.Text); };
+
             var cbFilt = Ui.Combo(150, "Active records", "Weeded records", "All records");
             if (catFilter == "weeded") cbFilt.SelectedIndex = 1;
             else if (catFilter == "all") cbFilt.SelectedIndex = 2;
@@ -236,17 +246,61 @@ namespace Errin
                 catFilter = cbFilt.SelectedIndex == 1 ? "weeded" : cbFilt.SelectedIndex == 2 ? "all" : "active";
                 FilterCat();
             };
-            bar.Controls.Add(Ui.Field("Status", cbFilt, 165));
-            var cbSort = Ui.Combo(175, "Title (A-Z)", "Title (Z-A)", "Author (A-Z)", "Barcode", "Call Number", "Acq. No.", "Newest Added");
-            cbSort.SelectedIndex = catSort;
+
+            var cbSort = Ui.Combo(175, "Title (A-Z)", "Title (Z-A)", "Author (A-Z)", "Barcode", "Call Number", "Acq. No.", "Newest Added", "Control No.");
+            cbSort.SelectedIndex = Math.Min(catSort, cbSort.Items.Count - 1);
             cbSort.SelectedIndexChanged += (s, e) => { catSort = cbSort.SelectedIndex; FilterCat(); };
-            bar.Controls.Add(Ui.Field("Sort by", cbSort, 190));
-            var bf = Ui.Flow(false); bf.Padding = Ui.S(new Padding(0, 18, 0, 0));
-            bf.Controls.Add(Ui.Btn("+ Add record", 0, (s, e) => ItemForm(null))); bf.Controls.Add(Ui.Btn("Batch ISBN lookup", 1, (s, e) => BatchLookupDialog())); bf.Controls.Add(Ui.Btn("Import MARC", 1, (s, e) => PickImport()));
-            bf.Controls.Add(Ui.Btn("Z39.50 search", 1, (s, e) => ZDialog())); bf.Controls.Add(Ui.Btn("Print labels", 1, (s, e) => PrintShown())); bf.Controls.Add(Ui.Btn("Print spine labels", 1, (s, e) => PrintSpines())); bar.Controls.Add(bf);
-            var tool = Ui.Card(null, bar);
+
+            // Row 1: Search & Filter fields
+            var filterRow = Ui.Flow(true);
+            filterRow.Controls.Add(Ui.Field("Search", q, 240));
+            filterRow.Controls.Add(btnClear);
+            filterRow.Controls.Add(Ui.Field("Status", cbFilt, 165));
+            filterRow.Controls.Add(Ui.Field("Sort by", cbSort, 190));
+
+            // Row 2: Action buttons with responsive wrapping so buttons are never cut off
+            var btnRow = Ui.Flow(true);
+            btnRow.Margin = Ui.S(new Padding(0, 6, 0, 0));
+            btnRow.Controls.Add(Ui.Btn("+ Add record", 0, (s, e) => ItemForm(null)));
+            btnRow.Controls.Add(Ui.Btn("Batch ISBN lookup", 1, (s, e) => BatchLookupDialog()));
+            btnRow.Controls.Add(Ui.Btn("Import MARC", 1, (s, e) => PickImport()));
+            btnRow.Controls.Add(Ui.Btn("Z39.50 search", 1, (s, e) => ZDialog()));
+            btnRow.Controls.Add(Ui.Btn("Print labels", 1, (s, e) => PrintShown()));
+            btnRow.Controls.Add(Ui.Btn("Print spine labels", 1, (s, e) => PrintSpines()));
+
+            var toolBox = Ui.Flow(false, FlowDirection.TopDown);
+            toolBox.Controls.Add(filterRow);
+            toolBox.Controls.Add(btnRow);
+
+            var tool = Ui.Card(null, toolBox);
             catGrid = Ui.Grid(); catNote = Ui.Lbl("", true);
             catGrid.CellDoubleClick += (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i != null) ItemForm(i); };
+            catGrid.KeyDown += (s, e) => {
+                if (e.KeyCode == Keys.Enter) { var i = Ui.Sel<Item>(catGrid); if (i != null) { e.SuppressKeyPress = true; ItemForm(i); } }
+                else if (e.KeyCode == Keys.Delete) { var i = Ui.Sel<Item>(catGrid); if (i != null) { e.SuppressKeyPress = true; DelItem(i); } }
+            };
+
+            var cm = new ContextMenuStrip();
+            cm.Items.Add("Edit Record...", null, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i != null) ItemForm(i); });
+            cm.Items.Add("Circulation History...", null, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i != null) ItemHistoryDialog(i); });
+            cm.Items.Add("Weed / Withdraw...", null, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i != null) WeedDialog(i); });
+            cm.Items.Add("View MARC 21...", null, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i != null) MarcView(i); });
+            cm.Items.Add(new ToolStripSeparator());
+            cm.Items.Add("Print Item Label", null, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i != null) LabelDialog(i); });
+            cm.Items.Add("Print Spine Label", null, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i != null) SpineDialog(i); });
+            cm.Items.Add(new ToolStripSeparator());
+            cm.Items.Add("Delete Record", null, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i != null) DelItem(i); });
+            catGrid.ContextMenuStrip = cm;
+            catGrid.MouseDown += (s, e) => {
+                if (e.Button == MouseButtons.Right) {
+                    var hit = catGrid.HitTest(e.X, e.Y);
+                    if (hit.RowIndex >= 0 && hit.RowIndex < catGrid.Rows.Count) {
+                        catGrid.ClearSelection();
+                        catGrid.Rows[hit.RowIndex].Selected = true;
+                    }
+                }
+            };
+
             catGrid.CellFormatting += (s, e) => {
                 if (e.RowIndex < 0 || e.ColumnIndex != 6 || e.Value == null) return;
                 string st = e.Value.ToString();
@@ -257,6 +311,7 @@ namespace Errin
             };
             catGrid.ColumnHeaderMouseClick += (s, e) => {
                 if (e.ColumnIndex == 0) catSort = 3;
+                else if (e.ColumnIndex == 1) catSort = 7;
                 else if (e.ColumnIndex == 2) catSort = 5;
                 else if (e.ColumnIndex == 3) catSort = catSort == 0 ? 1 : 0;
                 else if (e.ColumnIndex == 4) catSort = 2;
@@ -280,36 +335,108 @@ namespace Errin
         List<Item> shown = new List<Item>();
         void FilterCat()
         {
-            if (catGrid == null || catGrid.IsDisposed) return; string q = (catQ ?? "").ToLowerInvariant();
-            var all = db.Items.Where(i => i.All().ToLowerInvariant().Contains(q));
-            if (catFilter == "weeded") shown = all.Where(i => !string.IsNullOrEmpty(i.weeded)).ToList();
-            else if (catFilter == "all") shown = all.ToList();
-            else shown = all.Where(i => string.IsNullOrEmpty(i.weeded)).ToList();
+            if (catGrid == null || catGrid.IsDisposed) return;
+            var prevSel = Ui.Sel<Item>(catGrid);
+            string prevSelId = prevSel != null ? prevSel.id : null;
+
+            string q = (catQ ?? "").Trim();
+            string[] tokens = string.IsNullOrEmpty(q) ? null : q.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+            var activeLoans = new Dictionary<string, Loan>(StringComparer.Ordinal);
+            for (int li = 0; li < db.Loans.Count; li++)
+            {
+                var l = db.Loans[li];
+                if (l.ret == null && !string.IsNullOrEmpty(l.iid))
+                    activeLoans[l.iid] = l;
+            }
+
+            int weededTotal = 0;
+            var list = new List<Item>();
+            for (int i = 0; i < db.Items.Count; i++)
+            {
+                var it = db.Items[i];
+                bool isWeeded = !string.IsNullOrEmpty(it.weeded);
+                if (isWeeded) weededTotal++;
+
+                if (catFilter == "weeded" && !isWeeded) continue;
+                if (catFilter == "active" && isWeeded) continue;
+
+                if (tokens != null && !it.MatchesAll(tokens)) continue;
+
+                list.Add(it);
+            }
 
             switch (catSort)
             {
-                case 0: shown = shown.OrderBy(i => i.title ?? "", StringComparer.OrdinalIgnoreCase).ToList(); break;
-                case 1: shown = shown.OrderByDescending(i => i.title ?? "", StringComparer.OrdinalIgnoreCase).ToList(); break;
-                case 2: shown = shown.OrderBy(i => i.author ?? "", StringComparer.OrdinalIgnoreCase).ThenBy(i => i.title ?? "", StringComparer.OrdinalIgnoreCase).ToList(); break;
-                case 3: shown = shown.OrderBy(i => i.barcode ?? "", StringComparer.OrdinalIgnoreCase).ToList(); break;
-                case 4: shown = shown.OrderBy(i => i.call ?? "", StringComparer.OrdinalIgnoreCase).ToList(); break;
-                case 5: shown = shown.OrderBy(i => i.acq ?? "", StringComparer.OrdinalIgnoreCase).ToList(); break;
-                case 6: shown.Reverse(); break;
+                case 0: list.Sort((a, b) => string.Compare(a.title ?? "", b.title ?? "", StringComparison.OrdinalIgnoreCase)); break;
+                case 1: list.Sort((a, b) => string.Compare(b.title ?? "", a.title ?? "", StringComparison.OrdinalIgnoreCase)); break;
+                case 2: list.Sort((a, b) => {
+                    int c = string.Compare(a.author ?? "", b.author ?? "", StringComparison.OrdinalIgnoreCase);
+                    return c != 0 ? c : string.Compare(a.title ?? "", b.title ?? "", StringComparison.OrdinalIgnoreCase);
+                }); break;
+                case 3: list.Sort((a, b) => string.Compare(a.barcode ?? "", b.barcode ?? "", StringComparison.OrdinalIgnoreCase)); break;
+                case 4: list.Sort((a, b) => string.Compare(a.call ?? "", b.call ?? "", StringComparison.OrdinalIgnoreCase)); break;
+                case 5: list.Sort((a, b) => string.Compare(a.acq ?? "", b.acq ?? "", StringComparison.OrdinalIgnoreCase)); break;
+                case 6: list.Reverse(); break;
+                case 7: list.Sort((a, b) => string.Compare(a.ctl ?? "", b.ctl ?? "", StringComparison.OrdinalIgnoreCase)); break;
                 default: break;
             }
+            shown = list;
 
-            var rows = shown.Take(LIM).Select(i => {
+            int onLoanCount = 0;
+            int activeCount = 0;
+            for (int i = 0; i < shown.Count; i++)
+            {
+                if (string.IsNullOrEmpty(shown[i].weeded))
+                {
+                    activeCount++;
+                    if (activeLoans.ContainsKey(shown[i].id)) onLoanCount++;
+                }
+            }
+            int availCount = activeCount - onLoanCount;
+
+            int take = Math.Min(shown.Count, LIM);
+            var rows = new List<string[]>(take);
+            var tags = new List<object>(take);
+            for (int i = 0; i < take; i++)
+            {
+                var it = shown[i];
                 string status;
-                if (!string.IsNullOrEmpty(i.weeded)) status = "Weeded (" + (string.IsNullOrEmpty(i.weed_reason) ? i.weeded : i.weed_reason) + ")";
-                else { var l = lib.OpenLoan(i.id); status = l != null ? "Due " + l.due : "Available"; }
-                return new[] { i.barcode, i.ctl, i.acq, i.title, i.author, i.call, status };
-            }).ToList();
-            Ui.Fill(catGrid, new[] { "Barcode", "Control no.", "Acq. no.", "Title", "Author", "Call no.", "Status" }, rows, shown.Take(LIM).Cast<object>().ToList(), "No records found");
+                if (!string.IsNullOrEmpty(it.weeded))
+                {
+                    status = "Weeded (" + (string.IsNullOrEmpty(it.weed_reason) ? it.weeded : it.weed_reason) + ")";
+                }
+                else
+                {
+                    Loan l;
+                    if (activeLoans.TryGetValue(it.id, out l) && l != null)
+                        status = "Due " + l.due;
+                    else
+                        status = "Available";
+                }
+                rows.Add(new[] { it.barcode ?? "", it.ctl ?? "", it.acq ?? "", it.title ?? "", it.author ?? "", it.call ?? "", status });
+                tags.Add(it);
+            }
+
+            int[] catWeights = new[] { 65, 70, 70, 230, 115, 75, 95 };
+            Ui.Fill(catGrid, new[] { "Barcode", "Control no.", "Acq. no.", "Title", "Author", "Call no.", "Status" }, rows, tags, "No records found", catWeights);
+
+            if (prevSelId != null)
+            {
+                for (int r = 0; r < catGrid.Rows.Count; r++)
+                {
+                    var it = catGrid.Rows[r].Tag as Item;
+                    if (it != null && it.id == prevSelId)
+                    {
+                        catGrid.Rows[r].Selected = true;
+                        try { catGrid.CurrentCell = catGrid.Rows[r].Cells[0]; } catch { }
+                        break;
+                    }
+                }
+            }
+
             string countMsg = shown.Count > LIM ? "Showing the first " + LIM + " of " + shown.Count + " record(s)" : shown.Count + " record(s)";
-            int onLoanCount = shown.Count(i => string.IsNullOrEmpty(i.weeded) && lib.OpenLoan(i.id) != null);
-            int availCount = shown.Count(i => string.IsNullOrEmpty(i.weeded) && lib.OpenLoan(i.id) == null);
             countMsg += " \u00B7 " + availCount + " available \u00B7 " + onLoanCount + " on loan";
-            int weededTotal = db.Items.Count(i => !string.IsNullOrEmpty(i.weeded));
             if (catFilter == "active" && weededTotal > 0) countMsg += " \u00B7 " + weededTotal + " weeded item(s) hidden";
             else if (catFilter == "weeded") countMsg += " (weeded / withdrawn from circulation)";
             catNote.Text = countMsg;
