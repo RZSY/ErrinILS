@@ -780,17 +780,11 @@ namespace Errin
                         double unpaid = lib.Unpaid(p.id);
                         bool isBlocked = unpaid >= db.Set.block || db.Loans.Any(l => l.pid == p.id && lib.Overdue(l));
 
-                        list.Add(new Dictionary<string, object> {
-                            { "id", p.id },
-                            { "name", p.name },
-                            { "cls", p.cls },
-                            { "contact", p.contact },
-                            { "reg", p.reg },
-                            { "last", p.last },
-                            { "activeLoans", (double)loansCount },
-                            { "unpaidFines", unpaid },
-                            { "blocked", isBlocked }
-                        });
+                        var pd = p.ToJ();
+                        pd["activeLoans"] = (double)loansCount;
+                        pd["unpaidFines"] = unpaid;
+                        pd["blocked"] = isBlocked;
+                        list.Add(pd);
                     }
                 });
 
@@ -842,18 +836,11 @@ namespace Errin
                         });
                     }
 
-                    res = new Dictionary<string, object> {
-                        { "id", p.id },
-                        { "name", p.name },
-                        { "cls", p.cls },
-                        { "contact", p.contact },
-                        { "reg", p.reg },
-                        { "last", p.last },
-                        { "unpaidFines", lib.Unpaid(p.id) },
-                        { "activeLoans", activeLoans },
-                        { "pastLoans", pastLoans },
-                        { "fines", fines }
-                    };
+                    res = p.ToJ();
+                    res["unpaidFines"] = lib.Unpaid(p.id);
+                    res["activeLoans"] = activeLoans;
+                    res["pastLoans"] = pastLoans;
+                    res["fines"] = fines;
                 });
 
                 if (res == null) SendJson(stream, 404, new Dictionary<string, object> { { "ok", false }, { "error", "Student not found" } });
@@ -867,47 +854,62 @@ namespace Errin
 
                 string id = Json.Str(json, "id").Trim();
                 string name = Json.Str(json, "name").Trim();
-                string cls = Json.Str(json, "cls").Trim();
-                string contact = Json.Str(json, "contact").Trim();
+                string ic = Json.Str(json, "no_pengenalan").Trim();
+                if (string.IsNullOrEmpty(id)) id = ic;
+                if (string.IsNullOrEmpty(id)) id = Json.Str(json, "id_murid").Trim();
 
-                if (string.IsNullOrEmpty(id) || string.IsNullOrEmpty(name))
-                {
-                    SendJson(stream, 400, new Dictionary<string, object> { { "ok", false }, { "error", "Student ID and Name are required" } });
-                    return;
-                }
+                string norm = Lib.NormIc(id) ?? id;
 
-                // If IC is 12 digits, normalize
-                string norm = Lib.NormIc(id);
-                if (norm != null) id = norm;
-
+                string error = null;
                 Dictionary<string, object> result = null;
                 ExecuteOnUi(() =>
                 {
                     var db = GetDb();
                     var lib = GetLib();
-                    var p = lib.PatronById(id);
+                    var p = lib.PatronById(norm);
                     bool isNew = false;
                     if (p == null)
                     {
-                        p = new Patron { id = id, reg = Lib.Today() };
+                        p = new Patron { id = norm, reg = Lib.Today() };
                         db.Patrons.Add(p);
                         isNew = true;
                     }
-                    p.name = name;
-                    p.cls = cls;
-                    p.contact = contact;
+
+                    foreach (var k in Patron.Keys)
+                    {
+                        if (json.ContainsKey(k))
+                        {
+                            p.Set(k, Json.Str(json, k).Trim());
+                        }
+                    }
+
+                    if (!string.IsNullOrEmpty(name)) p.name = name;
+                    if (string.IsNullOrEmpty(p.no_pengenalan)) p.no_pengenalan = norm;
+                    if (string.IsNullOrEmpty(p.id_murid)) p.id_murid = norm;
+                    if (string.IsNullOrEmpty(p.cls) && !string.IsNullOrEmpty(p.nama_kelas)) p.cls = p.nama_kelas;
+                    if (string.IsNullOrEmpty(p.contact) && !string.IsNullOrEmpty(p.tel_penjaga1)) p.contact = p.tel_penjaga1;
                     p.last = Lib.Today();
 
+                    // Validation of required fields
+                    foreach (var f in Patron.PatronFields)
+                    {
+                        if (db.Set.IsPatronFieldRequired(f.Key))
+                        {
+                            string val = p.Get(f.Key);
+                            if (string.IsNullOrEmpty(val))
+                            {
+                                error = "Medan '" + f.Label + "' wajib diisi mengikut tetapan pendaftaran.";
+                                return;
+                            }
+                        }
+                    }
+
                     if (OnRemoteWrite != null) OnRemoteWrite(isNew ? "Student added: " + p.name : "Student updated: " + p.name);
-                    result = new Dictionary<string, object> {
-                        { "id", p.id },
-                        { "name", p.name },
-                        { "cls", p.cls },
-                        { "contact", p.contact }
-                    };
+                    result = p.ToJ();
                 });
 
-                SendJson(stream, 200, new Dictionary<string, object> { { "ok", true }, { "patron", result } });
+                if (error != null) SendJson(stream, 400, new Dictionary<string, object> { { "ok", false }, { "error", error } });
+                else SendJson(stream, 200, new Dictionary<string, object> { { "ok", true }, { "patron", result } });
             }
 
             void HandleDeletePatron(Stream stream, string body)

@@ -318,59 +318,296 @@ namespace Errin
         void PatForm(Patron edit = null)
         {
             bool isEdit = edit != null;
-            using (var d = Ui.Dlg(isEdit ? "Edit student \u00B7 " + edit.name : "Register student", 560, 320))
+            using (var d = Ui.Dlg(isEdit ? "Edit student \u00B7 " + edit.name : "Register student (Pendaftaran Murid)", 860, 720))
             {
-                var ic = Ui.Txt(240); var nm = Ui.Txt(240); var cl = Ui.Txt(240); var ct = Ui.Txt(240);
+                var root = new FlowLayoutPanel
+                {
+                    Dock = DockStyle.Fill,
+                    FlowDirection = FlowDirection.TopDown,
+                    WrapContents = false,
+                    AutoScroll = true,
+                    Padding = Ui.S(new Padding(24, 16, 20, 20)),
+                    BackColor = Th.Card
+                };
+
+                root.Controls.Add(new Label
+                {
+                    UseMnemonic = false,
+                    Text = isEdit ? "kemaskini maklumat murid" : "pendaftaran murid baharu",
+                    Font = Th.FT,
+                    ForeColor = Th.Ink,
+                    AutoSize = true,
+                    Margin = Ui.S(new Padding(0, 0, 0, 4))
+                });
+
+                root.Controls.Add(new Label
+                {
+                    UseMnemonic = false,
+                    Text = "Lengkapkan maklumat murid di bawah. Medan bertanda (*) adalah wajib mengikut ketetapan di Tetapan (Settings).",
+                    Font = Th.FS,
+                    ForeColor = Th.Mut,
+                    AutoSize = true,
+                    Margin = Ui.S(new Padding(0, 0, 0, 12))
+                });
+
+                var ctrls = new Dictionary<string, Control>();
+
+                Func<PatronFieldDef, int, Control> createFieldControl = (f, width) =>
+                {
+                    if (f.Options != null && f.Options.Length > 0)
+                    {
+                        var cb = new ComboBox
+                        {
+                            Width = Ui.S(width),
+                            DropDownStyle = ComboBoxStyle.DropDown,
+                            FlatStyle = FlatStyle.Flat,
+                            BackColor = Th.Bg,
+                            ForeColor = Th.Ink,
+                            Font = Th.F,
+                            Margin = Ui.S(new Padding(0, 2, 0, 8))
+                        };
+                        cb.Items.Add("");
+                        cb.Items.AddRange(f.Options);
+                        if (isEdit)
+                        {
+                            cb.Text = edit.Get(f.Key);
+                        }
+                        else
+                        {
+                            if (f.Key == "warganegara") cb.Text = "Warganegara";
+                            else if (f.Key == "status_pengajian") cb.Text = "Aktif";
+                            else if (f.Key == "status_oku") cb.Text = "Tidak";
+                            else if (f.Key == "status_yatim") cb.Text = "Tidak";
+                        }
+                        ctrls[f.Key] = cb;
+                        return cb;
+                    }
+                    else
+                    {
+                        var tb = Ui.Txt(width);
+                        if (isEdit)
+                        {
+                            tb.Text = edit.Get(f.Key);
+                        }
+                        else
+                        {
+                            if (f.Key == "tarikh_masuk_sekolah" || f.Key == "tarikh_masuk_kelas")
+                            {
+                                tb.Text = DateTime.Today.Year + "-01-01";
+                            }
+                        }
+                        ctrls[f.Key] = tb;
+                        return tb;
+                    }
+                };
+
+                var sections = new[] {
+                    "Maklumat Asas & Pengenalan",
+                    "Maklumat Persekolahan & Kelas",
+                    "Demografi & Profil",
+                    "Maklumat Ibu Bapa / Penjaga",
+                    "Alamat Tempat Tinggal"
+                };
+
+                foreach (var sec in sections)
+                {
+                    root.Controls.Add(new Label
+                    {
+                        UseMnemonic = false,
+                        Text = sec,
+                        Font = Th.FB,
+                        ForeColor = Th.Ink,
+                        AutoSize = true,
+                        Margin = Ui.S(new Padding(0, 10, 0, 4))
+                    });
+
+                    var secFlow = Ui.Flow(true);
+                    secFlow.MaximumSize = new Size(Ui.S(790), 0);
+
+                    foreach (var f in Patron.PatronFields.Where(x => x.Section == sec))
+                    {
+                        bool isReq = db.Set.IsPatronFieldRequired(f.Key);
+                        int w = 240;
+                        if (f.Key == "name" || f.Key == "nama_guru_kelas") w = 500;
+                        else if (f.Key == "nama_penjaga1" || f.Key == "nama_penjaga2") w = 360;
+                        else if (f.Key == "alamat1" || f.Key == "alamat2" || f.Key == "alamat3") w = 760;
+                        else if (f.Key == "poskod") w = 150;
+                        else if (f.Key == "bandar" || f.Key == "daerah" || f.Key == "negeri") w = 240;
+
+                        var ctl = createFieldControl(f, w);
+                        string lblText = f.Label + (isReq ? " *" : "");
+                        secFlow.Controls.Add(Ui.Field(lblText, ctl, w + 10));
+                    }
+                    root.Controls.Add(secFlow);
+                }
+
+                // IC leave auto-fill (DOB, Gender, ID Murid)
+                if (ctrls.ContainsKey("no_pengenalan"))
+                {
+                    var icBox = ctrls["no_pengenalan"];
+                    icBox.Leave += (s, e) =>
+                    {
+                        string raw = icBox.Text.Trim();
+                        string n = Lib.NormIc(raw);
+                        if (n != null)
+                        {
+                            icBox.Text = n;
+                            if (ctrls.ContainsKey("dob") && string.IsNullOrEmpty(ctrls["dob"].Text) && n.Length >= 6)
+                            {
+                                try
+                                {
+                                    int yy = int.Parse(n.Substring(0, 2));
+                                    int mm = int.Parse(n.Substring(2, 2));
+                                    int dd = int.Parse(n.Substring(4, 2));
+                                    int yr = (yy >= 40 ? 1900 : 2000) + yy;
+                                    if (mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31)
+                                    {
+                                        ctrls["dob"].Text = string.Format("{0:0000}-{1:00}-{2:00}", yr, mm, dd);
+                                    }
+                                }
+                                catch { }
+                            }
+                            if (ctrls.ContainsKey("jantina") && string.IsNullOrEmpty(ctrls["jantina"].Text))
+                            {
+                                char lastChar = n[n.Length - 1];
+                                if (char.IsDigit(lastChar))
+                                {
+                                    ctrls["jantina"].Text = (lastChar - '0') % 2 == 1 ? "Lelaki" : "Perempuan";
+                                }
+                            }
+                            if (ctrls.ContainsKey("id_murid") && string.IsNullOrEmpty(ctrls["id_murid"].Text))
+                            {
+                                ctrls["id_murid"].Text = n;
+                            }
+                        }
+                    };
+                }
+
+                var btnRow = Ui.Flow(false);
+                btnRow.Margin = Ui.S(new Padding(0, 16, 0, 0));
+                var ok = Ui.Btn(isEdit ? "Save changes" : "Register student", 0);
+                var ca = Ui.Btn("Cancel", 1); ca.Click += (s, e) => d.Close();
+                btnRow.Controls.Add(ok);
+                btnRow.Controls.Add(ca);
                 if (isEdit)
                 {
-                    ic.Text = edit.id;
-                    nm.Text = edit.name;
-                    cl.Text = edit.cls;
-                    ct.Text = edit.contact;
+                    var prCard = Ui.Btn("Print library card", 1, (s, e) => CardDialog(edit));
+                    btnRow.Controls.Add(prCard);
                 }
-                var f1 = Ui.Field("IC number", ic, 250); f1.Location = new Point(Ui.S(20), Ui.S(20)); var f2 = Ui.Field("Full name", nm, 250); f2.Location = new Point(Ui.S(286), Ui.S(20));
-                var f3 = Ui.Field("Class / grade", cl, 250); f3.Location = new Point(Ui.S(20), Ui.S(102)); var f4 = Ui.Field("Guardian contact", ct, 250); f4.Location = new Point(Ui.S(286), Ui.S(102));
-                d.Controls.Add(f1); d.Controls.Add(f2); d.Controls.Add(f3); d.Controls.Add(f4);
-                string helpText = isEdit
-                    ? "Update student details. If you change the IC number, all borrowing history and fines will automatically follow the new IC."
-                    : "Type the 12 digits from the student's IC or MyKid. The dashes are added for you. The IC number is the student's library ID and is printed on the library card.";
-                d.Controls.Add(new Label { UseMnemonic = false, Text = helpText,
-                    ForeColor = Th.Mut, Font = Th.FS, AutoSize = false, Size = new Size(Ui.S(510), Ui.S(42)), Location = new Point(Ui.S(20), Ui.S(184)) });
-                ic.Leave += (s, e) => { var n = Lib.NormIc(ic.Text); if (n != null) ic.Text = n; };
-                var ok = Ui.Btn(isEdit ? "Save changes" : "Register", 0); ok.Location = new Point(Ui.S(20), Ui.S(246)); var ca = Ui.Btn("Cancel", 1); ca.Location = new Point(Ui.S(134), Ui.S(246)); ca.Click += (s, e) => d.Close();
+                root.Controls.Add(btnRow);
+
                 ok.Click += (s, e) =>
                 {
-                    string n = Lib.NormIc(ic.Text), name = nm.Text.Trim();
-                    if (n == null || !Lib.IcOk(n)) { MessageBox.Show(d, "Please type a valid IC number with 12 digits.", "ErrinILS", MessageBoxButtons.OK, MessageBoxIcon.Information); ic.Focus(); return; }
-                    if (name == "") { MessageBox.Show(d, "Please type the student's full name.", "ErrinILS", MessageBoxButtons.OK, MessageBoxIcon.Information); nm.Focus(); return; }
+                    // 1. Validation of all configured required fields
+                    foreach (var f in Patron.PatronFields)
+                    {
+                        if (db.Set.IsPatronFieldRequired(f.Key))
+                        {
+                            string val = ctrls.ContainsKey(f.Key) ? ctrls[f.Key].Text.Trim() : "";
+                            if (string.IsNullOrEmpty(val))
+                            {
+                                MessageBox.Show(d, "Medan '" + f.Label + "' wajib diisi mengikut tetapan pendaftaran murid.\n\n(Field '" + f.Label + "' is required by student registration settings.)", "ErrinILS", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                                if (ctrls.ContainsKey(f.Key)) ctrls[f.Key].Focus();
+                                return;
+                            }
+                        }
+                    }
+
+                    // 2. Validate IC format if provided
+                    string icText = ctrls.ContainsKey("no_pengenalan") ? ctrls["no_pengenalan"].Text.Trim() : "";
+                    string nIc = Lib.NormIc(icText);
+                    if (!string.IsNullOrEmpty(icText) && nIc != null && !Lib.IcOk(nIc))
+                    {
+                        MessageBox.Show(d, "No. Pengenalan tidak sah (bulan atau hari tidak wujud). Sila semak semula 12 digit No. Pengenalan.", "ErrinILS", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        if (ctrls.ContainsKey("no_pengenalan")) ctrls["no_pengenalan"].Focus();
+                        return;
+                    }
+
+                    // 3. Check for duplicates
+                    string checkIc = nIc ?? icText;
+                    if (!string.IsNullOrEmpty(checkIc))
+                    {
+                        var exPat = lib.PatronById(checkIc);
+                        if (exPat != null && (!isEdit || exPat.id != edit.id))
+                        {
+                            MessageBox.Show(d, "Murid lain sudah didaftarkan dengan No. Pengenalan " + checkIc + " (" + exPat.name + ").", "ErrinILS", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            if (ctrls.ContainsKey("no_pengenalan")) ctrls["no_pengenalan"].Focus();
+                            return;
+                        }
+                    }
+                    string idMuridVal = ctrls.ContainsKey("id_murid") ? ctrls["id_murid"].Text.Trim() : "";
+                    if (!string.IsNullOrEmpty(idMuridVal))
+                    {
+                        var exId = db.Patrons.FirstOrDefault(x => string.Equals(x.id_murid, idMuridVal, StringComparison.OrdinalIgnoreCase) || string.Equals(x.id, idMuridVal, StringComparison.OrdinalIgnoreCase));
+                        if (exId != null && (!isEdit || exId.id != edit.id))
+                        {
+                            MessageBox.Show(d, "Murid lain sudah didaftarkan dengan ID Murid " + idMuridVal + " (" + exId.name + ").", "ErrinILS", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                            if (ctrls.ContainsKey("id_murid")) ctrls["id_murid"].Focus();
+                            return;
+                        }
+                    }
+
+                    string nameVal = ctrls.ContainsKey("name") ? ctrls["name"].Text.Trim() : "";
+                    string clsVal = ctrls.ContainsKey("nama_kelas") ? ctrls["nama_kelas"].Text.Trim() : "";
+                    if (string.IsNullOrEmpty(clsVal) && ctrls.ContainsKey("tahun_tingkatan")) clsVal = ctrls["tahun_tingkatan"].Text.Trim();
+                    string telVal = ctrls.ContainsKey("tel_penjaga1") ? ctrls["tel_penjaga1"].Text.Trim() : "";
 
                     if (isEdit)
                     {
                         string oldId = edit.id;
-                        if (n != oldId && lib.PatronById(n) != null) { MessageBox.Show(d, "Another student is already registered with IC number " + n + ".", "ErrinILS", MessageBoxButtons.OK, MessageBoxIcon.Information); ic.Focus(); return; }
-                        edit.name = name;
-                        edit.cls = cl.Text.Trim();
-                        edit.contact = ct.Text.Trim();
-                        edit.last = Lib.Today();
-                        if (n != oldId)
+                        string newId = !string.IsNullOrEmpty(nIc) ? nIc : (!string.IsNullOrEmpty(icText) ? icText : (!string.IsNullOrEmpty(idMuridVal) ? idMuridVal : oldId));
+
+                        foreach (var f in Patron.PatronFields)
                         {
-                            edit.id = n;
-                            foreach (var l in db.Loans) if (l.pid == oldId) l.pid = n;
-                            foreach (var f in db.Fines) if (f.pid == oldId) f.pid = n;
-                            foreach (var h in db.Holds) if (h.pid == oldId) h.pid = n;
+                            if (ctrls.ContainsKey(f.Key)) edit.Set(f.Key, ctrls[f.Key].Text.Trim());
                         }
+                        edit.name = nameVal;
+                        edit.cls = clsVal;
+                        edit.contact = telVal;
+                        edit.last = Lib.Today();
+
+                        if (newId != oldId)
+                        {
+                            edit.id = newId;
+                            foreach (var l in db.Loans) if (l.pid == oldId) l.pid = newId;
+                            foreach (var f in db.Fines) if (f.pid == oldId) f.pid = newId;
+                            foreach (var h in db.Holds) if (h.pid == oldId) h.pid = newId;
+                        }
+
                         d.Close();
-                        Commit("Student " + name + " updated");
+                        Commit("Student " + edit.name + " updated");
                     }
                     else
                     {
-                        if (lib.PatronById(n) != null) { MessageBox.Show(d, "This IC number is already registered.", "ErrinILS", MessageBoxButtons.OK, MessageBoxIcon.Information); ic.Focus(); return; }
-                        var p = new Patron { id = n, name = name, cls = cl.Text.Trim(), contact = ct.Text.Trim(), reg = Lib.Today(), last = Lib.Today() };
-                        db.Patrons.Add(p); d.Close(); Commit(name + " registered");
-                        if (Ui.Confirm(this, "Print a library card for " + name + " now?")) CardDialog(p);
+                        string newId = !string.IsNullOrEmpty(nIc) ? nIc : (!string.IsNullOrEmpty(icText) ? icText : (!string.IsNullOrEmpty(idMuridVal) ? idMuridVal : Lib.Uid()));
+                        var p = new Patron();
+                        foreach (var f in Patron.PatronFields)
+                        {
+                            if (ctrls.ContainsKey(f.Key)) p.Set(f.Key, ctrls[f.Key].Text.Trim());
+                        }
+                        p.id = newId;
+                        p.name = nameVal;
+                        if (string.IsNullOrEmpty(p.no_pengenalan)) p.no_pengenalan = newId;
+                        if (string.IsNullOrEmpty(p.id_murid)) p.id_murid = newId;
+                        p.cls = clsVal;
+                        p.contact = telVal;
+                        p.reg = Lib.Today();
+                        p.last = Lib.Today();
+
+                        db.Patrons.Add(p);
+                        d.Close();
+                        Commit(p.name + " registered");
+                        if (Ui.Confirm(this, "Print a library card for " + p.name + " now?")) CardDialog(p);
                     }
                 };
-                d.Controls.Add(ok); d.Controls.Add(ca); d.Shown += (s, e) => { if (isEdit) nm.Focus(); else ic.Focus(); }; d.ShowDialog(this);
+
+                d.Controls.Add(root);
+                d.Shown += (s, e) =>
+                {
+                    if (ctrls.ContainsKey("id_murid") && !isEdit) ctrls["id_murid"].Focus();
+                    else if (ctrls.ContainsKey("name")) ctrls["name"].Focus();
+                };
+                d.ShowDialog(this);
             }
         }
         void CardDialog(Patron p)
@@ -396,11 +633,19 @@ namespace Errin
         }
         void PatView(Patron p)
         {
-            using (var d = Ui.Dlg(p.name + " \u00B7 " + p.id, 740, 510))
+            using (var d = Ui.Dlg(p.name + " \u00B7 " + p.id, 780, 560))
             {
                 var fs = db.Fines.Where(f => f.pid == p.id && f.paid == "").ToList(); string later = Lib.AddD(string.CompareOrdinal(p.reg, p.last) > 0 ? p.reg : p.last, 365 * Lib.RET_YEARS);
                 d.Controls.Add(new Label { UseMnemonic = false, Text = p.name.ToLowerInvariant(), Font = Th.FT, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(14)) });
-                d.Controls.Add(new Label { UseMnemonic = false, Text = "IC " + p.id + " \u00B7 " + p.cls + " \u00B7 " + p.contact + " \u00B7 registered " + p.reg + "\nRecord scheduled for deletion after " + later + " if inactive", ForeColor = Th.Mut, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(42)) });
+                string extraLine = "ID: " + (!string.IsNullOrEmpty(p.id_murid) ? p.id_murid : p.id) +
+                    " \u00B7 IC: " + (!string.IsNullOrEmpty(p.no_pengenalan) ? p.no_pengenalan : p.id) +
+                    (!string.IsNullOrEmpty(p.jantina) ? " \u00B7 " + p.jantina : "") +
+                    (!string.IsNullOrEmpty(p.dob) ? " \u00B7 Lahir: " + p.dob : "") +
+                    (!string.IsNullOrEmpty(p.cls) ? " \u00B7 " + p.cls : "");
+                string contactLine = (!string.IsNullOrEmpty(p.nama_penjaga1) ? "Penjaga: " + p.nama_penjaga1 + " " : "") +
+                    (!string.IsNullOrEmpty(p.contact) ? "(" + p.contact + ") " : "") +
+                    (!string.IsNullOrEmpty(p.alamat1) ? "\u00B7 " + p.alamat1 + " " + p.bandar : "");
+                d.Controls.Add(new Label { UseMnemonic = false, Text = extraLine + "\n" + contactLine + "\nRegistered " + p.reg + " \u00B7 Scheduled for deletion after " + later + " if inactive", ForeColor = Th.Mut, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(42)) });
                 d.Controls.Add(new Label { UseMnemonic = false, Text = "Unpaid fines: " + Lib.Money(fs.Sum(f => f.amt)), Font = Th.FB, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(86)) });
                 var ls = db.Loans.Where(l => l.pid == p.id).Reverse().ToList();
                 var g = MakeGrid(new[] { "Title", "Out", "Due", "Returned" }, ls.Select(l => new[] { lib.Title(l.iid), l.@out, l.due, l.ret ?? "\u2014" }).ToList(), null, "No borrowing history");
@@ -985,7 +1230,7 @@ namespace Errin
                     {
                         if (!p.isValid) continue;
                         bool wasUpdate;
-                        string err = lib.BatchUpsertPatron(p.normIc, p.name, p.cls, p.contact, out wasUpdate);
+                        string err = lib.BatchUpsertPatron(p.patron != null && !string.IsNullOrEmpty(p.patron.name) ? p.patron : new Patron { id = p.normIc, no_pengenalan = p.normIc, name = p.name, cls = p.cls, contact = p.contact }, out wasUpdate);
                         if (err == null)
                         {
                             if (wasUpdate) updated++;

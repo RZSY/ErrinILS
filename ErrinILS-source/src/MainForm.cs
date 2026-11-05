@@ -375,7 +375,7 @@ namespace Errin
         void FilterPat()
         {
             if (patGrid == null || patGrid.IsDisposed) return; string q = (patQ ?? "").ToLowerInvariant();
-            var r = db.Patrons.Where(p => (p.id + p.name + p.cls).ToLowerInvariant().Contains(q) || (Lib.NormIc(q) != null && Lib.NormIc(p.id) == Lib.NormIc(q))).ToList();
+            var r = db.Patrons.Where(p => (p.id + " " + p.name + " " + p.cls + " " + p.id_murid + " " + p.no_pengenalan + " " + p.nama_guru_kelas + " " + p.nama_penjaga1).ToLowerInvariant().Contains(q) || (Lib.NormIc(q) != null && (Lib.NormIc(p.id) == Lib.NormIc(q) || Lib.NormIc(p.no_pengenalan) == Lib.NormIc(q)))).ToList();
 
             switch (patSort)
             {
@@ -1240,6 +1240,96 @@ namespace Errin
             var rate = Ui.Num(110, 0, 1000, (decimal)s.rate, 2, 0.05m); var mx = Ui.Num(110, 1, 100, s.maxLoans); var blk = Ui.Num(110, 0, 100000, (decimal)s.block, 2, 1);
             var sch = Ui.Txt(300); sch.Text = s.school; var pol = Ui.Flow(); pol.Controls.Add(Ui.Field("School / library name (printed on library cards)", sch, 400)); pol.Controls.Add(Ui.Field("Fine per day late", rate, 190)); pol.Controls.Add(Ui.Field("Max items per student", mx, 210)); pol.Controls.Add(Ui.Field("Block checkout at unpaid fines of", blk, 290));
             var polBody = Vbox(pol, Ui.Lbl("Loan period fixed at " + Lib.LOAN + " days \u00B7 max 2 renewals.", true), Spacer(6), Ui.Btn("Save", 0, (a, b) => { db.Set.school = sch.Text.Trim(); db.Set.rate = (double)rate.Value; db.Set.maxLoans = (int)mx.Value; db.Set.block = (double)blk.Value; Save(); Toast("Settings saved"); }));
+
+            // Student Registration Required Fields Card
+            var reqFlow = new FlowLayoutPanel
+            {
+                FlowDirection = FlowDirection.TopDown,
+                WrapContents = false,
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                BackColor = Th.Card
+            };
+
+            var chkBoxes = new Dictionary<string, CheckBox>();
+            var regSections = new[] {
+                "Maklumat Asas & Pengenalan",
+                "Maklumat Persekolahan & Kelas",
+                "Demografi & Profil",
+                "Maklumat Ibu Bapa / Penjaga",
+                "Alamat Tempat Tinggal"
+            };
+
+            foreach (var sec in regSections)
+            {
+                reqFlow.Controls.Add(new Label
+                {
+                    UseMnemonic = false,
+                    Text = sec,
+                    Font = Th.FB,
+                    ForeColor = Th.Ink,
+                    AutoSize = true,
+                    Margin = Ui.S(new Padding(0, 8, 0, 2))
+                });
+
+                var secFlow = Ui.Flow(true);
+                secFlow.MaximumSize = new Size(Ui.S(800), 0);
+                foreach (var f in Patron.PatronFields.Where(x => x.Section == sec))
+                {
+                    bool isReq = db.Set.IsPatronFieldRequired(f.Key);
+                    var cb = new CheckBox
+                    {
+                        Text = f.Label + (f.DefaultRequired ? " (R)" : ""),
+                        Checked = isReq,
+                        AutoSize = true,
+                        ForeColor = Th.Ink,
+                        Font = Th.F,
+                        Margin = Ui.S(new Padding(0, 4, 14, 4))
+                    };
+                    chkBoxes[f.Key] = cb;
+                    secFlow.Controls.Add(cb);
+                }
+                reqFlow.Controls.Add(secFlow);
+            }
+
+            var reqBtns = Ui.Flow(false);
+            reqBtns.Margin = Ui.S(new Padding(0, 10, 0, 0));
+            reqBtns.Controls.Add(Ui.Btn("Save field requirements", 0, (a, b) =>
+            {
+                var reqList = new List<string>();
+                foreach (var kv in chkBoxes)
+                {
+                    if (kv.Value.Checked) reqList.Add(kv.Key);
+                }
+                db.Set.requiredPatronFields = reqList;
+                Save();
+                Toast("Student registration field requirements saved");
+            }));
+            reqBtns.Controls.Add(Ui.Btn("Reset to defaults (R)", 1, (a, b) =>
+            {
+                db.Set.requiredPatronFields = null;
+                foreach (var f in Patron.PatronFields)
+                {
+                    if (chkBoxes.ContainsKey(f.Key))
+                        chkBoxes[f.Key].Checked = f.DefaultRequired;
+                }
+                Save();
+                Toast("Reset to default required fields (R)");
+            }));
+            reqBtns.Controls.Add(Ui.Btn("Select all", 1, (a, b) =>
+            {
+                foreach (var cb in chkBoxes.Values) cb.Checked = true;
+            }));
+            reqBtns.Controls.Add(Ui.Btn("Clear all", 1, (a, b) =>
+            {
+                foreach (var cb in chkBoxes.Values) cb.Checked = false;
+            }));
+
+            var reqBody = Vbox(
+                new Label { UseMnemonic = false, Text = "Pilih medan yang diwajibkan (R) semasa pendaftaran murid. Medan bertanda disahkan sebelum rekod boleh disimpan. (R) menandakan nilai asal sistem.\nConfigure which fields are mandatory (R) during student registration. Checked fields are validated before saving. (R) marks default fields.", AutoSize = false, Size = new Size(Ui.S(820), Ui.S(44)), ForeColor = Th.Ink },
+                reqFlow,
+                reqBtns
+            );
             Func<string, int, Control> para = (t, h) => new Label { UseMnemonic = false, Text = t, AutoSize = false, Size = new Size(Ui.S(820), Ui.S(h)), ForeColor = Th.Ink };
             var zE = Ui.Combo(150, "Off", "On"); var zP = Ui.Num(110, 1, 65535, zc.port); var zD = Ui.Txt(150); zD.Text = zc.db; var zB = Ui.Combo(170, "Other computers", "This computer only");
             zE.SelectedIndex = zc.enabled ? 1 : 0; zB.SelectedIndex = zc.bind == "local" ? 1 : 0;
@@ -1327,7 +1417,7 @@ namespace Errin
             };
             var updateBody = Vbox(para("ErrinILS is updated regularly with new features, bug fixes, and security enhancements. Keep your system up to date.", 44), autoUpdCheck, Spacer(6), chkUpdBtn, updStatus);
 
-            return ScrollPage(Ui.Heading("Settings", "Policies and data management"), Ui.Card("Policies", polBody), Ui.Card("Admin password", pwBody),
+            return ScrollPage(Ui.Heading("Settings", "Policies and data management"), Ui.Card("Policies", polBody), Ui.Card("Student registration fields", reqBody), Ui.Card("Admin password", pwBody),
                 Ui.Card("Remote Access", webBody),
                 Ui.Card("Software updates", updateBody),
                 Ui.Card("Data retention", para("Student records (with their loan and fine history) are deleted " + Lib.RET_YEARS + " years after their last activity, provided they have no unreturned items or unpaid fines. This happens automatically when ErrinILS starts.", 44)),

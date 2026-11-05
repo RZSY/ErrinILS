@@ -468,7 +468,32 @@ namespace Errin
                     cls TEXT,
                     contact TEXT,
                     reg TEXT,
-                    last TEXT
+                    last TEXT,
+                    id_murid TEXT,
+                    no_pengenalan TEXT,
+                    dob TEXT,
+                    status_pengajian TEXT,
+                    tarikh_masuk_sekolah TEXT,
+                    tarikh_masuk_kelas TEXT,
+                    tahun_tingkatan TEXT,
+                    nama_kelas TEXT,
+                    nama_guru_kelas TEXT,
+                    jantina TEXT,
+                    kaum TEXT,
+                    agama TEXT,
+                    warganegara TEXT,
+                    status_oku TEXT,
+                    status_yatim TEXT,
+                    nama_penjaga1 TEXT,
+                    tel_penjaga1 TEXT,
+                    nama_penjaga2 TEXT,
+                    alamat1 TEXT,
+                    alamat2 TEXT,
+                    alamat3 TEXT,
+                    poskod TEXT,
+                    bandar TEXT,
+                    daerah TEXT,
+                    negeri TEXT
                 );
                 CREATE INDEX IF NOT EXISTS idx_patrons_name ON patrons(name);
                 CREATE INDEX IF NOT EXISTS idx_patrons_cls ON patrons(cls);
@@ -515,7 +540,8 @@ namespace Errin
                     rate REAL,
                     max_loans INTEGER,
                     block REAL,
-                    zt_json TEXT
+                    zt_json TEXT,
+                    patron_req_json TEXT
                 );
 
                 CREATE TABLE IF NOT EXISTS class_history (
@@ -536,9 +562,25 @@ namespace Errin
                     last TEXT,
                     archived_date TEXT,
                     loans_json TEXT,
-                    fines_json TEXT
+                    fines_json TEXT,
+                    extra_json TEXT
                 );
             ");
+
+            string[] patronCols = new[] {
+                "id_murid", "no_pengenalan", "dob", "status_pengajian",
+                "tarikh_masuk_sekolah", "tarikh_masuk_kelas", "tahun_tingkatan",
+                "nama_kelas", "nama_guru_kelas", "jantina", "kaum", "agama",
+                "warganegara", "status_oku", "status_yatim", "nama_penjaga1",
+                "tel_penjaga1", "nama_penjaga2", "alamat1", "alamat2", "alamat3",
+                "poskod", "bandar", "daerah", "negeri"
+            };
+            foreach (var col in patronCols)
+            {
+                try { db.Execute("ALTER TABLE patrons ADD COLUMN " + col + " TEXT;"); } catch { }
+            }
+            try { db.Execute("ALTER TABLE settings ADD COLUMN patron_req_json TEXT;"); } catch { }
+            try { db.Execute("ALTER TABLE archived_patrons ADD COLUMN extra_json TEXT;"); } catch { }
         }
 
         public static Db Load(string dbPath)
@@ -577,19 +619,53 @@ namespace Errin
                 }
 
                 // Load patrons
-                using (var cmd = sdb.CreateCommand("SELECT id, name, cls, contact, reg, last FROM patrons;"))
+                using (var cmd = sdb.CreateCommand(@"SELECT id, name, cls, contact, reg, last,
+                    id_murid, no_pengenalan, dob, status_pengajian, tarikh_masuk_sekolah, tarikh_masuk_kelas,
+                    tahun_tingkatan, nama_kelas, nama_guru_kelas, jantina, kaum, agama,
+                    warganegara, status_oku, status_yatim, nama_penjaga1, tel_penjaga1, nama_penjaga2,
+                    alamat1, alamat2, alamat3, poskod, bandar, daerah, negeri FROM patrons;"))
                 {
                     while (cmd.Step())
                     {
-                        db.Patrons.Add(new Patron
+                        var p = new Patron
                         {
                             id = cmd.GetText(0),
                             name = cmd.GetText(1),
                             cls = cmd.GetText(2),
                             contact = cmd.GetText(3),
                             reg = cmd.GetText(4),
-                            last = cmd.GetText(5)
-                        });
+                            last = cmd.GetText(5),
+                            id_murid = cmd.GetText(6),
+                            no_pengenalan = cmd.GetText(7),
+                            dob = cmd.GetText(8),
+                            status_pengajian = cmd.GetText(9),
+                            tarikh_masuk_sekolah = cmd.GetText(10),
+                            tarikh_masuk_kelas = cmd.GetText(11),
+                            tahun_tingkatan = cmd.GetText(12),
+                            nama_kelas = cmd.GetText(13),
+                            nama_guru_kelas = cmd.GetText(14),
+                            jantina = cmd.GetText(15),
+                            kaum = cmd.GetText(16),
+                            agama = cmd.GetText(17),
+                            warganegara = cmd.GetText(18),
+                            status_oku = cmd.GetText(19),
+                            status_yatim = cmd.GetText(20),
+                            nama_penjaga1 = cmd.GetText(21),
+                            tel_penjaga1 = cmd.GetText(22),
+                            nama_penjaga2 = cmd.GetText(23),
+                            alamat1 = cmd.GetText(24),
+                            alamat2 = cmd.GetText(25),
+                            alamat3 = cmd.GetText(26),
+                            poskod = cmd.GetText(27),
+                            bandar = cmd.GetText(28),
+                            daerah = cmd.GetText(29),
+                            negeri = cmd.GetText(30)
+                        };
+                        if (string.IsNullOrEmpty(p.no_pengenalan)) p.no_pengenalan = p.id;
+                        if (string.IsNullOrEmpty(p.id_murid)) p.id_murid = p.id;
+                        if (string.IsNullOrEmpty(p.nama_kelas)) p.nama_kelas = p.cls;
+                        if (string.IsNullOrEmpty(p.tel_penjaga1)) p.tel_penjaga1 = p.contact;
+                        db.Patrons.Add(p);
                     }
                 }
 
@@ -647,7 +723,7 @@ namespace Errin
                 }
 
                 // Load settings
-                using (var cmd = sdb.CreateCommand("SELECT school, rate, max_loans, block, zt_json FROM settings WHERE id = 1;"))
+                using (var cmd = sdb.CreateCommand("SELECT school, rate, max_loans, block, zt_json, patron_req_json FROM settings WHERE id = 1;"))
                 {
                     if (cmd.Step())
                     {
@@ -675,6 +751,19 @@ namespace Errin
                                             db = Json.Str(d, "db")
                                         });
                                     }
+                                }
+                            }
+                            catch { }
+                        }
+                        string reqJson = cmd.GetText(5);
+                        if (!string.IsNullOrEmpty(reqJson))
+                        {
+                            try
+                            {
+                                var arr = Json.Parse(reqJson) as List<object>;
+                                if (arr != null)
+                                {
+                                    db.Set.requiredPatronFields = arr.Select(x => x != null ? x.ToString() : "").ToList();
                                 }
                             }
                             catch { }
@@ -722,7 +811,7 @@ namespace Errin
                 }
 
                 // Load archived patrons
-                using (var cmd = sdb.CreateCommand("SELECT id, name, cls, contact, reg, last, archived_date, loans_json, fines_json FROM archived_patrons;"))
+                using (var cmd = sdb.CreateCommand("SELECT id, name, cls, contact, reg, last, archived_date, loans_json, fines_json, extra_json FROM archived_patrons;"))
                 {
                     while (cmd.Step())
                     {
@@ -792,6 +881,26 @@ namespace Errin
                             }
                             catch { }
                         }
+                        string exJson = cmd.GetText(9);
+                        if (!string.IsNullOrEmpty(exJson))
+                        {
+                            try
+                            {
+                                var exd = Json.Parse(exJson) as Dictionary<string, object>;
+                                if (exd != null)
+                                {
+                                    foreach (var kv in exd)
+                                    {
+                                        ap.Set(kv.Key, kv.Value != null ? kv.Value.ToString() : "");
+                                    }
+                                }
+                            }
+                            catch { }
+                        }
+                        if (string.IsNullOrEmpty(ap.no_pengenalan)) ap.no_pengenalan = ap.id;
+                        if (string.IsNullOrEmpty(ap.id_murid)) ap.id_murid = ap.id;
+                        if (string.IsNullOrEmpty(ap.nama_kelas)) ap.nama_kelas = ap.cls;
+                        if (string.IsNullOrEmpty(ap.tel_penjaga1)) ap.tel_penjaga1 = ap.contact;
                         db.ArchivedPatrons.Add(ap);
                     }
                 }
@@ -842,7 +951,13 @@ namespace Errin
 
                     // Patrons
                     sdb.Execute("DELETE FROM patrons;");
-                    using (var cmd = sdb.CreateCommand("INSERT INTO patrons (id, name, cls, contact, reg, last) VALUES (?, ?, ?, ?, ?, ?);"))
+                    using (var cmd = sdb.CreateCommand(@"INSERT INTO patrons (
+                        id, name, cls, contact, reg, last,
+                        id_murid, no_pengenalan, dob, status_pengajian, tarikh_masuk_sekolah, tarikh_masuk_kelas,
+                        tahun_tingkatan, nama_kelas, nama_guru_kelas, jantina, kaum, agama,
+                        warganegara, status_oku, status_yatim, nama_penjaga1, tel_penjaga1, nama_penjaga2,
+                        alamat1, alamat2, alamat3, poskod, bandar, daerah, negeri
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"))
                     {
                         foreach (var p in db.Patrons)
                         {
@@ -853,6 +968,31 @@ namespace Errin
                             cmd.Bind(4, p.contact);
                             cmd.Bind(5, p.reg);
                             cmd.Bind(6, p.last);
+                            cmd.Bind(7, p.id_murid);
+                            cmd.Bind(8, p.no_pengenalan);
+                            cmd.Bind(9, p.dob);
+                            cmd.Bind(10, p.status_pengajian);
+                            cmd.Bind(11, p.tarikh_masuk_sekolah);
+                            cmd.Bind(12, p.tarikh_masuk_kelas);
+                            cmd.Bind(13, p.tahun_tingkatan);
+                            cmd.Bind(14, p.nama_kelas);
+                            cmd.Bind(15, p.nama_guru_kelas);
+                            cmd.Bind(16, p.jantina);
+                            cmd.Bind(17, p.kaum);
+                            cmd.Bind(18, p.agama);
+                            cmd.Bind(19, p.warganegara);
+                            cmd.Bind(20, p.status_oku);
+                            cmd.Bind(21, p.status_yatim);
+                            cmd.Bind(22, p.nama_penjaga1);
+                            cmd.Bind(23, p.tel_penjaga1);
+                            cmd.Bind(24, p.nama_penjaga2);
+                            cmd.Bind(25, p.alamat1);
+                            cmd.Bind(26, p.alamat2);
+                            cmd.Bind(27, p.alamat3);
+                            cmd.Bind(28, p.poskod);
+                            cmd.Bind(29, p.bandar);
+                            cmd.Bind(30, p.daerah);
+                            cmd.Bind(31, p.negeri);
                             cmd.ExecuteNonQuery();
                         }
                     }
@@ -912,7 +1052,7 @@ namespace Errin
 
                     // Settings
                     sdb.Execute("DELETE FROM settings;");
-                    using (var cmd = sdb.CreateCommand("INSERT INTO settings (id, school, rate, max_loans, block, zt_json) VALUES (1, ?, ?, ?, ?, ?);"))
+                    using (var cmd = sdb.CreateCommand("INSERT INTO settings (id, school, rate, max_loans, block, zt_json, patron_req_json) VALUES (1, ?, ?, ?, ?, ?, ?);"))
                     {
                         cmd.Bind(1, db.Set.school ?? "");
                         cmd.Bind(2, db.Set.rate);
@@ -929,6 +1069,8 @@ namespace Errin
                             ztJson = Json.Write(list);
                         }
                         cmd.Bind(5, ztJson);
+                        string reqJson = db.Set.requiredPatronFields != null ? Json.Write(db.Set.requiredPatronFields.Select(x => (object)x).ToList()) : "";
+                        cmd.Bind(6, reqJson);
                         cmd.ExecuteNonQuery();
                     }
 
@@ -966,8 +1108,8 @@ namespace Errin
                     if (db.ArchivedPatrons != null && db.ArchivedPatrons.Count > 0)
                     {
                         using (var cmd = sdb.CreateCommand(@"INSERT INTO archived_patrons
-                            (id, name, cls, contact, reg, last, archived_date, loans_json, fines_json)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);"))
+                            (id, name, cls, contact, reg, last, archived_date, loans_json, fines_json, extra_json)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"))
                         {
                             foreach (var ap in db.ArchivedPatrons)
                             {
@@ -1001,6 +1143,17 @@ namespace Errin
                                     fJson = Json.Write(list);
                                 }
                                 cmd.Bind(9, fJson);
+
+                                var extra = new Dictionary<string, object>();
+                                foreach (var k in Patron.Keys)
+                                {
+                                    if (k != "id" && k != "name" && k != "cls" && k != "contact" && k != "reg" && k != "last")
+                                    {
+                                        string v = ap.Get(k);
+                                        if (!string.IsNullOrEmpty(v)) extra[k] = v;
+                                    }
+                                }
+                                cmd.Bind(10, extra.Count > 0 ? Json.Write(extra) : "");
 
                                 cmd.ExecuteNonQuery();
                             }

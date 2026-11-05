@@ -24,10 +24,13 @@ namespace Errin
         public Item ItemByBarcode(string bc) { return D.Items.FirstOrDefault(i => string.Equals(i.barcode, bc, StringComparison.OrdinalIgnoreCase)); }
         public Patron PatronById(string id)
         {
-            var p = D.Patrons.FirstOrDefault(x => string.Equals(x.id, id, StringComparison.OrdinalIgnoreCase));
+            if (string.IsNullOrEmpty(id)) return null;
+            var p = D.Patrons.FirstOrDefault(x => string.Equals(x.id, id, StringComparison.OrdinalIgnoreCase) ||
+                                                  string.Equals(x.no_pengenalan, id, StringComparison.OrdinalIgnoreCase) ||
+                                                  string.Equals(x.id_murid, id, StringComparison.OrdinalIgnoreCase));
             if (p != null) return p;
             string n = NormIc(id);                                   // "120315100001" finds "120315-10-0001"
-            return n == null ? null : D.Patrons.FirstOrDefault(x => x.id == n || NormIc(x.id) == n);
+            return n == null ? null : D.Patrons.FirstOrDefault(x => x.id == n || NormIc(x.id) == n || NormIc(x.no_pengenalan) == n);
         }
         /// <summary>Malaysian IC / MyKid number: 12 digits shown as YYMMDD-PB-###G. Returns null if it is not 12 digits.</summary>
         public static string NormIc(string s)
@@ -211,6 +214,7 @@ namespace Errin
                         loans = D.Loans.Where(l => l.pid == pid).ToList(),
                         fines = D.Fines.Where(f => f.pid == pid).ToList()
                     };
+                    foreach (var k in Patron.Keys) ap.Set(k, p.Get(k));
                     D.ArchivedPatrons.RemoveAll(x => x.id == pid);
                     D.ArchivedPatrons.Add(ap);
                 }
@@ -230,6 +234,8 @@ namespace Errin
             if (ap == null) return false;
             if (PatronById(ap.id) != null) return false; // already active
             var p = new Patron { id = ap.id, name = ap.name, cls = ap.cls, contact = ap.contact, reg = ap.reg, last = Today() };
+            foreach (var k in Patron.Keys) p.Set(k, ap.Get(k));
+            p.last = Today();
             D.Patrons.Add(p);
             if (ap.loans != null) { foreach (var l in ap.loans) D.Loans.Add(l); }
             if (ap.fines != null) { foreach (var f in ap.fines) D.Fines.Add(f); }
@@ -300,36 +306,62 @@ namespace Errin
         }
 
         /* ---- batch patron registration with duplicate IC update ---- */
-        public string BatchUpsertPatron(string rawIc, string name, string cls, string contact, out bool updated)
+        public string BatchUpsertPatron(Patron pIn, out bool updated)
         {
             updated = false;
-            string norm = NormIc(rawIc) ?? (rawIc ?? "").Trim();
-            if (string.IsNullOrEmpty(norm)) return "Invalid IC or student ID";
-            string cleanName = (name ?? "").Trim();
+            if (pIn == null) return "No patron data";
+            string rawIc = !string.IsNullOrEmpty(pIn.no_pengenalan) ? pIn.no_pengenalan : pIn.id;
+            if (string.IsNullOrEmpty(rawIc)) rawIc = pIn.id_murid;
+            string cleanName = (pIn.name ?? "").Trim();
+            if (string.IsNullOrEmpty(rawIc)) return "Missing IC or student ID";
             if (string.IsNullOrEmpty(cleanName)) return "Missing student name";
 
+            string norm = NormIc(rawIc) ?? rawIc.Trim();
+
             var existing = PatronById(norm);
+            if (existing == null && norm != rawIc) existing = PatronById(rawIc);
+
             if (existing != null)
             {
+                foreach (var k in Patron.Keys)
+                {
+                    string v = pIn.Get(k);
+                    if (!string.IsNullOrEmpty(v)) existing.Set(k, v);
+                }
                 existing.name = cleanName;
-                if (!string.IsNullOrEmpty(cls)) existing.cls = cls.Trim();
-                if (!string.IsNullOrEmpty(contact)) existing.contact = contact.Trim();
+                if (!string.IsNullOrEmpty(pIn.cls)) existing.cls = pIn.cls.Trim();
+                if (!string.IsNullOrEmpty(pIn.contact)) existing.contact = pIn.contact.Trim();
                 existing.last = Today();
                 updated = true;
                 return null;
             }
 
-            var p = new Patron
-            {
-                id = norm,
-                name = cleanName,
-                cls = (cls ?? "").Trim(),
-                contact = (contact ?? "").Trim(),
-                reg = Today(),
-                last = Today()
-            };
+            var p = pIn.Clone();
+            p.id = norm;
+            p.name = cleanName;
+            if (string.IsNullOrEmpty(p.no_pengenalan)) p.no_pengenalan = norm;
+            if (string.IsNullOrEmpty(p.id_murid)) p.id_murid = norm;
+            if (string.IsNullOrEmpty(p.cls) && !string.IsNullOrEmpty(p.nama_kelas)) p.cls = p.nama_kelas;
+            if (string.IsNullOrEmpty(p.contact) && !string.IsNullOrEmpty(p.tel_penjaga1)) p.contact = p.tel_penjaga1;
+            p.reg = Today();
+            p.last = Today();
             D.Patrons.Add(p);
             return null;
+        }
+
+        public string BatchUpsertPatron(string rawIc, string name, string cls, string contact, out bool updated)
+        {
+            var p = new Patron
+            {
+                id = rawIc,
+                no_pengenalan = rawIc,
+                name = name,
+                cls = cls,
+                nama_kelas = cls,
+                contact = contact,
+                tel_penjaga1 = contact
+            };
+            return BatchUpsertPatron(p, out updated);
         }
 
         public static string FormatSchoolClass(string tahun, string namaKelas)
@@ -388,7 +420,12 @@ namespace Errin
             int headerRow = -1;
             int icCol = -1, nameCol = -1, tahunCol = -1, namaKelasCol = -1, singleClassCol = -1;
             int tel1Col = -1, tel2Col = -1, telRumahCol = -1, penjaga1Col = -1, genericContactCol = -1;
-            int idMuridCol = -1;
+            int idMuridCol = -1, dobCol = -1, statusPengajianCol = -1;
+            int tarikhMasukSekolahCol = -1, tarikhMasukKelasCol = -1, guruKelasCol = -1;
+            int jantinaCol = -1, kaumCol = -1, agamaCol = -1, warganegaraCol = -1;
+            int statusOkuCol = -1, statusYatimCol = -1, penjaga2Col = -1;
+            int alamat1Col = -1, alamat2Col = -1, alamat3Col = -1;
+            int poskodCol = -1, bandarCol = -1, daerahCol = -1, negeriCol = -1;
 
             // 1. Scan the first rows to locate the header row (supports APDM rows 1-25)
             int maxScan = Math.Min(rawRows.Count, 25);
@@ -513,6 +550,30 @@ namespace Errin
                     {
                         penjaga1Col = c;
                     }
+                    else if (h == "penjaga 2" || h == "nama penjaga 2" || h == "guardian 2")
+                    {
+                        penjaga2Col = c;
+                    }
+
+                    // APDM demographic & school columns
+                    if (h == "tarikh lahir" || h == "t.lahir" || h == "tarikh_lahir" || h == "dob" || h == "birth date") dobCol = c;
+                    else if (h == "status pengajian" || h == "status murid" || h == "status persekolahan" || h == "status") statusPengajianCol = c;
+                    else if (h == "tarikh masuk sekolah" || h == "tarikh_masuk_sekolah" || h == "t.masuk sekolah") tarikhMasukSekolahCol = c;
+                    else if (h == "tarikh masuk kelas" || h == "tarikh_masuk_kelas" || h == "t.masuk kelas") tarikhMasukKelasCol = c;
+                    else if (h == "nama guru kelas" || h == "guru kelas" || h == "class teacher") guruKelasCol = c;
+                    else if (h == "jantina" || h == "gender" || h == "sex") jantinaCol = c;
+                    else if (h == "kaum" || h == "bangsa" || h == "race" || h == "ethnicity") kaumCol = c;
+                    else if (h == "agama" || h == "religion") agamaCol = c;
+                    else if (h == "warganegara" || h == "kewarganegaraan" || h == "citizenship") warganegaraCol = c;
+                    else if (h == "status oku" || h == "oku") statusOkuCol = c;
+                    else if (h == "status yatim" || h == "yatim") statusYatimCol = c;
+                    else if (h == "alamat 1" || h == "alamat baris 1" || h == "alamat") alamat1Col = c;
+                    else if (h == "alamat 2" || h == "alamat baris 2") alamat2Col = c;
+                    else if (h == "alamat 3" || h == "alamat baris 3") alamat3Col = c;
+                    else if (h == "poskod" || h == "postcode" || h == "zip") poskodCol = c;
+                    else if (h == "bandar" || h == "city") bandarCol = c;
+                    else if (h == "daerah" || h == "district") daerahCol = c;
+                    else if (h == "negeri" || h == "state") negeriCol = c;
                 }
 
                 if (icCol < 0 && idMuridCol >= 0) icCol = idMuridCol;
@@ -599,6 +660,41 @@ namespace Errin
                     cls = cls,
                     contact = contact
                 };
+
+                item.patron = new Patron
+                {
+                    id = norm,
+                    id_murid = getVal(idMuridCol),
+                    no_pengenalan = getVal(icCol),
+                    name = name,
+                    dob = getVal(dobCol),
+                    status_pengajian = getVal(statusPengajianCol),
+                    tarikh_masuk_sekolah = getVal(tarikhMasukSekolahCol),
+                    tarikh_masuk_kelas = getVal(tarikhMasukKelasCol),
+                    tahun_tingkatan = getVal(tahunCol),
+                    nama_kelas = !string.IsNullOrEmpty(getVal(namaKelasCol)) ? getVal(namaKelasCol) : cls,
+                    nama_guru_kelas = getVal(guruKelasCol),
+                    jantina = getVal(jantinaCol),
+                    kaum = getVal(kaumCol),
+                    agama = getVal(agamaCol),
+                    warganegara = getVal(warganegaraCol),
+                    status_oku = getVal(statusOkuCol),
+                    status_yatim = getVal(statusYatimCol),
+                    nama_penjaga1 = guardian,
+                    tel_penjaga1 = phone,
+                    nama_penjaga2 = getVal(penjaga2Col),
+                    alamat1 = getVal(alamat1Col),
+                    alamat2 = getVal(alamat2Col),
+                    alamat3 = getVal(alamat3Col),
+                    poskod = getVal(poskodCol),
+                    bandar = getVal(bandarCol),
+                    daerah = getVal(daerahCol),
+                    negeri = getVal(negeriCol),
+                    cls = cls,
+                    contact = contact
+                };
+                if (string.IsNullOrEmpty(item.patron.id_murid)) item.patron.id_murid = norm;
+                if (string.IsNullOrEmpty(item.patron.no_pengenalan)) item.patron.no_pengenalan = norm;
 
                 if (string.IsNullOrEmpty(rawIc))
                 {

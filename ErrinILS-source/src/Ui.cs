@@ -179,10 +179,32 @@ namespace Errin
             try { typeof(DataGridView).GetProperty("DoubleBuffered", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).SetValue(g, true, null); } catch { }
             return g;
         }
-        public static void Fill(DataGridView g, string[] headers, List<string[]> rows, List<object> tags, string empty)
+        public static void Fill(DataGridView g, string[] headers, List<string[]> rows, List<object> tags, string empty, int[] fillWeights = null)
         {
-            g.SuspendLayout(); g.Rows.Clear(); g.Columns.Clear();
-            foreach (var h in headers) g.Columns.Add(new DataGridViewTextBoxColumn { HeaderText = h, MinimumWidth = S(30), SortMode = DataGridViewColumnSortMode.Automatic });
+            g.SuspendLayout();
+            bool colsMatch = g.Columns.Count == headers.Length;
+            if (colsMatch)
+            {
+                for (int i = 0; i < headers.Length; i++)
+                {
+                    if (g.Columns[i].HeaderText != headers[i]) { colsMatch = false; break; }
+                }
+            }
+            if (!colsMatch)
+            {
+                g.Rows.Clear();
+                g.Columns.Clear();
+                for (int i = 0; i < headers.Length; i++)
+                {
+                    var col = new DataGridViewTextBoxColumn { HeaderText = headers[i], MinimumWidth = S(30), SortMode = DataGridViewColumnSortMode.Automatic };
+                    if (fillWeights != null && i < fillWeights.Length && fillWeights[i] > 0) col.FillWeight = fillWeights[i];
+                    g.Columns.Add(col);
+                }
+            }
+            else
+            {
+                g.Rows.Clear();
+            }
             for (int k = 0; k < rows.Count; k++) { int ix = g.Rows.Add((object[])rows[k]); g.Rows[ix].Tag = tags != null ? tags[k] : null; }
             Label el = null; foreach (Control c in g.Controls) if (c is Label && c.Name == "emptyMsg") el = (Label)c;
             if (el == null) { el = new Label { UseMnemonic = false, Name = "emptyMsg", AutoSize = true, ForeColor = Th.Mut, BackColor = Th.Card, Font = Th.F, Location = new Point(S(8), g.ColumnHeadersHeight + S(8)) }; g.Controls.Add(el); }

@@ -50,6 +50,8 @@ static class SelfTest
         Ok(db2.Items.Count == 4 && db2.Patrons[0].name == "Aisha \"A\" Rahman" && db2.Loans[0].ret == null && db2.Loans[0].ren == 1 && Math.Abs(db2.Fines[0].amt - 0.7) < 1e-9, "JSON db round trip");
         var legacy = Db.FromJson("{\"items\":[{\"id\":\"x\",\"title\":\"T\",\"barcode\":\"B1\"}],\"patrons\":[],\"loans\":[{\"id\":\"l\",\"iid\":\"x\",\"pid\":\"p\",\"out\":\"2026-01-01\",\"due\":\"2026-01-08\",\"ret\":null,\"ren\":0}],\"holds\":[],\"fines\":[],\"set\":{\"rate\":0.1,\"maxLoans\":3,\"block\":5}}");
         Ok(legacy.Items[0].title == "T" && legacy.Loans[0].ret == null && legacy.Set.maxLoans == 3, "reads the old Electron data file");
+        Ok(items[0].Matches("charlotte") && items[0].Matches("WHITE") && items[0].Matches("B1001"), "Item.Matches field search");
+        Ok(items[0].MatchesAll(new[] { "charlotte", "white" }) && !items[0].MatchesAll(new[] { "charlotte", "nonexistent" }), "Item.MatchesAll multi-token search");
 
         // SQLite store round trip and migration test
         Ok(SqliteNative.IsAvailable, "SQLite native library is available");
@@ -481,6 +483,104 @@ static class SelfTest
         weedDb.Items.Add(new Item { id = "3", title = "Weeded Book", weeded = "2026-01-01", weed_reason = "damaged" });
         int actCount = weedDb.Items.Count(i => string.IsNullOrEmpty(i.weeded));
         Ok(actCount == 2, "Active catalog titles count correctly excludes weeded copies");
+
+        // 13. Student Registration APDM Fields and Configurable Requirements Test
+        var apdmPat = new Patron
+        {
+            id = "080315-10-1234",
+            id_murid = "M100456",
+            no_pengenalan = "080315-10-1234",
+            name = "Muhammad Amirul",
+            dob = "2008-03-15",
+            status_pengajian = "Aktif",
+            tarikh_masuk_sekolah = "2021-01-02",
+            tarikh_masuk_kelas = "2026-01-03",
+            tahun_tingkatan = "Tingkatan 4",
+            nama_kelas = "4 Cemerlang",
+            nama_guru_kelas = "Cikgu Rahmah",
+            jantina = "Lelaki",
+            kaum = "Melayu",
+            agama = "Islam",
+            warganegara = "Warganegara",
+            status_oku = "Tidak",
+            status_yatim = "Tidak",
+            nama_penjaga1 = "Hassan Bin Ali",
+            tel_penjaga1 = "012-3456789",
+            nama_penjaga2 = "Fatimah Binti Omar",
+            alamat1 = "No 12, Jalan Murni 3",
+            alamat2 = "Taman Murni Jaya",
+            alamat3 = "Batu 5",
+            poskod = "43000",
+            bandar = "Kajang",
+            daerah = "Hulu Langat",
+            negeri = "Selangor",
+            cls = "4 Cemerlang",
+            contact = "012-3456789",
+            reg = "2026-01-01",
+            last = "2026-01-01"
+        };
+
+        // Test field accessors
+        Ok(apdmPat.Get("id_murid") == "M100456" && apdmPat.Get("negeri") == "Selangor", "Patron.Get returns correct APDM values");
+        apdmPat.Set("negeri", "Perak");
+        Ok(apdmPat.negeri == "Perak", "Patron.Set updates field correctly");
+        apdmPat.negeri = "Selangor";
+
+        // Test default required fields
+        var defSet = new Settings();
+        Ok(defSet.IsPatronFieldRequired("id_murid") == true, "ID Murid is (R) by default");
+        Ok(defSet.IsPatronFieldRequired("name") == true, "Nama is (R) by default");
+        Ok(defSet.IsPatronFieldRequired("no_pengenalan") == true, "No. Pengenalan is (R) by default");
+        Ok(defSet.IsPatronFieldRequired("tarikh_masuk_sekolah") == true, "Tarikh Masuk Sekolah is (R) by default");
+        Ok(defSet.IsPatronFieldRequired("tahun_tingkatan") == true, "Tahun / Tingkatan is (R) by default");
+        Ok(defSet.IsPatronFieldRequired("nama_kelas") == true, "Nama Kelas is (R) by default");
+        Ok(defSet.IsPatronFieldRequired("nama_guru_kelas") == true, "Nama Guru Kelas is (R) by default");
+        Ok(defSet.IsPatronFieldRequired("jantina") == true, "Jantina is (R) by default");
+        Ok(defSet.IsPatronFieldRequired("nama_penjaga1") == true, "Nama Penjaga 1 is (R) by default");
+        Ok(defSet.IsPatronFieldRequired("tel_penjaga1") == true, "No. Tel. Bimbit Penjaga 1 is (R) by default");
+        Ok(defSet.IsPatronFieldRequired("alamat1") == true, "Alamat 1 is (R) by default");
+        Ok(defSet.IsPatronFieldRequired("dob") == false, "Tarikh Lahir is optional by default");
+        Ok(defSet.IsPatronFieldRequired("kaum") == false, "Kaum is optional by default");
+        Ok(defSet.IsPatronFieldRequired("agama") == false, "Agama is optional by default");
+        Ok(defSet.IsPatronFieldRequired("poskod") == false, "Poskod is optional by default");
+
+        // Test custom required fields in Settings
+        defSet.requiredPatronFields = new List<string> { "id_murid", "name", "kaum" };
+        Ok(defSet.IsPatronFieldRequired("kaum") == true, "Kaum can be configured as required in Settings");
+        Ok(defSet.IsPatronFieldRequired("alamat1") == false, "Alamat 1 can be configured as optional in Settings");
+
+        // Test JSON round-trip of full APDM fields and Settings
+        var apdmDb = new Db();
+        apdmDb.Set.requiredPatronFields = new List<string> { "id_murid", "name", "poskod" };
+        apdmDb.Patrons.Add(apdmPat);
+        string apdmJson = apdmDb.ToJson();
+        var apdmDbReloaded = Db.FromJson(apdmJson);
+        Ok(apdmDbReloaded.Patrons.Count == 1, "APDM patron JSON reload has 1 patron");
+        var pReload = apdmDbReloaded.Patrons[0];
+        Ok(pReload.id_murid == "M100456" && pReload.nama_guru_kelas == "Cikgu Rahmah" && pReload.negeri == "Selangor", "All APDM student fields preserved across JSON round-trip");
+        Ok(apdmDbReloaded.Set.requiredPatronFields != null && apdmDbReloaded.Set.requiredPatronFields.Contains("poskod"), "Settings requiredPatronFields preserved across JSON round-trip");
+
+        // Test SQLite round-trip of full APDM fields
+        string apdmDbPath = Path.Combine(Path.GetTempPath(), "test-apdm-" + Guid.NewGuid().ToString("N") + ".db");
+        try
+        {
+            SqliteStore.Save(apdmDbPath, apdmDb);
+            var sqlDb = SqliteStore.Load(apdmDbPath);
+            Ok(sqlDb != null && sqlDb.Patrons.Count == 1, "SQLite APDM database loaded");
+            var sp = sqlDb.Patrons[0];
+            Ok(sp.id_murid == "M100456" && sp.nama_guru_kelas == "Cikgu Rahmah" && sp.bandar == "Kajang" && sp.daerah == "Hulu Langat", "All APDM student fields preserved in SQLite");
+            Ok(sqlDb.Set.requiredPatronFields != null && sqlDb.Set.requiredPatronFields.Contains("poskod"), "Custom required fields preserved in SQLite settings");
+        }
+        finally
+        {
+            if (File.Exists(apdmDbPath)) try { File.Delete(apdmDbPath); } catch { }
+        }
+
+        // Test Lookup by ID Murid and No Pengenalan
+        var apdmLib = new Lib(apdmDb);
+        Ok(apdmLib.PatronById("M100456") == apdmPat, "Lib.PatronById finds student by ID Murid");
+        Ok(apdmLib.PatronById("080315-10-1234") == apdmPat, "Lib.PatronById finds student by No. Pengenalan (with dashes)");
+        Ok(apdmLib.PatronById("080315101234") == apdmPat, "Lib.PatronById finds student by No. Pengenalan (raw 12 digits)");
 
         Console.WriteLine("\nall " + n + " checks passed");
         return 0;
