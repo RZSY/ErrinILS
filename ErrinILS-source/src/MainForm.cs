@@ -1,4 +1,4 @@
-﻿// ErrinILS main window: header tabs, status bar and the eight pages.
+// ErrinILS main window: header tabs, status bar and the eight pages.
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -25,7 +25,7 @@ namespace Errin
         Panel host; Label sbar, toast; Timer toastT, debT; FlowLayoutPanel tabBar;
         string pwSalt = "", pwHash = ""; int pwIter = Auth.Iterations;
         readonly Dictionary<string, Button> tabs = new Dictionary<string, Button>();
-        string catQ = "", patQ = "", catFilter = "active", repSubTab = "analytics";
+        string catQ = "", catSubj = "", patQ = "", catFilter = "active", repSubTab = "analytics";
         bool archiveUnlocked = false;
         DataGridView catGrid, patGrid; Label catNote, patNote;
         static readonly string[][] NAV = { new[] { "dash", "Dashboard" }, new[] { "circ", "Circulation" }, new[] { "cat", "Catalog" }, new[] { "pat", "Students" }, new[] { "fine", "Fines" }, new[] { "rep", "Reports" }, new[] { "bak", "Backup" }, new[] { "set", "Settings" } };
@@ -225,19 +225,28 @@ namespace Errin
         int catSort = 0;
         Control CatPage()
         {
-            var q = Ui.Txt(240); q.Text = catQ; q.Margin = Ui.S(new Padding(0, 0, 8, 0));
+            var q = Ui.Txt(200); q.Text = catQ; q.Margin = Ui.S(new Padding(0, 0, 8, 0));
             q.TextChanged += (s, e) => { catQ = q.Text; debT.Stop(); debT.Start(); };
             q.KeyDown += (s, e) => {
                 if (e.KeyCode == Keys.Enter) { e.SuppressKeyPress = true; debT.Stop(); FilterCat(); }
                 else if (e.KeyCode == Keys.Escape) { e.SuppressKeyPress = true; q.Text = ""; }
             };
 
-            var btnClear = Ui.Btn("✕ Clear", 1, (s, e) => { q.Text = ""; q.Focus(); });
-            btnClear.Margin = Ui.S(new Padding(0, 18, 14, 0));
-            btnClear.Visible = !string.IsNullOrEmpty(catQ);
-            q.TextChanged += (s, e) => { btnClear.Visible = !string.IsNullOrEmpty(q.Text); };
+            var qSubj = Ui.Txt(180); qSubj.Text = catSubj; qSubj.Margin = Ui.S(new Padding(0, 0, 8, 0));
+            qSubj.TextChanged += (s, e) => { catSubj = qSubj.Text; debT.Stop(); debT.Start(); };
+            qSubj.KeyDown += (s, e) => {
+                if (e.KeyCode == Keys.Enter) { e.SuppressKeyPress = true; debT.Stop(); FilterCat(); }
+                else if (e.KeyCode == Keys.Escape) { e.SuppressKeyPress = true; qSubj.Text = ""; }
+            };
 
-            var cbFilt = Ui.Combo(150, "Active records", "Weeded records", "All records");
+            var btnClear = Ui.Btn("✕ Clear", 1, (s, e) => { q.Text = ""; qSubj.Text = ""; catQ = ""; catSubj = ""; q.Focus(); });
+            btnClear.Margin = Ui.S(new Padding(0, 18, 14, 0));
+            btnClear.Visible = !string.IsNullOrEmpty(catQ) || !string.IsNullOrEmpty(catSubj);
+            Action updateClear = () => { btnClear.Visible = !string.IsNullOrEmpty(q.Text) || !string.IsNullOrEmpty(qSubj.Text); };
+            q.TextChanged += (s, e) => updateClear();
+            qSubj.TextChanged += (s, e) => updateClear();
+
+            var cbFilt = Ui.Combo(140, "Active records", "Weeded records", "All records");
             if (catFilter == "weeded") cbFilt.SelectedIndex = 1;
             else if (catFilter == "all") cbFilt.SelectedIndex = 2;
             else cbFilt.SelectedIndex = 0;
@@ -247,16 +256,17 @@ namespace Errin
                 FilterCat();
             };
 
-            var cbSort = Ui.Combo(175, "Title (A-Z)", "Title (Z-A)", "Author (A-Z)", "Barcode", "Call Number", "Acq. No.", "Newest Added", "Control No.");
+            var cbSort = Ui.Combo(175, "Title (A-Z)", "Title (Z-A)", "Author (A-Z)", "Subject (A-Z)", "Barcode", "Call Number", "Acq. No.", "Newest Added", "Control No.");
             cbSort.SelectedIndex = Math.Min(catSort, cbSort.Items.Count - 1);
             cbSort.SelectedIndexChanged += (s, e) => { catSort = cbSort.SelectedIndex; FilterCat(); };
 
             // Row 1: Search & Filter fields
             var filterRow = Ui.Flow(true);
-            filterRow.Controls.Add(Ui.Field("Search", q, 240));
+            filterRow.Controls.Add(Ui.Field("Search", q, 200));
+            filterRow.Controls.Add(Ui.Field("Subject Heading", qSubj, 180));
             filterRow.Controls.Add(btnClear);
-            filterRow.Controls.Add(Ui.Field("Status", cbFilt, 165));
-            filterRow.Controls.Add(Ui.Field("Sort by", cbSort, 190));
+            filterRow.Controls.Add(Ui.Field("Status", cbFilt, 150));
+            filterRow.Controls.Add(Ui.Field("Sort by", cbSort, 180));
 
             // Row 2: Action buttons with responsive wrapping so buttons are never cut off
             var btnRow = Ui.Flow(true);
@@ -265,6 +275,7 @@ namespace Errin
             btnRow.Controls.Add(Ui.Btn("Batch ISBN lookup", 1, (s, e) => BatchLookupDialog()));
             btnRow.Controls.Add(Ui.Btn("Import MARC", 1, (s, e) => PickImport()));
             btnRow.Controls.Add(Ui.Btn("Z39.50 search", 1, (s, e) => ZDialog()));
+            btnRow.Controls.Add(Ui.Btn("Export Static OPAC", 1, (s, e) => ExportStaticOpacDialog()));
             btnRow.Controls.Add(Ui.Btn("Print labels", 1, (s, e) => PrintShown()));
             btnRow.Controls.Add(Ui.Btn("Print spine labels", 1, (s, e) => PrintSpines()));
 
@@ -302,7 +313,7 @@ namespace Errin
             };
 
             catGrid.CellFormatting += (s, e) => {
-                if (e.RowIndex < 0 || e.ColumnIndex != 6 || e.Value == null) return;
+                if (e.RowIndex < 0 || e.ColumnIndex != 7 || e.Value == null) return;
                 string st = e.Value.ToString();
                 if (st.StartsWith("Available")) { e.CellStyle.ForeColor = Th.Green; e.CellStyle.Font = Th.FB; }
                 else if (st.StartsWith("Due")) { e.CellStyle.ForeColor = Th.Yel; e.CellStyle.Font = Th.FB; }
@@ -310,12 +321,13 @@ namespace Errin
                 else if (st.StartsWith("Weeded")) { e.CellStyle.ForeColor = Th.Mut; }
             };
             catGrid.ColumnHeaderMouseClick += (s, e) => {
-                if (e.ColumnIndex == 0) catSort = 3;
-                else if (e.ColumnIndex == 1) catSort = 7;
-                else if (e.ColumnIndex == 2) catSort = 5;
+                if (e.ColumnIndex == 0) catSort = 4;
+                else if (e.ColumnIndex == 1) catSort = 8;
+                else if (e.ColumnIndex == 2) catSort = 6;
                 else if (e.ColumnIndex == 3) catSort = catSort == 0 ? 1 : 0;
                 else if (e.ColumnIndex == 4) catSort = 2;
-                else if (e.ColumnIndex == 5) catSort = 4;
+                else if (e.ColumnIndex == 5) catSort = 3;
+                else if (e.ColumnIndex == 6) catSort = 5;
                 if (cbSort.SelectedIndex != catSort && catSort < cbSort.Items.Count) cbSort.SelectedIndex = catSort;
                 FilterCat();
             };
@@ -361,6 +373,12 @@ namespace Errin
                 if (catFilter == "weeded" && !isWeeded) continue;
                 if (catFilter == "active" && isWeeded) continue;
 
+                if (!string.IsNullOrEmpty(catSubj))
+                {
+                    if (string.IsNullOrEmpty(it.subject) || it.subject.IndexOf(catSubj, StringComparison.OrdinalIgnoreCase) < 0)
+                        continue;
+                }
+
                 if (tokens != null && !it.MatchesAll(tokens)) continue;
 
                 list.Add(it);
@@ -374,11 +392,15 @@ namespace Errin
                     int c = string.Compare(a.author ?? "", b.author ?? "", StringComparison.OrdinalIgnoreCase);
                     return c != 0 ? c : string.Compare(a.title ?? "", b.title ?? "", StringComparison.OrdinalIgnoreCase);
                 }); break;
-                case 3: list.Sort((a, b) => string.Compare(a.barcode ?? "", b.barcode ?? "", StringComparison.OrdinalIgnoreCase)); break;
-                case 4: list.Sort((a, b) => string.Compare(a.call ?? "", b.call ?? "", StringComparison.OrdinalIgnoreCase)); break;
-                case 5: list.Sort((a, b) => string.Compare(a.acq ?? "", b.acq ?? "", StringComparison.OrdinalIgnoreCase)); break;
-                case 6: list.Reverse(); break;
-                case 7: list.Sort((a, b) => string.Compare(a.ctl ?? "", b.ctl ?? "", StringComparison.OrdinalIgnoreCase)); break;
+                case 3: list.Sort((a, b) => {
+                    int c = string.Compare(a.subject ?? "", b.subject ?? "", StringComparison.OrdinalIgnoreCase);
+                    return c != 0 ? c : string.Compare(a.title ?? "", b.title ?? "", StringComparison.OrdinalIgnoreCase);
+                }); break;
+                case 4: list.Sort((a, b) => string.Compare(a.barcode ?? "", b.barcode ?? "", StringComparison.OrdinalIgnoreCase)); break;
+                case 5: list.Sort((a, b) => string.Compare(a.call ?? "", b.call ?? "", StringComparison.OrdinalIgnoreCase)); break;
+                case 6: list.Sort((a, b) => string.Compare(a.acq ?? "", b.acq ?? "", StringComparison.OrdinalIgnoreCase)); break;
+                case 7: list.Reverse(); break;
+                case 8: list.Sort((a, b) => string.Compare(a.ctl ?? "", b.ctl ?? "", StringComparison.OrdinalIgnoreCase)); break;
                 default: break;
             }
             shown = list;
@@ -414,12 +436,12 @@ namespace Errin
                     else
                         status = "Available";
                 }
-                rows.Add(new[] { it.barcode ?? "", it.ctl ?? "", it.acq ?? "", it.title ?? "", it.author ?? "", it.call ?? "", status });
+                rows.Add(new[] { it.barcode ?? "", it.ctl ?? "", it.acq ?? "", it.title ?? "", it.author ?? "", it.subject ?? "", it.call ?? "", status });
                 tags.Add(it);
             }
 
-            int[] catWeights = new[] { 65, 70, 70, 230, 115, 75, 95 };
-            Ui.Fill(catGrid, new[] { "Barcode", "Control no.", "Acq. no.", "Title", "Author", "Call no.", "Status" }, rows, tags, "No records found", catWeights);
+            int[] catWeights = new[] { 60, 65, 65, 200, 110, 110, 70, 90 };
+            Ui.Fill(catGrid, new[] { "Barcode", "Control no.", "Acq. no.", "Title", "Author", "Subject Heading", "Call no.", "Status" }, rows, tags, "No records found", catWeights);
 
             if (prevSelId != null)
             {
@@ -1544,8 +1566,54 @@ namespace Errin
             };
             var updateBody = Vbox(para("ErrinILS is updated regularly with new features, bug fixes, and security enhancements. Keep your system up to date.", 44), autoUpdCheck, Spacer(6), chkUpdBtn, updStatus);
 
+            var opacLoginCheck = new CheckBox
+            {
+                Text = "Enable Patron Login for OPAC",
+                Checked = db.Set.opacLogin,
+                AutoSize = true,
+                ForeColor = Th.Ink,
+                Font = Th.FB,
+                BackColor = Color.Transparent,
+                Margin = Ui.S(new Padding(0, 4, 0, 4))
+            };
+            opacLoginCheck.CheckedChanged += (sender, e) =>
+            {
+                db.Set.opacLogin = opacLoginCheck.Checked;
+                Save();
+                Toast("OPAC Patron Login " + (db.Set.opacLogin ? "enabled" : "disabled"));
+            };
+
+            var opacBtns = Ui.Flow(false);
+            opacBtns.Margin = Ui.S(new Padding(0, 8, 0, 0));
+            opacBtns.Controls.Add(Ui.Btn("Open OPAC in Browser", 0, (a, b) =>
+            {
+                string scheme = (wsrv != null && wsrv.UseTls) ? "https://" : "http://";
+                int port = wsrv != null ? wsrv.Port : wc.port;
+                try { Process.Start(scheme + "127.0.0.1:" + port + "/opac"); } catch (Exception ex) { Toast("Could not open browser: " + ex.Message); }
+            }));
+            opacBtns.Controls.Add(Ui.Btn("Export Static OPAC (GitHub Pages)", 1, (a, b) => ExportStaticOpacDialog()));
+
+            var opacNote = new Label
+            {
+                UseMnemonic = false,
+                Text = "The OPAC gives students and teachers an online catalog to search books by title, author, and subject headings.\nWhen Patron Login is ON, students can log in using their Student ID or IC number to view their active loans, due dates, fines, history, and place holds on borrowed books.\nReachable on your school network at: http://<computer-ip>:" + wc.port + "/opac",
+                AutoSize = false,
+                Size = new Size(Ui.S(820), Ui.S(54)),
+                ForeColor = Th.Mut
+            };
+
+            var opacBody = Vbox(
+                para("The Online Public Access Catalog (OPAC) allows students, teachers, and visitors to search books, view copy availability, and explore subject headings without needing staff device pairing.", 44),
+                opacLoginCheck,
+                Ui.Lbl("Patron login is OFF by default. When turned on, students and teachers sign in with their Student ID or IC to view their loans, due dates, fines, history, and place book holds.", true),
+                Spacer(4),
+                opacNote,
+                opacBtns
+            );
+
             return ScrollPage(Ui.Heading("Settings", "Policies and data management"), Ui.Card("Policies", polBody), Ui.Card("Student registration fields", reqBody), Ui.Card("Admin password", pwBody),
                 Ui.Card("Remote Access", webBody),
+                Ui.Card("OPAC (Public Catalog)", opacBody),
                 Ui.Card("Software updates", updateBody),
                 Ui.Card("Data retention", para("Student records (with their loan and fine history) are deleted " + Lib.RET_YEARS + " years after their last activity, provided they have no unreturned items or unpaid fines. This happens automatically when ErrinILS starts.", 44)),
                 Ui.Card("Switching systems?", Vbox(para("Export every catalogued item as MARC 21, MARCXML, MarcEdit text, JSON and CSV to move to another ILS. To bring records in, use Import MARC on the Catalog page.", 44), Ui.Btn("Export catalog", 0, (a, b) => ExportDialog()))),
@@ -1613,7 +1681,8 @@ namespace Errin
                 var addrs = wc.bind == "local" ? new List<string> { "127.0.0.1" } : Z.LanAddresses().Concat(new[] { "127.0.0.1" }).ToList();
                 wStatusLabel.ForeColor = Th.Yel;
                 wStatusLabel.Text = "\u25CF Running on " + scheme + (addrs.Count > 0 ? addrs[0] : "127.0.0.1") + ":" + wc.port +
-                    (addrs.Count > 1 ? "  (also " + scheme + string.Join(":" + wc.port + ", " + scheme, addrs.Skip(1).ToArray()) + ":" + wc.port + ")" : "") +
+                    "  \u00B7  OPAC: " + scheme + (addrs.Count > 0 ? addrs[0] : "127.0.0.1") + ":" + wc.port + "/opac" +
+                    (addrs.Count > 1 ? "\n  (also " + scheme + string.Join(":" + wc.port + ", " + scheme, addrs.Skip(1).ToArray()) + ":" + wc.port + ")" : "") +
                     (wsrv.UseTls ? "\n\U0001F512 Encrypted with TLS/SSL: " + CertHelper.GetSummary(wsrv.ServerCert) : "\n\u26A0 Standard HTTP (not encrypted)");
             }
             else { wStatusLabel.ForeColor = Th.Mut; wStatusLabel.Text = "\u25CB Off. Remote access is disabled."; }

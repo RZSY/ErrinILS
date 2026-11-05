@@ -104,11 +104,14 @@ d:/errin/
 - **Batch ISBN Lookup**: High-throughput multi-ISBN copy cataloguing designed for book donations and bulk cataloguing (`BatchLookupDialog`). Supports pasting ISBN lists, scanning barcodes continuously, or loading files, with live multithreaded lookups and bulk catalog additions.
 - **Item Circulation History**: Full historical borrowing lens for any item (`ItemHistoryDialog`), detailing which students borrowed it, loan dates, due dates, return timestamps, and overdue metrics.
 
-### 3.5 Remote Access, QR Code Pairing & Device Pairing (`Web.cs`, `Qr.cs`)
+### 3.5 Remote Access, OPAC & Static Export (`Web.cs`, `Qr.cs`, `Dialogs.cs`)
 - **Device Pairing Model**: Zero-password access control using temporary 6-digit pairing codes (5-minute expiry, 3-attempt lockout) and persistent 32-byte cryptographically secure device tokens (`X-Errin-Token`).
 - **QR Code Generation (`Qr.cs`)**: Pure C# zero-dependency ISO/IEC 18004 QR code generator supporting Versions 1 to 10 with Error Correction Level M, rendering sharp `Bitmap`, `ToPng()`, and `ToSvg()` representations. Used in `PairNewDeviceDialog` for instant mobile connection via camera scanning (auto-filling pairing code), in Settings for sharing remote access links, and exposed via HTTP at `/api/qr` and `/qr.png`.
+- **Online Public Access Catalog (OPAC)**: Public-facing catalog served at `/opac` using the same pure C# HTTP server (`Web.cs`). Matches desktop `MainForm` visual theme (charcoal `#232427`, yellow accents `#f6c61b`, royal blue logo, left-border card styling). Enables searching by title, author, call number, and dedicated **Subject Heading** search, with multi-token keyword filters and subject topic exploration.
+- **OPAC Patron Login**: Optional student login (disabled by default, toggled in Settings `db.Set.opacLogin`). When enabled, students can sign in using their Student ID or Malaysian IC (`no_pengenalan`) to check current loans, due dates, fines, reading history, and place holds on borrowed copies.
+- **Static Hosting / GitHub Pages Export**: Schools can export their OPAC to a standalone bundle (`index.html`, `catalog.json`, `opac-standalone.html`, and `README.md` with step-by-step GitHub Pages instructions) via Settings > "Export Static OPAC (GitHub Pages)". Runs 100% client-side with zero external dependencies and zero backend server required.
 - **Multi-Network / Multi-Wi-Fi Support**: Pure C# HTTP server (`TcpListener`) binding to `0.0.0.0` (all interfaces: Ethernet, Wi-Fi 2.4/5GHz, VLANs, VPNs, and Tailscale mesh). Allows devices on different school Wi-Fi SSIDs/APs, subnets, or remote networks (via Tailscale or Cloudflare Tunnel) to connect seamlessly.
-- **Single Page App (SPA)**: Embedded mobile-friendly web replica covering Dashboard, Circulation, Catalog, Students, Fines, and Reports with instant barcode scanner support.
+- **Single Page App (SPA)**: Embedded mobile-friendly web replica covering Dashboard, Circulation, Catalog (with Subject Heading search), Students, Fines, and Reports with instant barcode scanner support.
 
 ### 3.6 Reports & Circulation Analytics (`MainForm.cs`, `Web.cs`)
 - **Executive Summary & Metrics**: Active copies, active loans, overdue items with percentages, registered students, active reader participation rate, fines assessed/collected/unpaid, and weeded items.
@@ -207,7 +210,7 @@ Requires `mono-mcs`, `mono-devel`, and `nsis`.
 
 ### 4.3 Building NSIS Installer
 ```cmd
-makensis -V2 -DVERSION=1.3.2 ErrinILS-source\installer.nsi
+makensis -V2 -DVERSION=1.3.3 ErrinILS-source\installer.nsi
 ```
 
 ---

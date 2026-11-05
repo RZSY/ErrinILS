@@ -246,6 +246,7 @@ namespace Errin
         public double rate = 0.1;
         public int maxLoans = 3;
         public double block = 5;
+        public bool opacLogin = false;
         public List<ZTarget> zt = new List<ZTarget>();
         public List<string> requiredPatronFields = null;
 
@@ -400,7 +401,7 @@ namespace Errin
             d["loans"] = Loans.Select(l => (object)new Dictionary<string, object> { { "id", l.id }, { "iid", l.iid }, { "pid", l.pid }, { "out", l.@out }, { "due", l.due }, { "ret", l.ret }, { "ren", (double)l.ren } }).ToList();
             d["holds"] = Holds.Select(h => (object)new Dictionary<string, object> { { "id", h.id }, { "iid", h.iid }, { "pid", h.pid }, { "date", h.date }, { "st", h.st } }).ToList();
             d["fines"] = Fines.Select(f => (object)new Dictionary<string, object> { { "id", f.id }, { "pid", f.pid }, { "iid", f.iid }, { "loan", f.loan }, { "days", (double)f.days }, { "amt", f.amt }, { "date", f.date }, { "paid", f.paid } }).ToList();
-            var s = new Dictionary<string, object> { { "school", Set.school }, { "rate", Set.rate }, { "maxLoans", (double)Set.maxLoans }, { "block", Set.block } };
+            var s = new Dictionary<string, object> { { "school", Set.school }, { "rate", Set.rate }, { "maxLoans", (double)Set.maxLoans }, { "block", Set.block }, { "opacLogin", Set.opacLogin } };
             if (Set.requiredPatronFields != null) s["requiredPatronFields"] = Set.requiredPatronFields.Select(x => (object)x).ToList();
             s["zt"] = Set.zt.Select(z => (object)new Dictionary<string, object> { { "n", z.n }, { "host", z.host }, { "port", (double)z.port }, { "db", z.db } }).ToList();
             d["set"] = s;
@@ -444,6 +445,7 @@ namespace Errin
             if (s.ContainsKey("rate")) db.Set.rate = Json.Num(s, "rate");
             if (s.ContainsKey("maxLoans")) db.Set.maxLoans = (int)Json.Num(s, "maxLoans");
             if (s.ContainsKey("block")) db.Set.block = Json.Num(s, "block");
+            if (s.ContainsKey("opacLogin")) db.Set.opacLogin = Json.Bool(s, "opacLogin");
             if (s.ContainsKey("requiredPatronFields")) { db.Set.requiredPatronFields = Json.Arr(s, "requiredPatronFields").Select(x => x != null ? x.ToString() : "").ToList(); }
             foreach (var o in Json.Arr(s, "zt")) { var d = o as Dictionary<string, object>; if (d == null) continue;
                 db.Set.zt.Add(new ZTarget { n = Json.Str(d, "n"), host = Json.Str(d, "host"), port = (int)Json.Num(d, "port"), db = Json.Str(d, "db") }); }

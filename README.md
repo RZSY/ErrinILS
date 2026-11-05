@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/RZSY/ErrinILS/releases"><img src="https://img.shields.io/badge/version-1.3.2-blue.svg?style=flat-square" height="20" alt="Version 1.3.2" /></a>
+  <a href="https://github.com/RZSY/ErrinILS/releases"><img src="https://img.shields.io/badge/version-1.3.3-blue.svg?style=flat-square" height="20" alt="Version 1.3.3" /></a>
   <a href="#system-requirements"><img src="https://img.shields.io/badge/platform-Windows%207%20|%208%20|%2010%20|%2011-0078D6.svg?style=flat-square&logo=windows" height="20" alt="Platform: Windows" /></a>
   <a href="#system-requirements"><img src="https://img.shields.io/badge/runtime-.NET%20Framework%204.0%2B-512BD4.svg?style=flat-square&logo=dotnet" height="20" alt=".NET 4.0+" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg?style=flat-square" height="20" alt="MIT License" /></a>
@@ -92,7 +92,7 @@ It covers everyday school library operations: barcode checkouts and returns, cop
 
 ## Comparison
 
-| Feature / Metric | ErrinILS v1.3.2 | Koha ILS | SLiMS (Senayan) | Excel / Spreadsheets |
+| Feature / Metric | ErrinILS v1.3.3 | Koha ILS | SLiMS (Senayan) | Excel / Spreadsheets |
 | :--- | :--- | :--- | :--- | :--- |
 | **Installation** | Single EXE or NSIS installer | Linux server + Perl modules | Apache + PHP + MySQL stack | Spreadsheet file only |
 | **Dependencies** | 0 (.NET 4.0 runtime only) | Hundreds of CPAN packages | PHP, Apache/Nginx, MariaDB | Office suite |
@@ -173,7 +173,7 @@ flowchart TD
 ## Quick Start
 
 ### Option 1: Windows Installer
-1. Download `ErrinILS-Setup-1.3.2.exe` from [Releases](https://github.com/RZSY/ErrinILS/releases).
+1. Download `ErrinILS-Setup-1.3.3.exe` from [Releases](https://github.com/RZSY/ErrinILS/releases).
 2. Double-click the installer and follow the wizard steps.
    *(If Windows SmartScreen appears, click "More info", then "Run anyway".)*
 3. Open ErrinILS from the Start menu or desktop icon.
@@ -216,6 +216,17 @@ ErrinILS includes a built-in HTTP server (`0.0.0.0:8080`) that allows staff to a
 2. Click **Pair New Device** to display a pairing QR code and 6-digit code.
 3. Scan the QR code using a phone or tablet camera.
 4. The browser opens the mobile web interface and pairs automatically using an authentication token (`X-Errin-Token`).
+
+---
+
+## Online Public Access Catalog (OPAC) & Static Hosting
+
+ErrinILS includes an **OPAC** (Online Public Access Catalog) for students, teachers, and parents:
+
+- **Local Network OPAC**: Reachable by anyone on the school network at `http://<computer-ip>:8080/opac`.
+- **Subject Heading & Multi-Token Search**: Search by title, author, call number, or dedicated **Subject Heading** (Perkara) to explore books by curriculum or topic.
+- **Optional Patron Login**: Can be turned ON in **Settings** → **OPAC & Online Catalog** (`db.Set.opacLogin`, OFF by default). When active, students log in with their Student ID or Malaysian IC (`no_pengenalan`) to check current loans, due dates, fines, reading history, and place holds on borrowed copies.
+- **Static Hosting (e.g. GitHub Pages)**: Schools can export a complete static OPAC bundle by clicking **Export Static OPAC (GitHub Pages)** in Settings. Drag and drop the generated files (`index.html`, `catalog.json`, `opac-standalone.html`, `README.md`) into a free GitHub repository with GitHub Pages enabled to give the entire school community 24/7 web access without needing a server running.
 
 ---
 
@@ -263,7 +274,7 @@ chmod +x build.sh
 ### Windows Installer (NSIS)
 
 ```cmd
-makensis -V2 -DVERSION=1.3.2 ErrinILS-source\installer.nsi
+makensis -V2 -DVERSION=1.3.3 ErrinILS-source\installer.nsi
 ```
 
 ---
@@ -283,7 +294,7 @@ d:/errin/
 │   ├── download.html             # Downloads and checksums
 │   └── assets/                   # Screenshots and PDF manual
 ├── dist/                         # Compiled packages
-│   ├── ErrinILS-Setup-1.3.2.exe  # Windows installer
+│   ├── ErrinILS-Setup-1.3.3.exe  # Windows installer
 │   ├── ErrinILS-Windows.zip      # Portable ZIP archive
 │   └── ErrinILS.exe              # Standalone executable
 └── ErrinILS-source/              # Source code

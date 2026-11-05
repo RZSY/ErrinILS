@@ -541,7 +541,8 @@ namespace Errin
                     max_loans INTEGER,
                     block REAL,
                     zt_json TEXT,
-                    patron_req_json TEXT
+                    patron_req_json TEXT,
+                    opac_login INTEGER DEFAULT 0
                 );
 
                 CREATE TABLE IF NOT EXISTS class_history (
@@ -580,6 +581,7 @@ namespace Errin
                 try { db.Execute("ALTER TABLE patrons ADD COLUMN " + col + " TEXT;"); } catch { }
             }
             try { db.Execute("ALTER TABLE settings ADD COLUMN patron_req_json TEXT;"); } catch { }
+            try { db.Execute("ALTER TABLE settings ADD COLUMN opac_login INTEGER DEFAULT 0;"); } catch { }
             try { db.Execute("ALTER TABLE archived_patrons ADD COLUMN extra_json TEXT;"); } catch { }
         }
 
@@ -723,7 +725,7 @@ namespace Errin
                 }
 
                 // Load settings
-                using (var cmd = sdb.CreateCommand("SELECT school, rate, max_loans, block, zt_json, patron_req_json FROM settings WHERE id = 1;"))
+                using (var cmd = sdb.CreateCommand("SELECT school, rate, max_loans, block, zt_json, patron_req_json, opac_login FROM settings WHERE id = 1;"))
                 {
                     if (cmd.Step())
                     {
@@ -768,6 +770,7 @@ namespace Errin
                             }
                             catch { }
                         }
+                        db.Set.opacLogin = cmd.GetInt(6) != 0;
                     }
                 }
 
@@ -1052,7 +1055,7 @@ namespace Errin
 
                     // Settings
                     sdb.Execute("DELETE FROM settings;");
-                    using (var cmd = sdb.CreateCommand("INSERT INTO settings (id, school, rate, max_loans, block, zt_json, patron_req_json) VALUES (1, ?, ?, ?, ?, ?, ?);"))
+                    using (var cmd = sdb.CreateCommand("INSERT INTO settings (id, school, rate, max_loans, block, zt_json, patron_req_json, opac_login) VALUES (1, ?, ?, ?, ?, ?, ?, ?);"))
                     {
                         cmd.Bind(1, db.Set.school ?? "");
                         cmd.Bind(2, db.Set.rate);
@@ -1071,6 +1074,7 @@ namespace Errin
                         cmd.Bind(5, ztJson);
                         string reqJson = db.Set.requiredPatronFields != null ? Json.Write(db.Set.requiredPatronFields.Select(x => (object)x).ToList()) : "";
                         cmd.Bind(6, reqJson);
+                        cmd.Bind(7, db.Set.opacLogin ? 1 : 0);
                         cmd.ExecuteNonQuery();
                     }
 

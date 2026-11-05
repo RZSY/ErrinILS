@@ -47,11 +47,18 @@ namespace Errin
             }
         }
 
-        public class PairSession
+                public class PairSession
         {
             public string code = "";
             public DateTime expiresAt;
             public int failedAttempts;
+        }
+
+        public class PatronSession
+        {
+            public string token = "";
+            public string patronId = "";
+            public DateTime expiresAt;
         }
 
         public class Server
@@ -67,6 +74,26 @@ namespace Errin
             public List<Device> Devices { get; set; }
             public PairSession ActivePair { get; private set; }
             public Device LastPairedDevice { get; private set; }
+
+            readonly Dictionary<string, PatronSession> patronSessions = new Dictionary<string, PatronSession>(StringComparer.OrdinalIgnoreCase);
+
+            Patron GetPatronFromToken(string token)
+            {
+                if (string.IsNullOrEmpty(token)) return null;
+                string pid = null;
+                lock (syncLock)
+                {
+                    PatronSession sess;
+                    if (patronSessions.TryGetValue(token, out sess) && sess != null)
+                    {
+                        if (DateTime.UtcNow < sess.expiresAt) pid = sess.patronId;
+                        else patronSessions.Remove(token);
+                    }
+                }
+                if (pid == null) return null;
+                var db = GetDb != null ? GetDb() : null;
+                return db != null ? db.Patrons.FirstOrDefault(p => p.id == pid) : null;
+            }
 
             public Func<Db> GetDb;
             public Func<Lib> GetLib;
@@ -245,6 +272,19 @@ namespace Errin
                             SendHtml(stream, HtmlPage);
                             return;
                         }
+                        if (path == "/opac" || path == "/opac/" || path == "/opac/index.html" || path == "/opac.html")
+                        {
+                            var db = GetDb != null ? GetDb() : null;
+                            string school = (db != null && db.Set != null) ? (db.Set.school ?? "") : "";
+                            bool opacLogin = (db != null && db.Set != null) && db.Set.opacLogin;
+                            SendHtml(stream, BuildOpacHtml(null, school, opacLogin));
+                            return;
+                        }
+                        if (path == "/catalog.json" || path == "/opac/catalog.json")
+                        {
+                            HandleOpacCatalogJson(stream);
+                            return;
+                        }
                         if (path == "/favicon.ico")
                         {
                             SendResponse(stream, "204 No Content", "text/plain", new byte[0]);
@@ -292,6 +332,48 @@ namespace Errin
                 if (path == "/api/pair" && method == "POST")
                 {
                     HandlePair(stream, body);
+                    return;
+                }
+
+                // Public OPAC API endpoints (no staff device token required)
+                if (path == "/api/opac/info")
+                {
+                    HandleOpacInfo(stream);
+                    return;
+                }
+                if (path == "/api/opac/search")
+                {
+                    HandleOpacSearch(stream, query);
+                    return;
+                }
+                if (path == "/api/opac/subjects")
+                {
+                    HandleOpacSubjects(stream);
+                    return;
+                }
+                if (path == "/api/opac/catalog.json")
+                {
+                    HandleOpacCatalogJson(stream);
+                    return;
+                }
+                if (path == "/api/opac/login" && method == "POST")
+                {
+                    HandleOpacLogin(stream, body);
+                    return;
+                }
+                if (path == "/api/opac/account")
+                {
+                    HandleOpacAccount(stream, headers, query);
+                    return;
+                }
+                if (path == "/api/opac/hold" && method == "POST")
+                {
+                    HandleOpacHold(stream, headers, query, body);
+                    return;
+                }
+                if (path == "/api/opac/cancel-hold" && method == "POST")
+                {
+                    HandleOpacCancelHold(stream, headers, query, body);
                     return;
                 }
 
@@ -552,6 +634,7 @@ namespace Errin
             void HandleGetItems(Stream stream, Dictionary<string, string> query)
             {
                 string q = (query.ContainsKey("q") ? query["q"] : "").Trim().ToLowerInvariant();
+                string subj = (query.ContainsKey("subject") ? query["subject"] : "").Trim().ToLowerInvariant();
                 string status = (query.ContainsKey("status") ? query["status"] : "active").ToLowerInvariant();
                 string sort = (query.ContainsKey("sort") ? query["sort"] : "title").ToLowerInvariant();
                 int limit = 150;
@@ -581,10 +664,16 @@ namespace Errin
                             (i.subject != null && i.subject.ToLowerInvariant().Contains(q)));
                     }
 
+                    if (!string.IsNullOrEmpty(subj))
+                    {
+                        items = items.Where(i => i.subject != null && i.subject.ToLowerInvariant().Contains(subj));
+                    }
+
                     switch (sort)
                     {
                         case "title_desc": items = items.OrderByDescending(i => i.title ?? "", StringComparer.OrdinalIgnoreCase); break;
                         case "author": items = items.OrderBy(i => i.author ?? "", StringComparer.OrdinalIgnoreCase).ThenBy(i => i.title ?? "", StringComparer.OrdinalIgnoreCase); break;
+                        case "subject": items = items.OrderBy(i => i.subject ?? "", StringComparer.OrdinalIgnoreCase).ThenBy(i => i.title ?? "", StringComparer.OrdinalIgnoreCase); break;
                         case "barcode": items = items.OrderBy(i => i.barcode ?? "", StringComparer.OrdinalIgnoreCase); break;
                         case "call": items = items.OrderBy(i => i.call ?? "", StringComparer.OrdinalIgnoreCase); break;
                         case "newest": items = items.Reverse(); break;
@@ -1451,6 +1540,505 @@ namespace Errin
                 return d;
             }
 
+
+            void HandleOpacInfo(Stream stream)
+            {
+                var db = GetDb != null ? GetDb() : null;
+                string school = (db != null && db.Set != null) ? (db.Set.school ?? "") : "";
+                int activeCount = 0;
+                if (db != null)
+                {
+                    for (int i = 0; i < db.Items.Count; i++)
+                    {
+                        if (string.IsNullOrEmpty(db.Items[i].weeded)) activeCount++;
+                    }
+                }
+                bool opacLogin = (db != null && db.Set != null) && db.Set.opacLogin;
+                SendJson(stream, 200, new Dictionary<string, object>
+                {
+                    { "ok", true },
+                    { "school", school },
+                    { "totalTitles", (double)activeCount },
+                    { "opacLogin", opacLogin }
+                });
+            }
+
+            void HandleOpacSearch(Stream stream, Dictionary<string, string> query)
+            {
+                var db = GetDb != null ? GetDb() : null;
+                if (db == null)
+                {
+                    SendJson(stream, 200, new Dictionary<string, object> { { "ok", true }, { "total", (double)0 }, { "items", new List<object>() } });
+                    return;
+                }
+
+                string q = query.ContainsKey("q") ? query["q"].Trim() : "";
+                string subj = query.ContainsKey("subject") ? query["subject"].Trim() : "";
+                string field = query.ContainsKey("field") ? query["field"].Trim().ToLowerInvariant() : "all";
+                bool availOnly = query.ContainsKey("avail") && (query["avail"] == "1" || string.Equals(query["avail"], "true", StringComparison.OrdinalIgnoreCase));
+                string sort = query.ContainsKey("sort") ? query["sort"].Trim().ToLowerInvariant() : "title_asc";
+
+                var activeLoans = new Dictionary<string, Loan>(StringComparer.Ordinal);
+                var holdsCount = new Dictionary<string, int>(StringComparer.Ordinal);
+                for (int i = 0; i < db.Loans.Count; i++)
+                {
+                    var l = db.Loans[i];
+                    if (l.ret == null && !string.IsNullOrEmpty(l.iid)) activeLoans[l.iid] = l;
+                }
+                for (int i = 0; i < db.Holds.Count; i++)
+                {
+                    var h = db.Holds[i];
+                    if (h.st == "waiting" && !string.IsNullOrEmpty(h.iid))
+                    {
+                        int c = 0; holdsCount.TryGetValue(h.iid, out c); holdsCount[h.iid] = c + 1;
+                    }
+                }
+
+                string[] tokens = string.IsNullOrEmpty(q) ? null : q.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+                var list = new List<Item>();
+                for (int i = 0; i < db.Items.Count; i++)
+                {
+                    var it = db.Items[i];
+                    if (!string.IsNullOrEmpty(it.weeded)) continue;
+
+                    bool isLoaned = activeLoans.ContainsKey(it.id);
+                    if (availOnly && isLoaned) continue;
+
+                    if (!string.IsNullOrEmpty(subj))
+                    {
+                        if (string.IsNullOrEmpty(it.subject) || it.subject.IndexOf(subj, StringComparison.OrdinalIgnoreCase) < 0)
+                            continue;
+                    }
+
+                    if (tokens != null && tokens.Length > 0)
+                    {
+                        if (field == "title")
+                        {
+                            bool match = true;
+                            for (int t = 0; t < tokens.Length; t++)
+                                if ((it.title ?? "").IndexOf(tokens[t], StringComparison.OrdinalIgnoreCase) < 0) { match = false; break; }
+                            if (!match) continue;
+                        }
+                        else if (field == "author")
+                        {
+                            bool match = true;
+                            for (int t = 0; t < tokens.Length; t++)
+                                if ((it.author ?? "").IndexOf(tokens[t], StringComparison.OrdinalIgnoreCase) < 0) { match = false; break; }
+                            if (!match) continue;
+                        }
+                        else if (field == "subject")
+                        {
+                            bool match = true;
+                            for (int t = 0; t < tokens.Length; t++)
+                                if ((it.subject ?? "").IndexOf(tokens[t], StringComparison.OrdinalIgnoreCase) < 0) { match = false; break; }
+                            if (!match) continue;
+                        }
+                        else if (field == "call")
+                        {
+                            bool match = true;
+                            for (int t = 0; t < tokens.Length; t++)
+                                if ((it.call ?? "").IndexOf(tokens[t], StringComparison.OrdinalIgnoreCase) < 0) { match = false; break; }
+                            if (!match) continue;
+                        }
+                        else if (field == "barcode" || field == "isbn")
+                        {
+                            bool match = true;
+                            for (int t = 0; t < tokens.Length; t++)
+                            {
+                                bool bMatch = (it.barcode ?? "").IndexOf(tokens[t], StringComparison.OrdinalIgnoreCase) >= 0;
+                                bool iMatch = (it.isbn ?? "").IndexOf(tokens[t], StringComparison.OrdinalIgnoreCase) >= 0;
+                                if (!bMatch && !iMatch) { match = false; break; }
+                            }
+                            if (!match) continue;
+                        }
+                        else
+                        {
+                            if (!it.MatchesAll(tokens)) continue;
+                        }
+                    }
+
+                    list.Add(it);
+                }
+
+                switch (sort)
+                {
+                    case "title_desc":
+                        list.Sort((a, b) => string.Compare(b.title ?? "", a.title ?? "", StringComparison.OrdinalIgnoreCase));
+                        break;
+                    case "author_asc":
+                        list.Sort((a, b) => {
+                            int c = string.Compare(a.author ?? "", b.author ?? "", StringComparison.OrdinalIgnoreCase);
+                            return c != 0 ? c : string.Compare(a.title ?? "", b.title ?? "", StringComparison.OrdinalIgnoreCase);
+                        });
+                        break;
+                    case "subject_asc":
+                        list.Sort((a, b) => {
+                            int c = string.Compare(a.subject ?? "", b.subject ?? "", StringComparison.OrdinalIgnoreCase);
+                            return c != 0 ? c : string.Compare(a.title ?? "", b.title ?? "", StringComparison.OrdinalIgnoreCase);
+                        });
+                        break;
+                    case "call_asc":
+                        list.Sort((a, b) => string.Compare(a.call ?? "", b.call ?? "", StringComparison.OrdinalIgnoreCase));
+                        break;
+                    case "newest":
+                        list.Reverse();
+                        break;
+                    case "title_asc":
+                    default:
+                        list.Sort((a, b) => string.Compare(a.title ?? "", b.title ?? "", StringComparison.OrdinalIgnoreCase));
+                        break;
+                }
+
+                var itemsJson = new List<object>();
+                for (int i = 0; i < list.Count; i++)
+                {
+                    var it = list[i];
+                    Loan l = null;
+                    activeLoans.TryGetValue(it.id, out l);
+                    int hc = 0;
+                    holdsCount.TryGetValue(it.id, out hc);
+
+                    var d = new Dictionary<string, object>();
+                    d["id"] = it.id;
+                    d["barcode"] = it.barcode ?? "";
+                    d["ctl"] = it.ctl ?? "";
+                    d["acq"] = it.acq ?? "";
+                    d["title"] = it.title ?? "";
+                    d["sub"] = it.sub ?? "";
+                    d["author"] = it.author ?? "";
+                    d["isbn"] = it.isbn ?? "";
+                    d["publisher"] = it.publisher ?? "";
+                    d["place"] = it.place ?? "";
+                    d["year"] = it.year ?? "";
+                    d["pages"] = it.pages ?? "";
+                    d["subject"] = it.subject ?? "";
+                    d["call"] = it.call ?? "";
+                    d["available"] = l == null;
+                    d["due"] = l != null ? l.due : "";
+                    d["holds"] = (double)hc;
+                    itemsJson.Add(d);
+                }
+
+                SendJson(stream, 200, new Dictionary<string, object>
+                {
+                    { "ok", true },
+                    { "total", (double)itemsJson.Count },
+                    { "items", itemsJson }
+                });
+            }
+
+            void HandleOpacSubjects(Stream stream)
+            {
+                var db = GetDb != null ? GetDb() : null;
+                if (db == null)
+                {
+                    SendJson(stream, 200, new List<object>());
+                    return;
+                }
+                var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                for (int i = 0; i < db.Items.Count; i++)
+                {
+                    var it = db.Items[i];
+                    if (!string.IsNullOrEmpty(it.weeded)) continue;
+                    if (string.IsNullOrEmpty(it.subject)) continue;
+                    var parts = it.subject.Split(new[] { ';', ',', '|', '/' }, StringSplitOptions.RemoveEmptyEntries);
+                    for (int p = 0; p < parts.Length; p++)
+                    {
+                        string s = parts[p].Trim();
+                        if (s.Length >= 2)
+                        {
+                            int c = 0; counts.TryGetValue(s, out c); counts[s] = c + 1;
+                        }
+                    }
+                }
+                var list = counts.OrderByDescending(kv => kv.Value).Take(50).Select(kv => (object)new Dictionary<string, object>
+                {
+                    { "name", kv.Key },
+                    { "count", (double)kv.Value }
+                }).ToList();
+
+                SendJson(stream, 200, list);
+            }
+
+            void HandleOpacCatalogJson(Stream stream)
+            {
+                var db = GetDb != null ? GetDb() : null;
+                string json = ExportOpacCatalogJson(db);
+                SendResponse(stream, "200 OK", "application/json; charset=utf-8", Encoding.UTF8.GetBytes(json));
+            }
+
+            void HandleOpacLogin(Stream stream, string body)
+            {
+                var db = GetDb != null ? GetDb() : null;
+                if (db == null)
+                {
+                    SendJson(stream, 500, new Dictionary<string, object> { { "ok", false }, { "error", "Database unavailable" } });
+                    return;
+                }
+
+                if (!db.Set.opacLogin)
+                {
+                    SendJson(stream, 403, new Dictionary<string, object> { { "ok", false }, { "error", "Patron login is not enabled on this OPAC." } });
+                    return;
+                }
+
+                var json = Json.Parse(body) as Dictionary<string, object>;
+                string idInput = json != null ? Json.Str(json, "id").Trim() : "";
+                if (string.IsNullOrEmpty(idInput))
+                {
+                    SendJson(stream, 400, new Dictionary<string, object> { { "ok", false }, { "error", "Please enter your Student ID or IC Number." } });
+                    return;
+                }
+
+                string normId = Lib.NormIc(idInput);
+                Patron patron = null;
+                for (int i = 0; i < db.Patrons.Count; i++)
+                {
+                    var p = db.Patrons[i];
+                    if (string.Equals(p.id, idInput, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(p.no_pengenalan, idInput, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(p.id_murid, idInput, StringComparison.OrdinalIgnoreCase) ||
+                        (!string.IsNullOrEmpty(normId) && (string.Equals(Lib.NormIc(p.id), normId, StringComparison.OrdinalIgnoreCase) ||
+                                                           string.Equals(Lib.NormIc(p.no_pengenalan), normId, StringComparison.OrdinalIgnoreCase))))
+                    {
+                        patron = p;
+                        break;
+                    }
+                }
+
+                if (patron == null)
+                {
+                    SendJson(stream, 404, new Dictionary<string, object> { { "ok", false }, { "error", "Student ID or IC Number not found in library records." } });
+                    return;
+                }
+
+                string token = "pat-" + Guid.NewGuid().ToString("N");
+                lock (syncLock)
+                {
+                    patronSessions[token] = new PatronSession
+                    {
+                        token = token,
+                        patronId = patron.id,
+                        expiresAt = DateTime.UtcNow.AddHours(24)
+                    };
+                }
+
+                SendJson(stream, 200, new Dictionary<string, object>
+                {
+                    { "ok", true },
+                    { "token", token },
+                    { "patron", new Dictionary<string, object>
+                        {
+                            { "id", patron.id },
+                            { "name", patron.name ?? "" },
+                            { "cls", patron.cls ?? "" },
+                            { "reg", patron.reg ?? "" }
+                        }
+                    }
+                });
+            }
+
+            void HandleOpacAccount(Stream stream, Dictionary<string, string> headers, Dictionary<string, string> query)
+            {
+                string token = "";
+                if (headers.ContainsKey("X-Errin-Patron-Token")) token = headers["X-Errin-Patron-Token"];
+                else if (query.ContainsKey("patronToken")) token = query["patronToken"];
+
+                var patron = GetPatronFromToken(token);
+                if (patron == null)
+                {
+                    SendJson(stream, 401, new Dictionary<string, object> { { "ok", false }, { "error", "Unauthorized. Please log in." } });
+                    return;
+                }
+
+                var db = GetDb != null ? GetDb() : null;
+                var lib = GetLib != null ? GetLib() : null;
+                if (db == null || lib == null)
+                {
+                    SendJson(stream, 500, new Dictionary<string, object> { { "ok", false }, { "error", "Database unavailable" } });
+                    return;
+                }
+
+                var itemMap = db.Items.ToDictionary(i => i.id, StringComparer.Ordinal);
+                string today = Lib.Today();
+
+                // Active loans
+                var loansJson = new List<object>();
+                for (int i = 0; i < db.Loans.Count; i++)
+                {
+                    var l = db.Loans[i];
+                    if (l.pid == patron.id && l.ret == null)
+                    {
+                        Item it = null; itemMap.TryGetValue(l.iid, out it);
+                        bool overdue = string.CompareOrdinal(today, l.due) > 0;
+                        int late = overdue ? Lib.Diff(today, l.due) : 0;
+                        double fine = late * (db.Set != null ? db.Set.rate : 0.1);
+                        loansJson.Add(new Dictionary<string, object>
+                        {
+                            { "id", l.id },
+                            { "barcode", it != null ? it.barcode : "" },
+                            { "title", it != null ? it.title : "Unknown" },
+                            { "author", it != null ? it.author : "" },
+                            { "out", l.@out },
+                            { "due", l.due },
+                            { "daysLate", (double)late },
+                            { "overdue", overdue },
+                            { "fine", fine }
+                        });
+                    }
+                }
+
+                // Returned loan history (last 20)
+                var historyJson = new List<object>();
+                for (int i = db.Loans.Count - 1; i >= 0 && historyJson.Count < 20; i--)
+                {
+                    var l = db.Loans[i];
+                    if (l.pid == patron.id && l.ret != null)
+                    {
+                        Item it = null; itemMap.TryGetValue(l.iid, out it);
+                        historyJson.Add(new Dictionary<string, object>
+                        {
+                            { "id", l.id },
+                            { "barcode", it != null ? it.barcode : "" },
+                            { "title", it != null ? it.title : "Unknown" },
+                            { "out", l.@out },
+                            { "ret", l.ret }
+                        });
+                    }
+                }
+
+                // Fines
+                var finesJson = new List<object>();
+                double totalUnpaidFines = 0;
+                for (int i = 0; i < db.Fines.Count; i++)
+                {
+                    var f = db.Fines[i];
+                    if (f.pid == patron.id)
+                    {
+                        Item it = null; itemMap.TryGetValue(f.iid, out it);
+                        bool isPaid = !string.IsNullOrEmpty(f.paid);
+                        if (!isPaid) totalUnpaidFines += f.amt;
+                        finesJson.Add(new Dictionary<string, object>
+                        {
+                            { "id", f.id },
+                            { "title", it != null ? it.title : "Library Fine" },
+                            { "amt", f.amt },
+                            { "paid", isPaid },
+                            { "date", f.date }
+                        });
+                    }
+                }
+
+                // Holds
+                var holdsJson = new List<object>();
+                for (int i = 0; i < db.Holds.Count; i++)
+                {
+                    var h = db.Holds[i];
+                    if (h.pid == patron.id)
+                    {
+                        Item it = null; itemMap.TryGetValue(h.iid, out it);
+                        holdsJson.Add(new Dictionary<string, object>
+                        {
+                            { "id", h.id },
+                            { "barcode", it != null ? it.barcode : "" },
+                            { "title", it != null ? it.title : "Reserved Item" },
+                            { "date", h.date },
+                            { "st", h.st }
+                        });
+                    }
+                }
+
+                SendJson(stream, 200, new Dictionary<string, object>
+                {
+                    { "ok", true },
+                    { "patron", new Dictionary<string, object>
+                        {
+                            { "id", patron.id },
+                            { "name", patron.name ?? "" },
+                            { "cls", patron.cls ?? "" },
+                            { "reg", patron.reg ?? "" },
+                            { "unpaidFines", totalUnpaidFines }
+                        }
+                    },
+                    { "loans", loansJson },
+                    { "history", historyJson },
+                    { "fines", finesJson },
+                    { "holds", holdsJson }
+                });
+            }
+
+            void HandleOpacHold(Stream stream, Dictionary<string, string> headers, Dictionary<string, string> query, string body)
+            {
+                string token = "";
+                if (headers.ContainsKey("X-Errin-Patron-Token")) token = headers["X-Errin-Patron-Token"];
+                else if (query.ContainsKey("patronToken")) token = query["patronToken"];
+
+                var patron = GetPatronFromToken(token);
+                if (patron == null)
+                {
+                    SendJson(stream, 401, new Dictionary<string, object> { { "ok", false }, { "error", "Unauthorized. Please log in to reserve books." } });
+                    return;
+                }
+
+                var db = GetDb != null ? GetDb() : null;
+                var lib = GetLib != null ? GetLib() : null;
+                if (db == null || lib == null)
+                {
+                    SendJson(stream, 500, new Dictionary<string, object> { { "ok", false }, { "error", "Database unavailable" } });
+                    return;
+                }
+
+                var json = Json.Parse(body) as Dictionary<string, object>;
+                string barcode = json != null ? Json.Str(json, "barcode").Trim() : "";
+
+                string msg = null;
+                string err = null;
+                ExecuteOnUi(() =>
+                {
+                    err = lib.PlaceHold(patron.id, barcode, out msg);
+                    if (err == null && OnRemoteWrite != null) OnRemoteWrite(msg);
+                });
+
+                if (err != null) SendJson(stream, 400, new Dictionary<string, object> { { "ok", false }, { "error", err } });
+                else SendJson(stream, 200, new Dictionary<string, object> { { "ok", true }, { "message", msg ?? "Hold placed." } });
+            }
+
+            void HandleOpacCancelHold(Stream stream, Dictionary<string, string> headers, Dictionary<string, string> query, string body)
+            {
+                string token = "";
+                if (headers.ContainsKey("X-Errin-Patron-Token")) token = headers["X-Errin-Patron-Token"];
+                else if (query.ContainsKey("patronToken")) token = query["patronToken"];
+
+                var patron = GetPatronFromToken(token);
+                if (patron == null)
+                {
+                    SendJson(stream, 401, new Dictionary<string, object> { { "ok", false }, { "error", "Unauthorized." } });
+                    return;
+                }
+
+                var db = GetDb != null ? GetDb() : null;
+                if (db == null)
+                {
+                    SendJson(stream, 500, new Dictionary<string, object> { { "ok", false }, { "error", "Database unavailable" } });
+                    return;
+                }
+
+                var json = Json.Parse(body) as Dictionary<string, object>;
+                string holdId = json != null ? Json.Str(json, "holdId").Trim() : "";
+                bool found = false;
+
+                ExecuteOnUi(() =>
+                {
+                    int rem = db.Holds.RemoveAll(h => h.id == holdId && h.pid == patron.id);
+                    found = rem > 0;
+                    if (found && OnRemoteWrite != null) OnRemoteWrite("OPAC Hold cancelled");
+                });
+
+                if (!found) SendJson(stream, 404, new Dictionary<string, object> { { "ok", false }, { "error", "Hold not found or not owned by you." } });
+                else SendJson(stream, 200, new Dictionary<string, object> { { "ok", true } });
+            }
+
             static int FindPattern(byte[] src, byte[] pattern)
             {
                 int max = src.Length - pattern.Length;
@@ -1467,7 +2055,88 @@ namespace Errin
             }
         }
 
-        public static Server StartServer(
+
+        public static string ExportOpacCatalogJson(Db db)
+        {
+            if (db == null) return "[]";
+            var activeLoans = new Dictionary<string, Loan>(StringComparer.Ordinal);
+            for (int i = 0; i < db.Loans.Count; i++)
+            {
+                var l = db.Loans[i];
+                if (l.ret == null && !string.IsNullOrEmpty(l.iid)) activeLoans[l.iid] = l;
+            }
+            var holdsCount = new Dictionary<string, int>(StringComparer.Ordinal);
+            for (int i = 0; i < db.Holds.Count; i++)
+            {
+                var h = db.Holds[i];
+                if (h.st == "waiting" && !string.IsNullOrEmpty(h.iid))
+                {
+                    int c = 0; holdsCount.TryGetValue(h.iid, out c); holdsCount[h.iid] = c + 1;
+                }
+            }
+
+            var list = new List<object>();
+            for (int i = 0; i < db.Items.Count; i++)
+            {
+                var it = db.Items[i];
+                if (!string.IsNullOrEmpty(it.weeded)) continue;
+
+                Loan l = null;
+                activeLoans.TryGetValue(it.id, out l);
+                int hc = 0;
+                holdsCount.TryGetValue(it.id, out hc);
+
+                var d = new Dictionary<string, object>();
+                d["id"] = it.id;
+                d["barcode"] = it.barcode ?? "";
+                d["ctl"] = it.ctl ?? "";
+                d["acq"] = it.acq ?? "";
+                d["title"] = it.title ?? "";
+                d["sub"] = it.sub ?? "";
+                d["author"] = it.author ?? "";
+                d["isbn"] = it.isbn ?? "";
+                d["publisher"] = it.publisher ?? "";
+                d["place"] = it.place ?? "";
+                d["year"] = it.year ?? "";
+                d["pages"] = it.pages ?? "";
+                d["subject"] = it.subject ?? "";
+                d["call"] = it.call ?? "";
+                d["available"] = l == null;
+                d["due"] = l != null ? l.due : "";
+                d["holds"] = (double)hc;
+                list.Add(d);
+            }
+            return Json.Write(list);
+        }
+
+        static string EscapeHtml(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return "";
+            return s.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\"", "&quot;");
+        }
+
+        public static string BuildOpacHtml(string embeddedJson = null, string school = null, bool opacLogin = false)
+        {
+            string html = OpacHtmlTemplate;
+            string title = !string.IsNullOrEmpty(school) ? school + " - OPAC" : "ErrinILS Library OPAC";
+            html = html.Replace("__TITLE__", EscapeHtml(title));
+            html = html.Replace("__SCHOOL_NAME__", EscapeHtml(!string.IsNullOrEmpty(school) ? school : "School Library"));
+
+            var configScript = new StringBuilder();
+            configScript.AppendLine("<script>");
+            configScript.AppendLine("window.__SCHOOL_NAME__ = " + Json.Quote(school ?? "") + ";");
+            configScript.AppendLine("window.__OPAC_LOGIN_ENABLED__ = " + (opacLogin ? "true" : "false") + ";");
+            if (!string.IsNullOrEmpty(embeddedJson))
+            {
+                configScript.AppendLine("window.__CATALOG_DATA__ = " + embeddedJson + ";");
+            }
+            configScript.AppendLine("</script>");
+
+            html = html.Replace("<!--__CONFIG_SCRIPT__-->", configScript.ToString());
+            return html;
+        }
+
+                public static Server StartServer(
             int port,
             bool localOnly,
             List<Device> devices,
@@ -1496,6 +2165,1041 @@ namespace Errin
         }
 
         // Single-Page Web Application: HTML, CSS, JavaScript in a single self-contained string
+        public const string OpacHtmlTemplate = @"<!DOCTYPE html>
+<html lang=""en"">
+<head>
+<meta charset=""utf-8"">
+<meta name=""viewport"" content=""width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"">
+<title>__TITLE__</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, ""Segoe UI"", Roboto, Helvetica, Arial, sans-serif; background: #232427; color: #f1efe8; line-height: 1.4; -webkit-font-smoothing: antialiased; padding-bottom: 70px; }
+button, input, select, textarea { font-family: inherit; font-size: 15px; }
+a { color: #f6c61b; text-decoration: none; }
+
+/* Top Header */
+.top-header { background: #232427; border-bottom: 2px solid #33343a; display: flex; align-items: stretch; justify-content: space-between; height: 62px; position: sticky; top: 0; z-index: 100; }
+.logo-box { background: #2f6bff; padding: 8px 20px; display: flex; flex-direction: column; justify-content: center; min-width: 170px; cursor: pointer; }
+.logo-title { font-size: 26px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; line-height: 1; }
+.logo-sub { font-size: 11px; color: rgba(255,255,255,0.85); font-weight: 600; margin-top: 2px; }
+.header-right { display: flex; align-items: center; gap: 10px; padding-right: 16px; flex-wrap: wrap; }
+.mode-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #9a9a94; background: #1c1d20; padding: 5px 10px; border-radius: 4px; border: 1px solid #38393e; }
+.dot-green { width: 8px; height: 8px; border-radius: 50%; background: #2fb36b; display: inline-block; }
+.dot-yel { width: 8px; height: 8px; border-radius: 50%; background: #f6c61b; display: inline-block; }
+
+/* Container & Cards */
+.container { max-width: 1100px; margin: 0 auto; padding: 22px 16px; }
+.page-heading { font-size: 26px; font-weight: 800; color: #f1efe8; margin-bottom: 4px; }
+.page-heading span { color: #f6c61b; }
+.page-sub { font-size: 14px; color: #9a9a94; margin-bottom: 20px; }
+
+.card { background: #2c2d31; border: 1px solid #44454a; border-left: 3px solid #f6c61b; border-radius: 6px; padding: 18px; margin-bottom: 18px; box-shadow: 0 2px 6px rgba(0,0,0,0.25); }
+.card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.card-title { font-size: 16px; font-weight: 700; color: #f1efe8; }
+
+/* Search Inputs & Field Group */
+.search-bar-wrap { display: flex; gap: 8px; margin-bottom: 12px; }
+.search-input { flex: 1; background: #1b1b1b; border: 1px solid #52545c; color: #f1efe8; padding: 12px 14px; border-radius: 6px; font-size: 16px; outline: none; }
+.search-input:focus { border-color: #f6c61b; }
+.btn-clear { background: #44454a; color: #f1efe8; border: none; padding: 0 16px; border-radius: 6px; cursor: pointer; font-weight: 600; display: none; }
+.btn-clear:hover { background: #52545c; }
+
+/* Search Field Selector Pills */
+.field-pills { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+.field-pill { background: #232427; border: 1px solid #44454a; color: #9a9a94; padding: 5px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+.field-pill:hover { color: #f1efe8; border-color: #52545c; }
+.field-pill.active { background: #f6c61b; color: #1b1b1b; border-color: #f6c61b; }
+
+/* Filter Controls Row */
+.filter-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; border-top: 1px solid #38393e; padding-top: 14px; }
+.select-filter { background: #1b1b1b; border: 1px solid #52545c; color: #f1efe8; padding: 8px 12px; border-radius: 6px; font-size: 13px; outline: none; }
+.select-filter:focus { border-color: #f6c61b; }
+.filter-label { font-size: 12px; font-weight: 600; color: #9a9a94; text-transform: uppercase; margin-right: 4px; }
+
+/* Subject discovery tags */
+.subjects-wrap { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; max-height: 140px; overflow-y: auto; }
+.subject-tag { background: #232427; border: 1px solid #44454a; color: #f1efe8; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; display: inline-flex; align-items: center; gap: 6px; }
+.subject-tag:hover { background: #38393e; border-color: #f6c61b; color: #f6c61b; }
+.subject-tag.active { background: #f6c61b; color: #1b1b1b; border-color: #f6c61b; }
+.subject-count { background: rgba(0,0,0,0.3); padding: 1px 6px; border-radius: 10px; font-size: 11px; }
+
+/* Results Header Bar */
+.results-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+.results-count { font-size: 14px; font-weight: 600; color: #9a9a94; }
+.results-count strong { color: #f1efe8; }
+.active-filters { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.filter-pill { background: #1c1d20; border: 1px solid #f6c61b; color: #f6c61b; padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.filter-pill:hover { background: #f6c61b; color: #1b1b1b; }
+.view-btns { display: flex; gap: 4px; }
+.view-btn { background: #2c2d31; border: 1px solid #44454a; color: #9a9a94; padding: 6px 12px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer; }
+.view-btn.active { background: #f6c61b; color: #1b1b1b; border-color: #f6c61b; }
+
+/* Grid view book cards */
+.books-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; margin-bottom: 24px; }
+.book-card { background: #2c2d31; border: 1px solid #44454a; border-left: 3px solid #2f6bff; border-radius: 6px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.1s, border-color 0.15s; }
+.book-card:hover { border-color: #52545c; transform: translateY(-2px); }
+.book-title { font-size: 16px; font-weight: 700; color: #f1efe8; margin-bottom: 4px; line-height: 1.3; cursor: pointer; }
+.book-title:hover { color: #f6c61b; }
+.book-sub { font-size: 12px; color: #9a9a94; margin-bottom: 6px; }
+.book-author { font-size: 13px; font-weight: 600; color: #f6c61b; margin-bottom: 10px; }
+.book-subjects { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 12px; }
+.book-subject-pill { background: #232427; border: 1px solid #44454a; color: #9a9a94; padding: 2px 7px; border-radius: 4px; font-size: 11px; cursor: pointer; }
+.book-subject-pill:hover { border-color: #f6c61b; color: #f6c61b; }
+.book-meta { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid #38393e; font-size: 12px; }
+.call-badge { background: #1c1d20; border: 1px solid #44454a; color: #f1efe8; padding: 3px 8px; border-radius: 4px; font-family: Consolas, monospace; font-size: 11px; font-weight: 700; }
+
+/* Badges */
+.badge { display: inline-block; padding: 4px 9px; border-radius: 4px; font-size: 11px; font-weight: 700; letter-spacing: 0.3px; }
+.badge-ok { background: #153c20; color: #4ade80; border: 1px solid #22c55e; }
+.badge-warn { background: #453512; color: #fde047; border: 1px solid #eab308; }
+.badge-err { background: #4a1d1d; color: #fca5a5; border: 1px solid #ef4444; }
+.badge-dim { background: #33343a; color: #b0b0a8; border: 1px solid #52545c; }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; justify-content: center; padding: 8px 14px; border-radius: 4px; font-weight: 600; font-size: 13px; cursor: pointer; border: none; transition: background 0.15s; }
+.btn-primary { background: #f6c61b; color: #1b1b1b; }
+.btn-primary:hover { background: #ffd84a; }
+.btn-sec { background: #2c2d31; border: 1px solid #52545c; color: #f1efe8; }
+.btn-sec:hover { background: #38393e; }
+.btn-danger { background: #e8392f; color: #ffffff; }
+.btn-sm { padding: 4px 8px; font-size: 11px; border-radius: 4px; }
+
+/* Tables */
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+th { background: #232427; color: #9a9a94; font-size: 11px; font-weight: 700; text-transform: uppercase; padding: 10px 12px; border-bottom: 1px solid #44454a; }
+td { padding: 10px 12px; border-bottom: 1px solid #38393e; color: #f1efe8; vertical-align: middle; }
+tr:hover td { background: rgba(255,255,255,0.02); }
+
+/* Modal overlay */
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 16px; }
+.modal-content { background: #2c2d31; border: 1px solid #52545c; border-radius: 8px; padding: 22px; width: 100%; max-width: 620px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+.modal-title { font-size: 18px; font-weight: 800; color: #f1efe8; margin-bottom: 14px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+
+/* Detail grid */
+.detail-grid { display: grid; grid-template-columns: 130px 1fr; gap: 8px 12px; font-size: 13px; margin: 16px 0; }
+.detail-label { color: #9a9a94; font-weight: 600; text-transform: uppercase; font-size: 11px; }
+.detail-val { color: #f1efe8; }
+
+/* Bottom Status Bar */
+.bottom-sbar { background: #2c2d31; border-top: 1px solid #44454a; padding: 8px 16px; font-size: 12px; color: #9a9a94; display: flex; justify-content: space-between; align-items: center; position: fixed; bottom: 0; left: 0; right: 0; z-index: 90; }
+.sbar-left { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.btn-export-link { background: transparent; border: none; color: #f6c61b; font-size: 12px; cursor: pointer; text-decoration: underline; }
+.btn-export-link:hover { color: #ffd84a; }
+
+/* Patron tabs in My Account */
+.acc-tab-bar { display: flex; gap: 6px; border-bottom: 1px solid #44454a; margin-bottom: 14px; }
+.acc-tab-btn { background: transparent; border: none; color: #9a9a94; padding: 8px 12px; font-weight: 600; font-size: 13px; cursor: pointer; border-bottom: 2px solid transparent; }
+.acc-tab-btn.active { color: #f6c61b; border-bottom-color: #f6c61b; }
+</style>
+<!--__CONFIG_SCRIPT__-->
+</head>
+<body>
+
+<header class=""top-header"">
+  <div class=""logo-box"" onclick=""resetSearch()"">
+    <span class=""logo-title"">errin.</span>
+    <span class=""logo-sub"">OPAC &middot; Public Access Catalog</span>
+  </div>
+  <div class=""header-right"">
+    <span id=""schoolBadge"" class=""mode-badge"" style=""font-weight: 600; color: #f1efe8; display: none;""></span>
+    <span id=""modeBadge"" class=""mode-badge""><span class=""dot-green""></span> Live Server</span>
+    <div id=""authArea"">
+      <button id=""btnSignIn"" class=""btn btn-primary btn-sm"" onclick=""openLoginModal()"" style=""display: none;"">Patron Sign In</button>
+      <div id=""patronBadge"" style=""display: none; align-items: center; gap: 8px;"">
+        <span id=""patronNameDisplay"" style=""font-weight: 700; color: #f6c61b; font-size: 13px;""></span>
+        <button class=""btn btn-sec btn-sm"" onclick=""openAccountModal()"">My Account</button>
+        <button class=""btn btn-sec btn-sm"" onclick=""doLogout()"">Sign Out</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<main class=""container"">
+  <div class=""page-heading"">library catalogue<span>.</span></div>
+  <div class=""page-sub"">Search books by title, author, subject heading, ISBN, or call number</div>
+
+  <!-- Search Card -->
+  <div class=""card"">
+    <div class=""search-bar-wrap"">
+      <input type=""text"" id=""opacQuery"" class=""search-input"" placeholder=""Search by title, author, subject, ISBN, call number..."" oninput=""onQueryInput()"" onkeydown=""onQueryKeyDown(event)"" autocomplete=""off"" />
+      <button id=""opacClearBtn"" class=""btn-clear"" onclick=""clearQuery()"">&#x2715;</button>
+      <button class=""btn btn-primary"" onclick=""runSearch()"" style=""padding: 0 20px;"">Search</button>
+    </div>
+
+    <!-- Search Field Pills -->
+    <div class=""field-pills"">
+      <button class=""field-pill active"" onclick=""setSearchField('all')"">All Fields</button>
+      <button class=""field-pill"" onclick=""setSearchField('title')"">Title</button>
+      <button class=""field-pill"" onclick=""setSearchField('author')"">Author</button>
+      <button class=""field-pill"" onclick=""setSearchField('subject')"">Subject Heading</button>
+      <button class=""field-pill"" onclick=""setSearchField('call')"">Call Number / Dewey</button>
+      <button class=""field-pill"" onclick=""setSearchField('barcode')"">Barcode / ISBN</button>
+    </div>
+
+    <!-- Filter Row -->
+    <div class=""filter-row"">
+      <div>
+        <span class=""filter-label"">Subject:</span>
+        <select id=""opacSubjectSelect"" class=""select-filter"" style=""max-width: 220px;"" onchange=""onSubjectSelectChange()"">
+          <option value="""">(All Subjects)</option>
+        </select>
+      </div>
+      <div>
+        <span class=""filter-label"">Status:</span>
+        <select id=""opacAvailSelect"" class=""select-filter"" onchange=""runSearch()"">
+          <option value=""0"">All Items</option>
+          <option value=""1"">Available to Borrow Only</option>
+        </select>
+      </div>
+      <div>
+        <span class=""filter-label"">Sort:</span>
+        <select id=""opacSortSelect"" class=""select-filter"" onchange=""runSearch()"">
+          <option value=""title_asc"">Title (A-Z)</option>
+          <option value=""title_desc"">Title (Z-A)</option>
+          <option value=""author_asc"">Author (A-Z)</option>
+          <option value=""subject_asc"">Subject (A-Z)</option>
+          <option value=""call_asc"">Call Number</option>
+          <option value=""newest"">Newest Added</option>
+        </select>
+      </div>
+      <button class=""btn btn-sec btn-sm"" onclick=""resetFilters()"">Reset Filters</button>
+    </div>
+  </div>
+
+  <!-- Subject Headings Discovery Card -->
+  <div class=""card"" id=""subjectDiscoveryCard"">
+    <div class=""card-header"">
+      <div class=""card-title"">Popular Subject Headings</div>
+      <span style=""font-size: 12px; color: #9a9a94;"">Click any subject to filter instantly</span>
+    </div>
+    <div id=""popularSubjects"" class=""subjects-wrap"">
+      <span style=""color: #9a9a94; font-size: 13px;"">Loading subjects...</span>
+    </div>
+  </div>
+
+  <!-- Results Section -->
+  <div class=""results-header"">
+    <div class=""results-count"" id=""resultsCount"">Loading catalogue...</div>
+    <div class=""active-filters"" id=""activeFilterPills""></div>
+    <div class=""view-btns"">
+      <button id=""btnGrid"" class=""view-btn active"" onclick=""setViewMode('grid')"">&#x229E; Cards</button>
+      <button id=""btnTable"" class=""view-btn"" onclick=""setViewMode('table')"">&#x2630; Table</button>
+    </div>
+  </div>
+
+  <div id=""resultsGrid"" class=""books-grid""></div>
+
+  <div id=""resultsTableWrap"" class=""card"" style=""display: none; padding: 0;"">
+    <div class=""table-wrap"">
+      <table id=""resultsTable"">
+        <thead>
+          <tr>
+            <th>Barcode</th>
+            <th>Title</th>
+            <th>Author</th>
+            <th>Subject Heading</th>
+            <th>Call Number</th>
+            <th>Status</th>
+            <th style=""text-align: right;"">Action</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<!-- Book Details Modal -->
+<div id=""detailModal"" class=""modal-overlay"" style=""display: none;"" onclick=""onModalBgClick(event, 'detailModal')"">
+  <div class=""modal-content"">
+    <div class=""modal-title"" id=""dtTitle"">Book Details</div>
+    <div id=""dtSub"" style=""color: #9a9a94; font-size: 13px; margin-top: -10px; margin-bottom: 12px;""></div>
+    <div class=""detail-grid"">
+      <div class=""detail-label"">Author:</div><div class=""detail-val"" id=""dtAuthor""></div>
+      <div class=""detail-label"">Subject Headings:</div><div class=""detail-val"" id=""dtSubject""></div>
+      <div class=""detail-label"">Call Number:</div><div class=""detail-val""><span id=""dtCall"" class=""call-badge""></span></div>
+      <div class=""detail-label"">Availability:</div><div class=""detail-val"" id=""dtStatus""></div>
+      <div class=""detail-label"">Barcode:</div><div class=""detail-val""><code id=""dtBarcode""></code></div>
+      <div class=""detail-label"">ISBN:</div><div class=""detail-val"" id=""dtIsbn""></div>
+      <div class=""detail-label"">Publisher:</div><div class=""detail-val"" id=""dtPub""></div>
+      <div class=""detail-label"">Publication Year:</div><div class=""detail-val"" id=""dtYear""></div>
+      <div class=""detail-label"">Pages / Extent:</div><div class=""detail-val"" id=""dtPages""></div>
+      <div class=""detail-label"">Control / Acq No:</div><div class=""detail-val"" id=""dtCtl""></div>
+    </div>
+    <div class=""modal-actions"">
+      <button id=""btnHoldInModal"" class=""btn btn-primary"" style=""display: none;"" onclick=""onHoldFromModal()"">Place Hold</button>
+      <button class=""btn btn-sec"" onclick=""closeModal('detailModal')"">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Patron Login Modal -->
+<div id=""loginModal"" class=""modal-overlay"" style=""display: none;"" onclick=""onModalBgClick(event, 'loginModal')"">
+  <div class=""modal-content"" style=""max-width: 420px;"">
+    <div class=""modal-title"">Patron Sign In</div>
+    <div style=""font-size: 13px; color: #9a9a94; margin-bottom: 16px;"">Sign in with your Student ID or IC Number (No. Pengenalan) to view your loans, due dates, fines, and place holds.</div>
+    <form onsubmit=""doLogin(event)"">
+      <div style=""margin-bottom: 14px;"">
+        <label style=""display: block; font-size: 12px; font-weight: 600; color: #9a9a94; text-transform: uppercase; margin-bottom: 4px;"">Student ID or IC Number *</label>
+        <input type=""text"" id=""loginId"" class=""search-input"" style=""width: 100%;"" placeholder=""e.g. 120315-10-0001 or ID Murid"" required autofocus autocomplete=""off"" />
+      </div>
+      <div id=""loginErr"" style=""color: #e8392f; font-weight: 600; font-size: 13px; margin-bottom: 12px; display: none;""></div>
+      <div class=""modal-actions"">
+        <button type=""button"" class=""btn btn-sec"" onclick=""closeModal('loginModal')"">Cancel</button>
+        <button type=""submit"" id=""btnLoginSubmit"" class=""btn btn-primary"">Sign In</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Patron My Account Modal -->
+<div id=""accountModal"" class=""modal-overlay"" style=""display: none;"" onclick=""onModalBgClick(event, 'accountModal')"">
+  <div class=""modal-content"" style=""max-width: 700px;"">
+    <div class=""modal-title"" id=""accName"">My Library Account</div>
+    <div id=""accInfo"" style=""color: #9a9a94; font-size: 13px; margin-top: -10px; margin-bottom: 16px;""></div>
+
+    <div class=""acc-tab-bar"">
+      <button id=""accTabLoans"" class=""acc-tab-btn active"" onclick=""switchAccTab('loans')"">Active Loans (<span id=""accLoanCount"">0</span>)</button>
+      <button id=""accTabHistory"" class=""acc-tab-btn"" onclick=""switchAccTab('history')"">Reading History</button>
+      <button id=""accTabFines"" class=""acc-tab-btn"" onclick=""switchAccTab('fines')"">Fines (<span id=""accFineTotal"">RM 0.00</span>)</button>
+      <button id=""accTabHolds"" class=""acc-tab-btn"" onclick=""switchAccTab('holds')"">Active Holds (<span id=""accHoldCount"">0</span>)</button>
+    </div>
+
+    <!-- Active Loans Pane -->
+    <div id=""accPaneLoans"">
+      <div class=""table-wrap"">
+        <table>
+          <thead><tr><th>Title</th><th>Barcode</th><th>Checkout Date</th><th>Due Date</th><th>Status</th></tr></thead>
+          <tbody id=""accLoansTbody""></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- History Pane -->
+    <div id=""accPaneHistory"" style=""display: none;"">
+      <div class=""table-wrap"">
+        <table>
+          <thead><tr><th>Title</th><th>Barcode</th><th>Borrowed</th><th>Returned Date</th></tr></thead>
+          <tbody id=""accHistoryTbody""></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Fines Pane -->
+    <div id=""accPaneFines"" style=""display: none;"">
+      <div class=""table-wrap"">
+        <table>
+          <thead><tr><th>Reason / Title</th><th>Date</th><th>Amount</th><th>Status</th></tr></thead>
+          <tbody id=""accFinesTbody""></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Holds Pane -->
+    <div id=""accPaneHolds"" style=""display: none;"">
+      <div class=""table-wrap"">
+        <table>
+          <thead><tr><th>Title</th><th>Barcode</th><th>Reserved Date</th><th>Status</th><th>Action</th></tr></thead>
+          <tbody id=""accHoldsTbody""></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class=""modal-actions"">
+      <button class=""btn btn-sec"" onclick=""closeModal('accountModal')"">Close</button>
+    </div>
+  </div>
+</div>
+
+<footer class=""bottom-sbar"">
+  <div class=""sbar-left"">
+    <span class=""dot-green""></span>
+    <span id=""sbarText"">ErrinILS Public Access Catalog</span>
+  </div>
+  <div>
+    <button class=""btn-export-link"" onclick=""downloadCatalogJson()"">Download Catalog (JSON)</button>
+  </div>
+</footer>
+
+<script>
+let rawItems = [];
+let isStatic = false;
+let currentSearchField = 'all';
+let selectedSubject = '';
+let viewMode = 'grid';
+let searchDebounce = null;
+let currentModalItem = null;
+let patronToken = localStorage.getItem('errin_patron_token') || '';
+let currentPatron = null;
+try { currentPatron = JSON.parse(localStorage.getItem('errin_patron_data')); } catch(e){}
+
+async function init() {
+  // 1. Check if catalog data is embedded
+  if (window.__CATALOG_DATA__ && Array.isArray(window.__CATALOG_DATA__)) {
+    rawItems = window.__CATALOG_DATA__;
+    isStatic = true;
+    setModeBadge('Static Archive (Embedded)');
+  } else {
+    // 2. Try fetching catalog.json (for GitHub Pages or static host)
+    try {
+      const resp = await fetch('catalog.json');
+      if (resp.ok) {
+        const data = await resp.json();
+        if (Array.isArray(data)) {
+          rawItems = data;
+          isStatic = true;
+          setModeBadge('Static Archive (GitHub Pages)');
+        }
+      }
+    } catch(e) {}
+  }
+
+  // 3. Live Server Mode
+  if (!rawItems.length && !isStatic) {
+    setModeBadge('Live Server');
+    try {
+      const infoRes = await fetch('/api/opac/info');
+      if (infoRes.ok) {
+        const info = await infoRes.json();
+        if (info.school) updateSchoolName(info.school);
+        if (typeof info.opacLogin !== 'undefined') window.__OPAC_LOGIN_ENABLED__ = info.opacLogin;
+      }
+    } catch(e) {}
+  }
+
+  if (window.__SCHOOL_NAME__) updateSchoolName(window.__SCHOOL_NAME__);
+  updateLoginUI();
+
+  if (isStatic || rawItems.length) {
+    extractSubjects(rawItems);
+    filterAndRenderLocal();
+  } else {
+    loadSubjectsFromApi();
+    loadSearchResultsFromApi();
+  }
+
+  if (patronToken && window.__OPAC_LOGIN_ENABLED__) {
+    verifyPatronSession();
+  }
+}
+
+function setModeBadge(txt) {
+  const b = document.getElementById('modeBadge');
+  if (b) b.innerHTML = `<span class=""dot-green""></span> ${escape(txt)}`;
+}
+
+function updateSchoolName(name) {
+  if (!name) return;
+  const b = document.getElementById('schoolBadge');
+  if (b) { b.textContent = name; b.style.display = 'inline-flex'; }
+  document.title = name + ' - Library OPAC';
+}
+
+function updateLoginUI() {
+  const btn = document.getElementById('btnSignIn');
+  const badge = document.getElementById('patronBadge');
+  if (!window.__OPAC_LOGIN_ENABLED__) {
+    if (btn) btn.style.display = 'none';
+    if (badge) badge.style.display = 'none';
+    return;
+  }
+  if (patronToken && currentPatron) {
+    if (btn) btn.style.display = 'none';
+    if (badge) badge.style.display = 'inline-flex';
+    document.getElementById('patronNameDisplay').textContent = `\uD83D\uDC64 ${currentPatron.name} (${currentPatron.cls || 'Student'})`;
+  } else {
+    if (btn) btn.style.display = 'inline-block';
+    if (badge) badge.style.display = 'none';
+  }
+}
+
+function setSearchField(f) {
+  currentSearchField = f;
+  document.querySelectorAll('.field-pill').forEach(p => p.classList.remove('active'));
+  const pills = document.querySelectorAll('.field-pill');
+  const map = { 'all': 0, 'title': 1, 'author': 2, 'subject': 3, 'call': 4, 'barcode': 5 };
+  if (pills[map[f]]) pills[map[f]].classList.add('active');
+  runSearch();
+}
+
+function onQueryInput() {
+  const val = document.getElementById('opacQuery').value.trim();
+  document.getElementById('opacClearBtn').style.display = val ? 'inline-block' : 'none';
+  clearTimeout(searchDebounce);
+  searchDebounce = setTimeout(runSearch, 220);
+}
+
+function onQueryKeyDown(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    clearTimeout(searchDebounce);
+    runSearch();
+  }
+}
+
+function clearQuery() {
+  document.getElementById('opacQuery').value = '';
+  document.getElementById('opacClearBtn').style.display = 'none';
+  runSearch();
+}
+
+function resetSearch() {
+  document.getElementById('opacQuery').value = '';
+  document.getElementById('opacClearBtn').style.display = 'none';
+  selectedSubject = '';
+  document.getElementById('opacSubjectSelect').value = '';
+  document.getElementById('opacAvailSelect').value = '0';
+  document.getElementById('opacSortSelect').value = 'title_asc';
+  setSearchField('all');
+}
+
+function resetFilters() {
+  resetSearch();
+}
+
+function onSubjectSelectChange() {
+  selectedSubject = document.getElementById('opacSubjectSelect').value;
+  runSearch();
+}
+
+function selectSubject(s) {
+  selectedSubject = s;
+  document.getElementById('opacSubjectSelect').value = s;
+  runSearch();
+}
+
+function setViewMode(m) {
+  viewMode = m;
+  document.getElementById('btnGrid').classList.toggle('active', m === 'grid');
+  document.getElementById('btnTable').classList.toggle('active', m === 'table');
+  document.getElementById('resultsGrid').style.display = m === 'grid' ? 'grid' : 'none';
+  document.getElementById('resultsTableWrap').style.display = m === 'table' ? 'block' : 'none';
+}
+
+function extractSubjects(items) {
+  const counts = {};
+  items.forEach(it => {
+    if (!it.subject) return;
+    const parts = it.subject.split(/[;,|/]/);
+    parts.forEach(p => {
+      const s = p.trim();
+      if (s.length >= 2) counts[s] = (counts[s] || 0) + 1;
+    });
+  });
+
+  const sorted = Object.keys(counts).map(k => ({ name: k, count: counts[k] })).sort((a,b) => b.count - a.count);
+
+  // Populate dropdown
+  const sel = document.getElementById('opacSubjectSelect');
+  sel.innerHTML = '<option value="""">(All Subjects)</option>';
+  sorted.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.name;
+    opt.textContent = `${s.name} (${s.count})`;
+    sel.appendChild(opt);
+  });
+
+  // Populate popular pills (top 20)
+  const pop = document.getElementById('popularSubjects');
+  pop.innerHTML = '';
+  if (sorted.length === 0) {
+    pop.innerHTML = '<span style=""color:#9a9a94; font-size:12px;"">No subject headings specified yet.</span>';
+    return;
+  }
+  sorted.slice(0, 20).forEach(s => {
+    const btn = document.createElement('button');
+    btn.className = 'subject-tag' + (selectedSubject === s.name ? ' active' : '');
+    btn.innerHTML = `${escape(s.name)} <span class=""subject-count"">${s.count}</span>`;
+    btn.onclick = () => selectSubject(selectedSubject === s.name ? '' : s.name);
+    pop.appendChild(btn);
+  });
+}
+
+function runSearch() {
+  if (isStatic || rawItems.length) {
+    filterAndRenderLocal();
+  } else {
+    loadSearchResultsFromApi();
+  }
+}
+
+function filterAndRenderLocal() {
+  const q = document.getElementById('opacQuery').value.trim();
+  const subj = selectedSubject || document.getElementById('opacSubjectSelect').value;
+  const availOnly = document.getElementById('opacAvailSelect').value === '1';
+  const sort = document.getElementById('opacSortSelect').value;
+
+  const tokens = q ? q.toLowerCase().split(/\s+/).filter(Boolean) : null;
+
+  let list = rawItems.filter(it => {
+    if (availOnly && !it.available) return false;
+    if (subj) {
+      if (!it.subject || !it.subject.toLowerCase().includes(subj.toLowerCase())) return false;
+    }
+    if (tokens && tokens.length > 0) {
+      for (let i = 0; i < tokens.length; i++) {
+        const t = tokens[i];
+        if (currentSearchField === 'title') {
+          if (!((it.title || '').toLowerCase().includes(t))) return false;
+        } else if (currentSearchField === 'author') {
+          if (!((it.author || '').toLowerCase().includes(t))) return false;
+        } else if (currentSearchField === 'subject') {
+          if (!((it.subject || '').toLowerCase().includes(t))) return false;
+        } else if (currentSearchField === 'call') {
+          if (!((it.call || '').toLowerCase().includes(t))) return false;
+        } else if (currentSearchField === 'barcode') {
+          const bMatch = (it.barcode || '').toLowerCase().includes(t);
+          const iMatch = (it.isbn || '').toLowerCase().includes(t);
+          if (!bMatch && !iMatch) return false;
+        } else {
+          const all = `${it.title||''} ${it.sub||''} ${it.author||''} ${it.subject||''} ${it.call||''} ${it.barcode||''} ${it.isbn||''} ${it.publisher||''} ${it.year||''}`.toLowerCase();
+          if (!all.includes(t)) return false;
+        }
+      }
+    }
+    return true;
+  });
+
+  // Sort
+  list.sort((a, b) => {
+    switch (sort) {
+      case 'title_desc': return (b.title || '').localeCompare(a.title || '');
+      case 'author_asc': return (a.author || '').localeCompare(b.author || '') || (a.title || '').localeCompare(b.title || '');
+      case 'subject_asc': return (a.subject || '').localeCompare(b.subject || '') || (a.title || '').localeCompare(b.title || '');
+      case 'call_asc': return (a.call || '').localeCompare(b.call || '');
+      case 'newest': return (b.id || '').localeCompare(a.id || '');
+      case 'title_asc':
+      default: return (a.title || '').localeCompare(b.title || '');
+    }
+  });
+
+  renderResults(list);
+}
+
+async function loadSearchResultsFromApi() {
+  const q = document.getElementById('opacQuery').value.trim();
+  const subj = selectedSubject || document.getElementById('opacSubjectSelect').value;
+  const avail = document.getElementById('opacAvailSelect').value;
+  const sort = document.getElementById('opacSortSelect').value;
+
+  const url = `/api/opac/search?q=${encodeURIComponent(q)}&subject=${encodeURIComponent(subj)}&field=${encodeURIComponent(currentSearchField)}&avail=${avail}&sort=${encodeURIComponent(sort)}`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return;
+    const data = await res.json();
+    renderResults(data.items || []);
+  } catch(e) {}
+}
+
+async function loadSubjectsFromApi() {
+  try {
+    const res = await fetch('/api/opac/subjects');
+    if (!res.ok) return;
+    const subjects = await res.json();
+
+    // Populate dropdown
+    const sel = document.getElementById('opacSubjectSelect');
+    sel.innerHTML = '<option value="""">(All Subjects)</option>';
+    subjects.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.name;
+      opt.textContent = `${s.name} (${s.count})`;
+      sel.appendChild(opt);
+    });
+
+    // Populate popular pills
+    const pop = document.getElementById('popularSubjects');
+    pop.innerHTML = '';
+    subjects.slice(0, 20).forEach(s => {
+      const btn = document.createElement('button');
+      btn.className = 'subject-tag' + (selectedSubject === s.name ? ' active' : '');
+      btn.innerHTML = `${escape(s.name)} <span class=""subject-count"">${s.count}</span>`;
+      btn.onclick = () => selectSubject(selectedSubject === s.name ? '' : s.name);
+      pop.appendChild(btn);
+    });
+  } catch(e) {}
+}
+
+function renderResults(items) {
+  const availableCount = items.filter(x => x.available).length;
+  document.getElementById('resultsCount').innerHTML = `Showing <strong>${items.length}</strong> title(s) (${availableCount} available to borrow)`;
+
+  // Update active filter pills
+  const pWrap = document.getElementById('activeFilterPills');
+  pWrap.innerHTML = '';
+  const q = document.getElementById('opacQuery').value.trim();
+  if (q) {
+    pWrap.innerHTML += `<span class=""filter-pill"" onclick=""clearQuery()"">Keyword: ""${escape(q)}"" &#x2715;</span>`;
+  }
+  if (selectedSubject) {
+    pWrap.innerHTML += `<span class=""filter-pill"" onclick=""selectSubject('')"">Subject: ${escape(selectedSubject)} &#x2715;</span>`;
+  }
+
+  // Update subject pills active state
+  document.querySelectorAll('.subject-tag').forEach(t => {
+    t.classList.toggle('active', t.textContent.startsWith(selectedSubject) && selectedSubject !== '');
+  });
+
+  // Render Grid
+  const grid = document.getElementById('resultsGrid');
+  grid.innerHTML = '';
+  if (items.length === 0) {
+    grid.innerHTML = '<div class=""card"" style=""grid-column: 1/-1; text-align: center; padding: 32px; color: #9a9a94;"">No books found matching your search. Try different keywords or click <a href=""javascript:resetFilters()"">Reset Filters</a>.</div>';
+  } else {
+    items.forEach(it => {
+      const card = document.createElement('div');
+      card.className = 'book-card';
+
+      let stBadge = it.available ? '<span class=""badge badge-ok"">&#x2713; Available</span>' : `<span class=""badge badge-warn"">&#x23F1; Due ${escape(it.due || '')}</span>`;
+
+      let subjectsHtml = '';
+      if (it.subject) {
+        it.subject.split(/[;,|/]/).slice(0, 3).forEach(s => {
+          const st = s.trim();
+          if (st) subjectsHtml += `<span class=""book-subject-pill"" onclick=""selectSubject('${escape(st)}')"">${escape(st)}</span>`;
+        });
+      }
+
+      let holdBtn = '';
+      if (window.__OPAC_LOGIN_ENABLED__ && patronToken && !it.available) {
+        holdBtn = `<button class=""btn btn-primary btn-sm"" onclick=""event.stopPropagation(); doHold('${escape(it.barcode)}', '${escape(it.title)}')"">Reserve</button>`;
+      }
+
+      card.innerHTML = `
+        <div>
+          <div class=""book-title"" onclick='openDetail(${JSON.stringify(it)})'>${escape(it.title)}</div>
+          ${it.sub ? `<div class=""book-sub"">${escape(it.sub)}</div>` : ''}
+          <div class=""book-author"">${escape(it.author || 'Unknown author')}</div>
+          ${subjectsHtml ? `<div class=""book-subjects"">${subjectsHtml}</div>` : ''}
+        </div>
+        <div>
+          <div class=""book-meta"">
+            <span class=""call-badge"">${escape(it.call || 'No call no.')}</span>
+            <div>${stBadge}</div>
+          </div>
+          <div style=""display: flex; justify-content: flex-end; gap: 6px; margin-top: 10px;"">
+            ${holdBtn}
+            <button class=""btn btn-sec btn-sm"" onclick='openDetail(${JSON.stringify(it)})'>View Details</button>
+          </div>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+  }
+
+  // Render Table
+  const tbody = document.querySelector('#resultsTable tbody');
+  tbody.innerHTML = '';
+  if (items.length === 0) {
+    tbody.innerHTML = '<tr><td colspan=""7"" style=""text-align: center; color: #9a9a94; padding: 24px;"">No books found matching your search.</td></tr>';
+  } else {
+    items.forEach(it => {
+      const tr = document.createElement('tr');
+      let stBadge = it.available ? '<span class=""badge badge-ok"">&#x2713; Available</span>' : `<span class=""badge badge-warn"">&#x23F1; Due ${escape(it.due || '')}</span>`;
+      let holdBtn = '';
+      if (window.__OPAC_LOGIN_ENABLED__ && patronToken && !it.available) {
+        holdBtn = `<button class=""btn btn-primary btn-sm"" style=""margin-right: 4px;"" onclick=""doHold('${escape(it.barcode)}', '${escape(it.title)}')"">Reserve</button>`;
+      }
+      tr.innerHTML = `
+        <td><code>${escape(it.barcode || '')}</code></td>
+        <td><strong>${escape(it.title)}</strong><div style=""font-size:11px; color:#9a9a94;"">${escape(it.sub || '')}</div></td>
+        <td>${escape(it.author || '')}</td>
+        <td><span class=""badge badge-dim"" style=""font-size:11px; cursor:pointer;"" onclick=""selectSubject('${escape(it.subject || '')}')"">${escape(it.subject || '\u2014')}</span></td>
+        <td><span class=""call-badge"">${escape(it.call || '')}</span></td>
+        <td>${stBadge}</td>
+        <td style=""text-align: right; white-space: nowrap;"">
+          ${holdBtn}
+          <button class=""btn btn-sec btn-sm"" onclick='openDetail(${JSON.stringify(it)})'>Details</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Update footer
+  document.getElementById('sbarText').textContent = `ErrinILS Public Access Catalog \u00B7 Total Active Titles: ${items.length}`;
+}
+
+function openDetail(it) {
+  currentModalItem = it;
+  document.getElementById('dtTitle').textContent = it.title || '';
+  document.getElementById('dtSub').textContent = it.sub || '';
+  document.getElementById('dtAuthor').textContent = it.author || '\u2014';
+  document.getElementById('dtCall').textContent = it.call || '\u2014';
+  document.getElementById('dtBarcode').textContent = it.barcode || '\u2014';
+  document.getElementById('dtIsbn').textContent = it.isbn || '\u2014';
+  document.getElementById('dtPub').textContent = (it.publisher || '') + (it.place ? ` (${it.place})` : '');
+  document.getElementById('dtYear').textContent = it.year || '\u2014';
+  document.getElementById('dtPages').textContent = it.pages ? `${it.pages} pages` : '\u2014';
+  document.getElementById('dtCtl').textContent = `${it.ctl || '\u2014'} / ${it.acq || '\u2014'}`;
+
+  // Subject pill tags
+  const sBox = document.getElementById('dtSubject');
+  sBox.innerHTML = '';
+  if (it.subject) {
+    it.subject.split(/[;,|/]/).forEach(s => {
+      const st = s.trim();
+      if (st) {
+        const span = document.createElement('span');
+        span.className = 'book-subject-pill';
+        span.style.marginRight = '6px';
+        span.style.display = 'inline-block';
+        span.textContent = st;
+        span.onclick = () => { closeModal('detailModal'); selectSubject(st); };
+        sBox.appendChild(span);
+      }
+    });
+  } else {
+    sBox.textContent = '\u2014';
+  }
+
+  const stBox = document.getElementById('dtStatus');
+  const holdBtn = document.getElementById('btnHoldInModal');
+  if (it.available) {
+    stBox.innerHTML = '<span class=""badge badge-ok"">&#x2713; Available on shelf for checkout</span>';
+    holdBtn.style.display = 'none';
+  } else {
+    stBox.innerHTML = `<span class=""badge badge-warn"">&#x23F1; Currently on loan (Due date: ${escape(it.due || 'Soon')})</span>`;
+    holdBtn.style.display = (window.__OPAC_LOGIN_ENABLED__ && patronToken) ? 'inline-block' : 'none';
+  }
+
+  document.getElementById('detailModal').style.display = 'flex';
+}
+
+function onHoldFromModal() {
+  if (!currentModalItem) return;
+  doHold(currentModalItem.barcode, currentModalItem.title);
+  closeModal('detailModal');
+}
+
+function closeModal(id) {
+  document.getElementById(id).style.display = 'none';
+}
+
+function onModalBgClick(e, id) {
+  if (e.target && e.target.id === id) closeModal(id);
+}
+
+// Patron Authentication
+function openLoginModal() {
+  document.getElementById('loginErr').style.display = 'none';
+  document.getElementById('loginId').value = '';
+  document.getElementById('loginModal').style.display = 'flex';
+  setTimeout(() => document.getElementById('loginId').focus(), 50);
+}
+
+async function doLogin(e) {
+  e.preventDefault();
+  const id = document.getElementById('loginId').value.trim();
+  const errBox = document.getElementById('loginErr');
+  errBox.style.display = 'none';
+  if (!id) return;
+
+  const btn = document.getElementById('btnLoginSubmit');
+  btn.disabled = true;
+  btn.textContent = 'Signing in...';
+
+  try {
+    const res = await fetch('/api/opac/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: id })
+    });
+    const data = await res.json();
+    btn.disabled = false;
+    btn.textContent = 'Sign In';
+
+    if (data.ok && data.token) {
+      patronToken = data.token;
+      currentPatron = data.patron;
+      localStorage.setItem('errin_patron_token', patronToken);
+      localStorage.setItem('errin_patron_data', JSON.stringify(currentPatron));
+      closeModal('loginModal');
+      updateLoginUI();
+      runSearch();
+      alert(`Welcome back, ${currentPatron.name}! You are now signed in to the library.`);
+    } else {
+      errBox.textContent = data.error || 'Student ID or IC Number not found.';
+      errBox.style.display = 'block';
+    }
+  } catch(ex) {
+    btn.disabled = false;
+    btn.textContent = 'Sign In';
+    errBox.textContent = 'Connection error. Please try again.';
+    errBox.style.display = 'block';
+  }
+}
+
+async function verifyPatronSession() {
+  try {
+    const res = await fetch('/api/opac/account', {
+      headers: { 'X-Errin-Patron-Token': patronToken }
+    });
+    if (!res.ok) {
+      doLogout();
+    }
+  } catch(e) {}
+}
+
+function doLogout() {
+  patronToken = '';
+  currentPatron = null;
+  localStorage.removeItem('errin_patron_token');
+  localStorage.removeItem('errin_patron_data');
+  updateLoginUI();
+  runSearch();
+}
+
+async function openAccountModal() {
+  if (!patronToken) return;
+  try {
+    const res = await fetch('/api/opac/account', {
+      headers: { 'X-Errin-Patron-Token': patronToken }
+    });
+    if (!res.ok) { alert('Session expired. Please sign in again.'); doLogout(); return; }
+    const data = await res.json();
+
+    document.getElementById('accName').textContent = `\uD83D\uDC64 ${data.patron.name}`;
+    document.getElementById('accInfo').textContent = `IC/ID: ${data.patron.id} \u00B7 Class: ${data.patron.cls || 'No class'} \u00B7 Registered: ${data.patron.reg || '\u2014'}`;
+    document.getElementById('accLoanCount').textContent = data.loans ? data.loans.length : 0;
+    document.getElementById('accFineTotal').textContent = `RM ${(data.patron.unpaidFines || 0).toFixed(2)}`;
+    document.getElementById('accHoldCount').textContent = data.holds ? data.holds.length : 0;
+
+    // Populate loans
+    const lt = document.getElementById('accLoansTbody');
+    lt.innerHTML = '';
+    if (!data.loans || data.loans.length === 0) {
+      lt.innerHTML = '<tr><td colspan=""5"" style=""text-align:center; color:#9a9a94; padding:16px;"">No active borrowed books.</td></tr>';
+    } else {
+      data.loans.forEach(l => {
+        const badge = l.overdue ? `<span class=""badge badge-err"">${l.daysLate}d late</span>` : '<span class=""badge badge-ok"">On time</span>';
+        lt.innerHTML += `<tr><td><strong>${escape(l.title)}</strong></td><td><code>${escape(l.barcode)}</code></td><td>${l.out}</td><td>${l.due}</td><td>${badge}</td></tr>`;
+      });
+    }
+
+    // Populate history
+    const ht = document.getElementById('accHistoryTbody');
+    ht.innerHTML = '';
+    if (!data.history || data.history.length === 0) {
+      ht.innerHTML = '<tr><td colspan=""4"" style=""text-align:center; color:#9a9a94; padding:16px;"">No past loans recorded.</td></tr>';
+    } else {
+      data.history.forEach(h => {
+        ht.innerHTML += `<tr><td><strong>${escape(h.title)}</strong></td><td><code>${escape(h.barcode)}</code></td><td>${h.out}</td><td>${h.ret}</td></tr>`;
+      });
+    }
+
+    // Populate fines
+    const ft = document.getElementById('accFinesTbody');
+    ft.innerHTML = '';
+    if (!data.fines || data.fines.length === 0) {
+      ft.innerHTML = '<tr><td colspan=""4"" style=""text-align:center; color:#9a9a94; padding:16px;"">No fines on record.</td></tr>';
+    } else {
+      data.fines.forEach(f => {
+        const badge = f.paid ? '<span class=""badge badge-ok"">Paid</span>' : '<span class=""badge badge-err"">Unpaid</span>';
+        ft.innerHTML += `<tr><td>${escape(f.title)}</td><td>${f.date}</td><td>RM ${f.amt.toFixed(2)}</td><td>${badge}</td></tr>`;
+      });
+    }
+
+    // Populate holds
+    const hdt = document.getElementById('accHoldsTbody');
+    hdt.innerHTML = '';
+    if (!data.holds || data.holds.length === 0) {
+      hdt.innerHTML = '<tr><td colspan=""5"" style=""text-align:center; color:#9a9a94; padding:16px;"">No reserved holds.</td></tr>';
+    } else {
+      data.holds.forEach(h => {
+        hdt.innerHTML += `<tr><td><strong>${escape(h.title)}</strong></td><td><code>${escape(h.barcode)}</code></td><td>${h.date}</td><td><span class=""badge badge-warn"">${escape(h.st)}</span></td><td><button class=""btn btn-danger btn-sm"" onclick=""cancelHold('${h.id}')"">Cancel</button></td></tr>`;
+      });
+    }
+
+    switchAccTab('loans');
+    document.getElementById('accountModal').style.display = 'flex';
+  } catch(e) {
+    alert('Error loading account data.');
+  }
+}
+
+function switchAccTab(tab) {
+  const tabs = ['loans', 'history', 'fines', 'holds'];
+  tabs.forEach(t => {
+    document.getElementById('accTab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.toggle('active', t === tab);
+    document.getElementById('accPane' + t.charAt(0).toUpperCase() + t.slice(1)).style.display = t === tab ? 'block' : 'none';
+  });
+}
+
+async function doHold(barcode, title) {
+  if (!patronToken) {
+    openLoginModal();
+    return;
+  }
+  if (!confirm(`Place a hold/reservation for '${title}'?`)) return;
+
+  try {
+    const res = await fetch('/api/opac/hold', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Errin-Patron-Token': patronToken
+      },
+      body: JSON.stringify({ barcode: barcode })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      alert(data.message || 'Hold placed successfully!');
+      runSearch();
+    } else {
+      alert(data.error || 'Could not place hold.');
+    }
+  } catch(e) {
+    alert('Error connecting to server.');
+  }
+}
+
+async function cancelHold(holdId) {
+  if (!confirm('Cancel this hold request?')) return;
+  try {
+    const res = await fetch('/api/opac/cancel-hold', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Errin-Patron-Token': patronToken
+      },
+      body: JSON.stringify({ holdId: holdId })
+    });
+    const data = await res.json();
+    if (data.ok) {
+      alert('Hold cancelled.');
+      openAccountModal();
+      runSearch();
+    } else {
+      alert(data.error || 'Could not cancel hold.');
+    }
+  } catch(e) {
+    alert('Error connecting to server.');
+  }
+}
+
+function downloadCatalogJson() {
+  const data = rawItems.length ? rawItems : [];
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'catalog.json';
+  a.click();
+}
+
+function escape(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/""/g, '&quot;');
+}
+
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
+";
+
         public const string HtmlPage = @"<!DOCTYPE html>
 <html lang=""en"">
 <head>
@@ -1509,31 +3213,40 @@ button, input, select, textarea { font-family: inherit; font-size: 15px; }
 a { color: #f6c61b; text-decoration: none; }
 
 /* Top Header */
-.top-header { background: #232427; border-bottom: 2px solid #33343a; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; height: 56px; position: sticky; top: 0; z-index: 100; }
-.logo-area { display: flex; align-items: baseline; gap: 8px; }
-.logo-title { font-size: 24px; font-weight: 800; color: #2f6bff; letter-spacing: -0.5px; }
-.logo-view { font-size: 16px; font-weight: 600; color: #f1efe8; }
+.top-header { background: #232427; border-bottom: 2px solid #33343a; display: flex; align-items: stretch; justify-content: space-between; height: 62px; position: sticky; top: 0; z-index: 100; }
+.logo-box { background: #2f6bff; padding: 8px 20px; display: flex; flex-direction: column; justify-content: center; min-width: 170px; }
+.logo-title { font-size: 26px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; line-height: 1; }
+.logo-sub { font-size: 11px; color: rgba(255,255,255,0.85); font-weight: 600; margin-top: 2px; }
+.header-right { display: flex; align-items: center; gap: 12px; padding-right: 16px; }
+.btn-opac-link { background: #2c2d31; border: 1px solid #52545c; color: #f6c61b; font-weight: 700; font-size: 12px; padding: 6px 12px; border-radius: 4px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+.btn-opac-link:hover { background: #f6c61b; color: #1b1b1b; }
 .device-badge { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #9a9a94; }
 .dot-green { width: 8px; height: 8px; border-radius: 50%; background: #2fb36b; display: inline-block; }
 .btn-unpair { background: transparent; border: 1px solid #52545c; color: #9a9a94; border-radius: 4px; padding: 4px 8px; font-size: 11px; cursor: pointer; }
 .btn-unpair:hover { background: #3d1b1b; color: #e8392f; border-color: #e8392f; }
 
 /* Navigation Tab Bar */
-.tab-bar { display: flex; overflow-x: auto; background: #1c1d20; border-bottom: 1px solid #33343a; padding: 0 8px; scrollbar-width: none; }
+.tab-bar { display: flex; overflow-x: auto; background: #232427; border-bottom: 2px solid #33343a; padding: 0; scrollbar-width: none; }
 .tab-bar::-webkit-scrollbar { display: none; }
-.tab-btn { background: transparent; border: none; color: #9a9a94; padding: 12px 16px; font-weight: 600; font-size: 14px; cursor: pointer; white-space: nowrap; border-bottom: 3px solid transparent; transition: all 0.15s; }
-.tab-btn:hover { color: #f1efe8; }
-.tab-btn.active { color: #f6c61b; border-bottom-color: #f6c61b; }
+.tab-btn { background: #232427; border: none; border-right: 2px solid #52545c; color: #f1efe8; padding: 14px 20px; font-weight: 700; font-size: 14px; cursor: pointer; white-space: nowrap; transition: background 0.15s, color 0.15s; }
+.tab-btn:hover { background: #44454a; }
+.tab-btn.active { background: #f6c61b; color: #1b1b1b; }
 
 /* Content Layout */
 .container { max-width: 1000px; margin: 0 auto; padding: 16px; padding-bottom: 60px; }
-.card { background: #2c2d31; border: 1px solid #44454a; border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.25); }
+.card { background: #2c2d31; border: 1px solid #44454a; border-left: 3px solid #f6c61b; border-radius: 6px; padding: 18px; margin-bottom: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.25); }
 .card-title { font-size: 17px; font-weight: 700; color: #f1efe8; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
 .card-desc { font-size: 13px; color: #9a9a94; margin-bottom: 14px; }
 
 /* Metrics Grid */
 .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 16px; }
-.metric-box { background: #2c2d31; border: 1px solid #44454a; border-radius: 8px; padding: 14px 12px; text-align: center; }
+.metric-box { background: #2c2d31; border: 1px solid #44454a; border-radius: 6px; padding: 14px 12px; text-align: center; }
+.metric-box:nth-child(1) { border-left: 6px solid #2f6bff; }
+.metric-box:nth-child(2) { border-left: 6px solid #2fb36b; }
+.metric-box:nth-child(3) { border-left: 6px solid #f6c61b; }
+.metric-box:nth-child(4) { border-left: 6px solid #8b5cf6; }
+.metric-box:nth-child(5) { border-left: 6px solid #e8392f; }
+.metric-box:nth-child(6) { border-left: 6px solid #06b6d4; }
 .metric-val { font-size: 26px; font-weight: 800; color: #f6c61b; line-height: 1.1; margin-bottom: 4px; }
 .metric-lbl { font-size: 12px; font-weight: 600; color: #9a9a94; text-transform: uppercase; letter-spacing: 0.5px; }
 
@@ -1606,19 +3319,25 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     </div>
     <button id=""pairBtn"" class=""btn btn-primary"" style=""width: 100%; padding: 14px; font-size: 16px; margin-top: 8px;"" onclick=""doPair()"">Connect Device</button>
     <div id=""pairErr"" style=""color: #e8392f; font-weight: 600; font-size: 13px; margin-top: 12px; display: none;""></div>
+    <div style=""margin-top: 20px; font-size: 13px; border-top: 1px solid #38393e; padding-top: 16px;"">
+      <a href=""/opac"" style=""color: #f6c61b; font-weight: 600;"">Looking for the Public Book Catalogue? Open OPAC &#x2192;</a>
+    </div>
   </div>
 </div>
 
 <div id=""appView"" style=""display: none;"">
   <header class=""top-header"">
-    <div class=""logo-area"">
+    <div class=""logo-box"">
       <span class=""logo-title"">errin.</span>
-      <span id=""viewTitle"" class=""logo-view"">Dashboard</span>
+      <span class=""logo-sub"">A school library system.</span>
     </div>
-    <div class=""device-badge"">
-      <span class=""dot-green""></span>
-      <span id=""devName"">Paired</span>
-      <button class=""btn-unpair"" onclick=""doUnpair()"">Disconnect</button>
+    <div class=""header-right"">
+      <a href=""/opac"" target=""_blank"" class=""btn-opac-link"">Open OPAC &#x2197;</a>
+      <div class=""device-badge"">
+        <span class=""dot-green""></span>
+        <span id=""devName"">Paired</span>
+        <button class=""btn-unpair"" onclick=""doUnpair()"">Disconnect</button>
+      </div>
     </div>
   </header>
 
@@ -1703,8 +3422,9 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     <div id=""tab-cat"" class=""tab-pane"" style=""display: none;"">
       <div class=""card"">
         <div style=""display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: space-between;"">
-          <div style=""display: flex; gap: 8px; flex: 1; min-width: 260px;"">
-            <input type=""text"" id=""catQ"" class=""input-text"" placeholder=""Search titles, authors, barcode, ISBN..."" oninput=""debouncedLoadCat()"" />
+          <div style=""display: flex; gap: 8px; flex: 1; min-width: 260px; flex-wrap: wrap;"">
+            <input type=""text"" id=""catQ"" class=""input-text"" style=""flex: 1; min-width: 180px;"" placeholder=""Search titles, authors, barcode, ISBN..."" oninput=""debouncedLoadCat()"" />
+            <input type=""text"" id=""catSubj"" class=""input-text"" style=""width: 160px;"" placeholder=""Subject Heading..."" oninput=""debouncedLoadCat()"" />
             <select id=""catStatus"" class=""select-box"" style=""width: 120px;"" onchange=""loadCatalog()"">
               <option value=""active"">Active</option>
               <option value=""weeded"">Weeded</option>
@@ -1715,6 +3435,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
               <option value=""title"">Sort: Title (A-Z)</option>
               <option value=""title_desc"">Sort: Title (Z-A)</option>
               <option value=""author"">Sort: Author</option>
+              <option value=""subject"">Sort: Subject</option>
               <option value=""barcode"">Sort: Barcode</option>
               <option value=""call"">Sort: Call No</option>
               <option value=""newest"">Sort: Newest</option>
@@ -1728,7 +3449,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         <div class=""table-wrap"">
           <table id=""catTable"">
             <thead>
-              <tr><th>Title</th><th>Author</th><th>Barcode</th><th>Call No</th><th>Status</th><th style=""text-align: right;"">Actions</th></tr>
+              <tr><th>Title</th><th>Author</th><th>Subject Heading</th><th>Barcode</th><th>Call No</th><th>Status</th><th style=""text-align: right;"">Actions</th></tr>
             </thead>
             <tbody></tbody>
           </table>
@@ -2178,9 +3899,10 @@ function debouncedLoadCat() {
 
 async function loadCatalog() {
   const q = document.getElementById('catQ').value.trim();
+  const subj = document.getElementById('catSubj') ? document.getElementById('catSubj').value.trim() : '';
   const st = document.getElementById('catStatus').value;
   const sort = document.getElementById('catSort') ? document.getElementById('catSort').value : 'title';
-  const res = await api(`/api/items?q=${encodeURIComponent(q)}&status=${st}&sort=${encodeURIComponent(sort)}`);
+  const res = await api(`/api/items?q=${encodeURIComponent(q)}&subject=${encodeURIComponent(subj)}&status=${st}&sort=${encodeURIComponent(sort)}`);
   if (!res.ok) return;
 
   const tbody = document.querySelector('#catTable tbody');
@@ -2198,6 +3920,7 @@ async function loadCatalog() {
     tr.innerHTML = `
       <td><strong>${escape(i.title)}</strong><div style=""font-size:12px; color:#9a9a94;"">${escape(i.sub || '')}</div></td>
       <td>${escape(i.author)}</td>
+      <td><span class=""badge badge-dim"" style=""font-size:11px;"">${escape(i.subject || '\u2014')}</span></td>
       <td><code>${escape(i.barcode)}</code></td>
       <td>${escape(i.call)}</td>
       <td>${stBadge}</td>

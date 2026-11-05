@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ErrinILS User Manual - Comprehensive Operating Guidelines</title>
-  <meta name="description" content="Official, exhaustive user manual and operating handbook for ErrinILS version 1.3.2. Covers installation, circulation, cataloguing, student management, fines, weeding, QR remote pairing, analytics, and administration.">
+  <meta name="description" content="Official, exhaustive user manual and operating handbook for ErrinILS version 1.3.3. Covers installation, circulation, cataloguing, student management, fines, weeding, QR remote pairing, analytics, and administration.">
   <link rel="icon" type="image/png" href="assets/icon.png">
   <link rel="stylesheet" href="styles.css">
   <script>
@@ -25,7 +25,7 @@
       <a href="index.html" class="brand-link">
         <img src="assets/icon.png" alt="ErrinILS Logo" class="brand-icon">
         <span>ErrinILS</span>
-        <span class="brand-badge">v1.3.2</span>
+        <span class="brand-badge">v1.3.3</span>
       </a>
 
       <button class="mobile-menu-btn" aria-label="Toggle navigation" aria-expanded="false">☰</button>
@@ -39,7 +39,7 @@
 
       <div class="nav-actions">
         <button class="theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme"></button>
-        <a href="download.html" class="btn btn-primary btn-sm">Download v1.3.2</a>
+        <a href="download.html" class="btn btn-primary btn-sm">Download v1.3.3</a>
       </div>
     </div>
   </header>
@@ -59,7 +59,7 @@
     <!-- Download / Print Action Bar -->
     <div class="guide-actions-bar">
       <div class="guide-actions-left">
-        <a href="assets/ErrinILS-User-Guide.pdf" download="ErrinILS-User-Guide-v1.3.2.pdf" id="btn-download-guide-pdf" class="btn btn-primary btn-sm">
+        <a href="assets/ErrinILS-User-Guide.pdf" download="ErrinILS-User-Guide-v1.3.3.pdf" id="btn-download-guide-pdf" class="btn btn-primary btn-sm">
           Download PDF Manual (646 KB)
         </a>
         <button id="btn-download-guide-md" class="btn btn-secondary btn-sm">
@@ -73,7 +73,7 @@
         </button>
       </div>
       <div>
-        <span class="badge badge-gold">Official Manual v1.3.2</span>
+        <span class="badge badge-gold">Official Manual v1.3.3</span>
       </div>
     </div>
 
@@ -96,7 +96,7 @@
           <li><a href="#ch10" class="guide-nav-link">10. Students &amp; Patrons</a></li>
           <li><a href="#ch11" class="guide-nav-link">11. Fines Management</a></li>
           <li><a href="#ch12" class="guide-nav-link">12. Collection Weeding</a></li>
-          <li><a href="#ch13" class="guide-nav-link">13. Remote QR Access</a></li>
+          <li><a href="#ch13" class="guide-nav-link">13. Remote Access &amp; Web OPAC</a></li>
           <li><a href="#ch14" class="guide-nav-link">14. Reports &amp; Analytics</a></li>
           <li><a href="#ch15" class="guide-nav-link">15. Backup &amp; Recovery</a></li>
           <li><a href="#ch16" class="guide-nav-link">16. Settings &amp; Admin</a></li>
@@ -277,7 +277,7 @@
           <div class="chapter-body">
             <h4 style="color: var(--accent-gold); margin: 16px 0 8px 0;">3.1 Installing with the Setup program</h4>
             <ol class="step-list">
-              <li>Download <code>ErrinILS-Setup-1.3.2.exe</code> from the official website or GitHub release.</li>
+              <li>Download <code>ErrinILS-Setup-1.3.3.exe</code> from the official website or GitHub release.</li>
               <li>Double-click the installer. If Windows UAC prompts *"Do you want to allow this app to make changes?"*, click <strong>Yes</strong>.</li>
               <li>If a blue *"Windows protected your PC"* box appears, click <strong>More info</strong> and then <strong>Run anyway</strong>. This occurs because open-source educational software is released without costly commercial certificates.</li>
               <li>Follow the setup wizard, keep the default directory (<code>C:\Program Files (x86)\ErrinILS</code>), click <strong>Install</strong>, and click <strong>Finish</strong>.</li>
@@ -547,6 +547,16 @@
               Title, Author, Publisher, Year, Subjects, and Dewey Decimal Classification (DDC) are populated automatically.
             </p>
 
+            <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">9.5 Subject Heading (Perkara) Search &amp; Browsing</h4>
+            <p>
+              The catalog provides a dedicated <strong>Subject Heading</strong> filter alongside title and author keyword searches:
+            </p>
+            <ul class="step-list">
+              <li><strong>Targeted Topic Filter:</strong> Type subject keywords (e.g., <em>Sains</em>, <em>Sejarah</em>, <em>Fiksyen Remaja</em>) into the Subject Heading box to instantly isolate titles classified under that topic.</li>
+              <li><strong>A-Z Subject Sorting:</strong> Select <strong>Subject (A-Z)</strong> from the Sort dropdown to group books systematically by subject matter.</li>
+              <li><strong>Catalog Grid Display:</strong> The main catalog view includes a dedicated Subject Heading column showing all indexed topics at a glance.</li>
+            </ul>
+
             <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">9.11 Printing barcode and spine labels</h4>
             <ul class="step-list">
               <li><strong>Barcode Labels (70 × 30 mm):</strong> Shows call number on the left; title, Code 128 barcode, and digits on the right.</li>
@@ -620,22 +630,61 @@
         <!-- Chapter 13 -->
         <article class="guide-chapter" id="ch13">
           <div class="chapter-number">Chapter 13</div>
-          <h2 class="chapter-title">Remote Access, QR Code Pairing &amp; Mobile Web App</h2>
+          <h2 class="chapter-title">Remote Access, Web OPAC &amp; Static Hosting</h2>
           <div class="chapter-body">
             <div class="figure-box">
               <img src="assets/screenshot-settings.png" alt="ErrinILS Settings Screenshot" class="figure-img">
-              <div class="figure-caption">Figure 7: Settings &amp; Remote Access — Policy parameters, admin password, and wireless QR code device pairing.</div>
+              <div class="figure-caption">Figure 7: Settings &amp; Remote Access — Policy parameters, admin password, OPAC configuration, and wireless QR code device pairing.</div>
             </div>
             <p>
-              ErrinILS features a built-in pure C# HTTP server (`TcpListener`) binding to all network interfaces (`0.0.0.0`), allowing smartphones and tablets on school Wi-Fi or hotspots to access the library wirelessly.
+              ErrinILS features a built-in pure C# HTTP server (<code>TcpListener</code>) binding to all network interfaces (<code>0.0.0.0</code>), allowing smartphones, tablets, and computers on school Wi-Fi or LAN to access the library wirelessly.
             </p>
-            <h4 style="color: var(--accent-gold); margin: 16px 0 8px 0;">13.3 Instant QR Code &amp; 6-digit PIN pairing</h4>
+            <h4 style="color: var(--accent-gold); margin: 16px 0 8px 0;">13.3 Instant QR Code &amp; 6-digit PIN pairing (Staff Remote Access)</h4>
             <ol class="step-list">
-              <li>In **Settings → Remote Access**, click **Pair New Device**.</li>
+              <li>In <strong>Settings → Remote Access &amp; Device Pairing</strong>, click <strong>Pair New Device</strong>.</li>
               <li>Scan the displayed sharp QR code with your smartphone camera.</li>
-              <li>The web browser opens with the 6-digit pairing code pre-filled. Tap **Verify &amp; Pair**.</li>
-              <li>A persistent 32-byte cryptographic token (`X-Errin-Token`) authenticates the device. You never need to enter passwords again.</li>
-              <li>Use your phone camera as a wireless barcode scanner for stock audits.</li>
+              <li>The web browser opens with the 6-digit pairing code pre-filled. Tap <strong>Verify &amp; Pair</strong>.</li>
+              <li>A persistent 32-byte cryptographic token (<code>X-Errin-Token</code>) authenticates the device. You never need to enter passwords again.</li>
+              <li>The mobile web interface matches the desktop dark charcoal design and allows staff to use their phone camera or handheld scanners for stock audits and catalog management.</li>
+            </ol>
+
+            <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">13.4 Online Public Access Catalog (OPAC)</h4>
+            <p>
+              The OPAC provides a clean, responsive public search portal for students, teachers, and parents:
+            </p>
+            <ul class="step-list">
+              <li><strong>Local Network URL:</strong> Open any browser on the school network and navigate to <code>http://&lt;server-ip&gt;:8080/opac</code> (or click <strong>Open OPAC in Browser</strong> in Settings).</li>
+              <li><strong>Signature Theme:</strong> Designed with the desktop software's charcoal palette, golden yellow accents, royal blue branding, and clear status cards.</li>
+              <li><strong>Search Capabilities:</strong> Multi-token keyword search across title, author, and call number, plus a dedicated <strong>Subject Heading</strong> filter and interactive topic tag cloud.</li>
+              <li><strong>Live Copy Availability:</strong> Immediately shows whether copies are on the shelf, on loan (with due date), or held.</li>
+            </ul>
+
+            <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">13.5 Optional Patron Self-Service Login</h4>
+            <p>
+              To protect student privacy and keep the OPAC simple for younger students, Patron Login is <strong>OFF by default</strong>:
+            </p>
+            <ul class="step-list">
+              <li><strong>Enabling Login:</strong> In <strong>Settings → OPAC &amp; Online Catalog</strong>, check the box: <code>Enable Patron Login for OPAC</code>.</li>
+              <li><strong>Student Sign-In:</strong> Students click <strong>Log Masuk Murid / Patron Login</strong> in the top header and enter either their <strong>Student ID</strong> (<code>id_murid</code>) or <strong>Malaysian IC / MyKid</strong> (<code>no_pengenalan</code>).</li>
+              <li><strong>Student Dashboard:</strong> Once logged in, students can review their active borrowed items, loan due dates, calculated overdue fines (RM), reading history, and place holds on books currently loaned out to others.</li>
+            </ul>
+
+            <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">13.6 1-Click Static OPAC Export for GitHub Pages (Zero-Server Setup)</h4>
+            <p>
+              Schools without a dedicated computer left running 24/7 can publish their library catalog to the web for free using GitHub Pages:
+            </p>
+            <ol class="step-list">
+              <li>In <strong>Settings → OPAC &amp; Online Catalog</strong>, click <strong>Export Static OPAC (GitHub Pages)</strong>.</li>
+              <li>Choose an export folder. ErrinILS instantly writes four clean files:
+                <ul>
+                  <li><code>index.html</code>: The full standalone OPAC web application configured for static hosts.</li>
+                  <li><code>catalog.json</code>: Sanitized JSON catalog export (withdrawn and weeded items excluded).</li>
+                  <li><code>opac-standalone.html</code>: All-in-one file with embedded catalog data (can be double-clicked without a server).</li>
+                  <li><code>README.md</code>: Step-by-step instructions for creating a free GitHub repository and turning on Pages.</li>
+                </ul>
+              </li>
+              <li>Create a new public repository on GitHub (e.g. <code>school-library-opac</code>), drag and drop the exported files, and commit.</li>
+              <li>Go to <strong>Settings → Pages</strong> in GitHub, select the <code>main</code> branch root, and save. Within 2 minutes, your school OPAC is live worldwide with zero server costs!</li>
             </ol>
           </div>
         </article>
@@ -681,7 +730,7 @@
           <h2 class="chapter-title">Settings and Administration</h2>
           <div class="chapter-body">
             <p>
-              Configure school name, daily fine rate (default: `RM 0.10`), max loan limits (default: `3`), and fine block threshold (default: `RM 5.00`). Change administrator password and manage the optional Z39.50 server.
+              Configure school name, daily fine rate (default: <code>RM 0.10</code>), max loan limits (default: <code>3</code>), and fine block threshold (default: <code>RM 5.00</code>). Change administrator password, configure mandatory student registration fields, enable or disable OPAC Patron Login, launch the local OPAC in your browser, export static OPAC files for GitHub Pages, and manage the optional Z39.50 server.
             </p>
           </div>
         </article>
@@ -763,7 +812,7 @@
             <p><strong>What is the default administrator password?</strong><br>The factory default administrator password is <code>admin123</code>. You can change it to any password of 4 or more characters in <strong>Settings → Admin Password</strong>.</p>
             <p style="margin-top: 12px;"><strong>Can multiple devices access the system at once?</strong><br>Yes. Enable the built-in Remote Web Server in Settings to let smartphones and tablets perform circulation and cataloguing over school Wi-Fi.</p>
             <p style="margin-top: 12px;"><strong>Are student records private?</strong><br>Yes. All database files remain strictly on your local PC. ErrinILS transmits no personal student data over the internet.</p>
-            <p style="margin-top: 12px;"><strong>Can we change the 7-day loan duration?</strong><br>In v1.3.2, the loan duration is fixed at 7 days with up to 2 renewals (21 days max). Fine rates and block thresholds can be customized at any time in Settings.</p>
+            <p style="margin-top: 12px;"><strong>Can we change the 7-day loan duration?</strong><br>In v1.3.3, the loan duration is fixed at 7 days with up to 2 renewals (21 days max). Fine rates and block thresholds can be customized at any time in Settings.</p>
           </div>
         </article>
 
@@ -933,7 +982,7 @@
             <li><a href="download.html#requirements">System Requirements</a></li>
             <li><a href="guide.html#circ">Circulation Desk Guide</a></li>
             <li><a href="guide.html#simple">Simplified View Setup</a></li>
-            <li><a href="assets/ErrinILS-User-Guide.pdf" download="ErrinILS-User-Guide-v1.3.2.pdf">Official Manual (PDF)</a></li>
+            <li><a href="assets/ErrinILS-User-Guide.pdf" download="ErrinILS-User-Guide-v1.3.3.pdf">Official Manual (PDF)</a></li>
             <li><a href="assets/ErrinILS-User-Guide.md" download>Download Manual (.md)</a></li>
           </ul>
         </div>
@@ -941,9 +990,9 @@
         <div>
           <div class="footer-col-title">Releases</div>
           <ul class="footer-links">
-            <li><a href="https://github.com/RZSY/ErrinILS/releases/tag/v1.3.2" target="_blank" rel="noopener">ErrinILS v1.3.2 on GitHub</a></li>
-            <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.3.2/ErrinILS-Setup-1.3.2.exe">Setup Installer (.exe)</a></li>
-            <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.3.2/ErrinILS-Windows.zip">Portable Package (.zip)</a></li>
+            <li><a href="https://github.com/RZSY/ErrinILS/releases/tag/v1.3.3" target="_blank" rel="noopener">ErrinILS v1.3.3 on GitHub</a></li>
+            <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.3.3/ErrinILS-Setup-1.3.3.exe">Setup Installer (.exe)</a></li>
+            <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.3.3/ErrinILS-Windows.zip">Portable Package (.zip)</a></li>
             <li><a href="https://github.com/RZSY/ErrinILS" target="_blank" rel="noopener">GitHub Repository</a></li>
           </ul>
         </div>

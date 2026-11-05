@@ -582,6 +582,54 @@ static class SelfTest
         Ok(apdmLib.PatronById("080315-10-1234") == apdmPat, "Lib.PatronById finds student by No. Pengenalan (with dashes)");
         Ok(apdmLib.PatronById("080315101234") == apdmPat, "Lib.PatronById finds student by No. Pengenalan (raw 12 digits)");
 
+        // --- OPAC & Subject Heading tests ---
+        var opacDb = new Db();
+        opacDb.Set.opacLogin = true;
+        opacDb.Set.school = "Sekolah Menengah Kebangsaan Seri Melati";
+        var b1 = new Item { id = "1", barcode = "BK001", title = "Sejarah Malaysia", author = "Prof. Zainal", subject = "Sejarah--Malaysia", call = "959.5 ZAI" };
+        var b2 = new Item { id = "2", barcode = "BK002", title = "Sains Komputer", author = "Dr. Alan", subject = "Sains Komputer; Pengaturcaraan", call = "004 ALA" };
+        var bWeeded = new Item { id = "3", barcode = "BK003", title = "Buku Rosak", author = "Anon", subject = "Umum", call = "000 ANO", weeded = "2026-11-05" };
+        opacDb.Items.Add(b1);
+        opacDb.Items.Add(b2);
+        opacDb.Items.Add(bWeeded);
+        var opacStudent = new Patron { id = "P101", id_murid = "M999", no_pengenalan = "090101-10-5555", name = "Farhan bin Ahmad" };
+        opacDb.Patrons.Add(opacStudent);
+
+        // Settings.opacLogin JSON & SQLite round-trip
+        var opacDbJson = Db.FromJson(opacDb.ToJson());
+        Ok(opacDbJson.Set.opacLogin == true, "Settings.opacLogin preserved in JSON");
+
+        string opacDbPath = Path.Combine(Path.GetTempPath(), "test-opac-" + Guid.NewGuid().ToString("N") + ".db");
+        try
+        {
+            SqliteStore.Save(opacDbPath, opacDb);
+            var opacSqlDb = SqliteStore.Load(opacDbPath);
+            Ok(opacSqlDb != null && opacSqlDb.Set.opacLogin == true, "Settings.opacLogin preserved in SQLite");
+        }
+        finally
+        {
+            if (File.Exists(opacDbPath)) try { File.Delete(opacDbPath); } catch { }
+        }
+
+        // Subject Heading search matching
+        Ok(b1.Matches("Sejarah") && b1.Matches("Malaysia"), "Item matches subject heading terms");
+        Ok(b2.Matches("Pengaturcaraan") && b2.Matches("Komputer"), "Item matches multiple subject terms");
+
+        // Web.ExportOpacCatalogJson excludes weeded items and contains subjects
+        string catJson = Web.ExportOpacCatalogJson(opacDb);
+        Ok(catJson.Contains("Sejarah--Malaysia") && catJson.Contains("BK001"), "ExportOpacCatalogJson contains active items and subjects");
+        Ok(!catJson.Contains("BK003") && !catJson.Contains("Buku Rosak"), "ExportOpacCatalogJson excludes weeded items");
+
+        // Web.BuildOpacHtml generation
+        string opacHtmlLive = Web.BuildOpacHtml(null, opacDb.Set.school, true);
+        Ok(opacHtmlLive.Contains("Sekolah Menengah Kebangsaan Seri Melati"), "OPAC HTML contains school name");
+        Ok(opacHtmlLive.Contains("Subject Heading") || opacHtmlLive.Contains("subject"), "OPAC HTML contains subject heading capabilities");
+        Ok(opacHtmlLive.Contains("opac-login") || opacHtmlLive.Contains("Patron Login") || opacHtmlLive.Contains("Murid") || opacHtmlLive.Contains("Log Masuk"), "OPAC HTML contains patron login when enabled");
+
+        string opacHtmlStatic = Web.BuildOpacHtml(catJson, opacDb.Set.school, false);
+        Ok(opacHtmlStatic.Contains("window.__CATALOG_DATA__"), "Standalone OPAC HTML embeds catalog data");
+        Ok(!opacHtmlStatic.Contains("btn-login-open"), "OPAC HTML hides patron login button when disabled");
+
         Console.WriteLine("\nall " + n + " checks passed");
         return 0;
     }

@@ -693,6 +693,64 @@ namespace Errin
             }
         }
 
+        void ExportStaticOpacDialog()
+        {
+            using (var fbd = new FolderBrowserDialog())
+            {
+                fbd.Description = "Select a destination folder to export the Static OPAC (ready for GitHub Pages or school web server):";
+                fbd.ShowNewFolderButton = true;
+                if (fbd.ShowDialog(this) != DialogResult.OK || string.IsNullOrEmpty(fbd.SelectedPath)) return;
+
+                string targetDir = fbd.SelectedPath;
+                try
+                {
+                    string catJson = Web.ExportOpacCatalogJson(db);
+                    File.WriteAllText(Path.Combine(targetDir, "catalog.json"), catJson, Encoding.UTF8);
+
+                    string schoolName = db.Set != null ? (db.Set.school ?? "") : "";
+                    string html = Web.BuildOpacHtml(null, schoolName, db.Set != null && db.Set.opacLogin);
+                    File.WriteAllText(Path.Combine(targetDir, "index.html"), html, Encoding.UTF8);
+
+                    string standaloneHtml = Web.BuildOpacHtml(catJson, schoolName, db.Set != null && db.Set.opacLogin);
+                    File.WriteAllText(Path.Combine(targetDir, "opac-standalone.html"), standaloneHtml, Encoding.UTF8);
+
+                    var readme = new StringBuilder();
+                    readme.AppendLine("# School Library OPAC (Online Public Access Catalog)");
+                    readme.AppendLine("Exported from ErrinILS on " + DateTime.Now.ToString("yyyy-MM-dd HH:mm") + ".");
+                    readme.AppendLine();
+                    readme.AppendLine("This folder contains a fully static, standalone web catalog that can be hosted on **GitHub Pages**, Cloudflare Pages, Netlify, or any school web server.");
+                    readme.AppendLine();
+                    readme.AppendLine("## Included Files");
+                    readme.AppendLine("- `index.html` - The OPAC web application. Automatically loads `catalog.json` for fast in-browser searching.");
+                    readme.AppendLine("- `catalog.json` - Active catalog bibliographic records.");
+                    readme.AppendLine("- `opac-standalone.html` - Complete all-in-one single-file catalog with embedded records (can be opened locally by double-clicking).");
+                    readme.AppendLine();
+                    readme.AppendLine("## How to Host on GitHub Pages (Free & Instant)");
+                    readme.AppendLine("1. Log in to [GitHub](https://github.com) and click **New repository** (e.g. `school-library-opac`).");
+                    readme.AppendLine("2. Choose **Public**, and click **Create repository**.");
+                    readme.AppendLine("3. Click **Upload an existing file** and drag all files from this folder (`index.html`, `catalog.json`, `README.md`) into the browser.");
+                    readme.AppendLine("4. Click **Commit changes**.");
+                    readme.AppendLine("5. In the repository, go to **Settings** > **Pages** (under Code and automation).");
+                    readme.AppendLine("6. Under **Branch**, select `main` and `/ (root)`, then click **Save**.");
+                    readme.AppendLine("7. Within 1-2 minutes, your school's OPAC is live at:");
+                    readme.AppendLine("   `https://<your-github-username>.github.io/school-library-opac/`");
+                    readme.AppendLine();
+                    readme.AppendLine("Students, teachers, and parents can search by title, author, subject heading, call number, and explore subject categories without any server setup!");
+                    File.WriteAllText(Path.Combine(targetDir, "README.md"), readme.ToString(), Encoding.UTF8);
+
+                    Toast("Static OPAC exported successfully to " + Path.GetFileName(targetDir));
+                    if (Ui.Confirm(this, "Static OPAC exported successfully to:\n" + targetDir + "\n\nWould you like to open this folder in File Explorer?"))
+                    {
+                        try { System.Diagnostics.Process.Start("explorer.exe", targetDir); } catch { }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, "Could not export OPAC files: " + ex.Message, "Export Failed", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+        }
+
         /* ---------- MARC import ---------- */
         void PickImport()
         {

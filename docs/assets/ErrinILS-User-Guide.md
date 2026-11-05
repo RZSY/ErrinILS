@@ -1,7 +1,7 @@
 # ErrinILS School Library System
 ## User Manual and Operating Guidelines
 **Installation, daily circulation, cataloguing, students, fines, weeding, remote access, reports, backup and administration**  
-**Software Version 1.3.2 (Windows Edition)**  
+**Software Version 1.3.3 (Windows Edition)**  
 *For Windows 7, 8, 8.1, 10 and 11 (32-bit and 64-bit)*  
 *Official Repository: https://github.com/RZSY/ErrinILS*  
 *Online Portal: https://rzsy.github.io/ErrinILS/*
@@ -232,8 +232,8 @@ ErrinILS is engineered to work out of the box with any **USB Keyboard Wedge Barc
 ## 3. Installing, Updating and Starting ErrinILS
 
 ### 3.1 Installing with the Setup program
-1. Download `ErrinILS-Setup-1.3.2.exe` from the official release page: `https://github.com/RZSY/ErrinILS/releases/tag/v1.3.2`.
-2. Double-click `ErrinILS-Setup-1.3.2.exe`.
+1. Download `ErrinILS-Setup-1.3.3.exe` from the official release page: `https://github.com/RZSY/ErrinILS/releases/tag/v1.3.3`.
+2. Double-click `ErrinILS-Setup-1.3.3.exe`.
 3. If Windows User Account Control (UAC) prompts *"Do you want to allow this app to make changes?"*, click **Yes**.
 4. If a blue **Windows protected your PC** (SmartScreen) notification appears, click **More info**, then click **Run anyway**. *(This appears on open-source releases that do not have costly commercial signing certificates).*
 5. The setup wizard opens. Click **Next**, keep the default destination directory (`C:\Program Files (x86)\ErrinILS` or `C:\Program Files\ErrinILS`), click **Install**, then click **Finish**.
@@ -323,8 +323,8 @@ If an unhandled system error occurs, ErrinILS displays a notification: *"Somethi
 
 | Rule | Default Value | Configurable? | Location in Settings |
 |---|---|---|---|
-| **Loan Period** | 7 calendar days | Fixed in v1.3.2 | Core Circulation Engine |
-| **Max Renewals per Loan** | 2 renewals (+14 days max) | Fixed in v1.3.2 | Core Circulation Engine |
+| **Loan Period** | 7 calendar days | Fixed in v1.3.3 | Core Circulation Engine |
+| **Max Renewals per Loan** | 2 renewals (+14 days max) | Fixed in v1.3.3 | Core Circulation Engine |
 | **Max Books per Student** | 3 books | Yes | **Settings → Max items per student** |
 | **Overdue Fine Rate** | RM 0.10 / day late | Yes | **Settings → Fine per day late** |
 | **Borrowing Block Threshold** | RM 5.00 unpaid fines | Yes | **Settings → Block checkout at unpaid fines of** |
@@ -506,8 +506,12 @@ The **Catalog** tab manages every bibliographic record and physical copy in the 
 - **Search Bar**: Real-time multi-term search across titles, authors, ISBNs, barcodes, and Dewey numbers.
 - **Bottom Actions**: **Edit**, **MARC**, **Label**, **Spine Label**, **Weed Copy**, and **Delete**.
 
-### 9.2 Searching the catalogue
-Type any search keyword into the **Search** box. Searching `Rowling`, `823.914`, `B1042`, or `0545010221` immediately filters matching records with sub-second speed.
+### 9.2 Searching the catalogue & Subject Heading filtering
+ErrinILS provides dual search inputs and subject sorting for efficient collection discovery:
+- **General Search**: Type any search keyword into the **Search** box. Searching `Rowling`, `823.914`, `B1042`, or `0545010221` immediately filters matching records across titles, authors, barcodes, call numbers, and identifiers.
+- **Subject Heading Filter**: Enter specific subject topics (e.g. `Sejarah`, `Sains`, `Fiksyen`) into the dedicated **Subject Heading** box to isolate books indexed under that subject heading.
+- **Subject (A-Z) Sorting**: Select `Subject (A-Z)` in the sort dropdown to group the catalog systematically by topical categories.
+- **Subject Heading Column**: The catalog table includes a dedicated column displaying all assigned subject headings for rapid browsing.
 
 ### 9.3 Adding a record by hand
 1. Click **+ Add record**. ErrinILS auto-generates the next sequential Barcode, Control Number, and Acquisition Number.
@@ -682,7 +686,7 @@ If a lost book is subsequently returned by a student, open **Catalog → Weeded 
 
 ---
 
-## 13. Remote Access, QR Code Pairing & Mobile Web App
+## 13. Remote Access, Web OPAC & Static Hosting
 
 ### 13.1 Architecture & network connectivity
 ErrinILS includes a built-in, zero-dependency pure C# HTTP/1.1 server (`TcpListener`). It binds to `0.0.0.0`, allowing access across all school network interfaces:
@@ -714,6 +718,26 @@ In the mobile Web App, tap the camera icon next to any barcode input field. Your
 
 ### 13.5 Managing paired devices & token security
 In **Settings → Remote Access**, view the **Paired Devices** register showing device name, IP address, pairing date, and last active timestamp. Click **Revoke** next to any device to instantly terminate its access.
+
+### 13.6 Online Public Access Catalog (OPAC)
+The OPAC provides a public-facing catalog interface for students, teachers, and parents:
+- **School Network Access**: Anyone connected to school Wi-Fi or LAN can open `http://<server-ip>:8080/opac`.
+- **Desktop-Consistent Theme**: Styled with the dark charcoal workspace background, golden yellow active highlights, royal blue logo branding, and left-stripe card borders.
+- **Subject Heading Search**: Fast keyword queries across titles, authors, and call numbers, plus a dedicated **Subject Heading** input and live clickable subject topic pills.
+- **Real-Time Copy Availability**: Shows whether books are available on the shelf, checked out with due dates, or held.
+
+### 13.7 Optional Patron Self-Service Login
+Patron login is **OFF by default** to keep public searches simple and private:
+- **Enabling**: Check **Enable Patron Login for OPAC** in **Settings → OPAC & Online Catalog**.
+- **Student Sign-in**: Students authenticate using their **Student ID** (`id_murid`) or **Malaysian IC / MyKid** (`no_pengenalan`).
+- **Self-Service Dashboard**: Enables students to check active loans, upcoming due dates, calculated fines (RM), borrowing history, and place hold requests on borrowed books.
+
+### 13.8 1-Click Static OPAC Export for GitHub Pages
+Schools can publish their OPAC 24/7 on the internet for free without needing a dedicated server:
+1. In **Settings → OPAC & Online Catalog**, click **Export Static OPAC (GitHub Pages)**.
+2. Select an output folder. ErrinILS creates `index.html`, `catalog.json`, `opac-standalone.html`, and `README.md`.
+3. Create a free GitHub repository (e.g. `school-library-opac`), upload the exported files, and enable GitHub Pages under repository settings.
+4. The OPAC runs 100% client-side with full in-browser search and subject filtering with zero server hosting costs.
 
 ---
 

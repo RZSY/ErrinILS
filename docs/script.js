@@ -128,7 +128,13 @@ function initScreenshotViewer() {
       src: 'assets/screenshot-settings.png',
       alt: 'ErrinILS Settings and Mobile QR Screen',
       title: 'ErrinILS — Settings & Remote Access',
-      caption: '<strong>Settings & Mobile QR Access:</strong> Pair phones and tablets over school Wi-Fi with a 6-digit PIN and QR code for wireless shelf audits. One-click ZIP backup of the entire library database.'
+      caption: '<strong>Settings & Remote Access:</strong> Pair phones and tablets over school Wi-Fi with a 6-digit PIN and QR code for wireless shelf audits, toggle OPAC patron login, and export static OPAC bundles for GitHub Pages.'
+    },
+    opac: {
+      src: 'assets/screenshot-catalog.png',
+      alt: 'ErrinILS Online Public Access Catalog (OPAC) Screen',
+      title: 'ErrinILS — Online Public Access Catalog (OPAC)',
+      caption: '<strong>Web OPAC & Static Export:</strong> Public online catalog matching the desktop dark theme, served at <code>/opac</code> with Subject Heading search, topic clouds, optional Student ID/IC login for loans & holds, and 1-click export to host for free on GitHub Pages.'
     }
   };
 
@@ -248,7 +254,7 @@ function initGuideActions() {
           return res.text();
         })
         .then(function (mdText) {
-          triggerBlobDownload(mdText, 'ErrinILS-User-Guide-v1.3.2.md', 'text/markdown;charset=utf-8');
+          triggerBlobDownload(mdText, 'ErrinILS-User-Guide-v1.3.3.md', 'text/markdown;charset=utf-8');
         })
         .catch(function () {
           window.location.href = guidePath;
@@ -265,7 +271,7 @@ function initGuideActions() {
           return res.text();
         })
         .then(function (text) {
-          triggerBlobDownload(text, 'ErrinILS-User-Guide-v1.3.2.txt', 'text/plain;charset=utf-8');
+          triggerBlobDownload(text, 'ErrinILS-User-Guide-v1.3.3.txt', 'text/plain;charset=utf-8');
         })
         .catch(function () {
           window.location.href = guidePath;

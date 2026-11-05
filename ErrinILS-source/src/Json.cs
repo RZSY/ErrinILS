@@ -158,5 +158,12 @@ namespace Errin
             object v; if (d != null && d.TryGetValue(k, out v)) { var o = v as Dictionary<string, object>; if (o != null) return o; }
             return new Dictionary<string, object>();
         }
+        public static bool Bool(IDictionary<string, object> d, string k)
+        {
+            object v; if (d == null || !d.TryGetValue(k, out v) || v == null) return false;
+            if (v is bool) return (bool)v;
+            string s = v.ToString().Trim().ToLowerInvariant();
+            return s == "true" || s == "1";
+        }
     }
 }

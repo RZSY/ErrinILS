@@ -25,7 +25,7 @@
       <a href="index.html" class="brand-link">
         <img src="assets/icon.png" alt="ErrinILS Logo" class="brand-icon">
         <span>ErrinILS</span>
-        <span class="brand-badge">v1.3.2</span>
+        <span class="brand-badge">v1.3.3</span>
       </a>
 
       <button class="mobile-menu-btn" aria-label="Toggle navigation" aria-expanded="false">☰</button>
@@ -39,7 +39,7 @@
 
       <div class="nav-actions">
         <button class="theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme"></button>
-        <a href="download.html" class="btn btn-primary btn-sm">Download v1.3.2</a>
+        <a href="download.html" class="btn btn-primary btn-sm">Download v1.3.3</a>
       </div>
     </div>
   </header>
@@ -148,7 +148,7 @@
         <div class="card">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
             <h3 class="card-title" style="margin-bottom: 0;">QR Code Remote Access &amp; Multi-Wi-Fi</h3>
-            <span class="badge badge-green">NEW v1.3.2</span>
+            <span class="badge badge-green">NEW v1.3.3</span>
           </div>
           <p class="card-text">
             Teachers, student librarians, and stock audit assistants can access the library system wirelessly from smartphones and tablets without installing any app:
@@ -210,6 +210,42 @@
             <li><strong>Circulation Trajectory:</strong> Monthly checkout volume trends over the last 6 months.</li>
             <li><strong>Collection Classification:</strong> Dewey Decimal 100s distribution breakdown and dormant zero-circulation audits.</li>
             <li><strong>1-Click CSV Export:</strong> Instant spreadsheet generation for school board presentations.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-top: 32px;" id="opac">
+        <!-- Feature 7 -->
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+            <h3 class="card-title" style="margin-bottom: 0;">Online Public Access Catalog (OPAC)</h3>
+            <span class="badge badge-gold">NEW v1.3.3</span>
+          </div>
+          <p class="card-text">
+            Students, teachers, and parents can search the library collection from any device on the school network:
+          </p>
+          <ul class="step-list" style="margin-left: 16px;">
+            <li><strong>Local Network Web OPAC:</strong> Served at <code>/opac</code> matching the signature desktop dark theme (charcoal, golden yellow accents, royal blue branding).</li>
+            <li><strong>Dedicated Subject Heading Search:</strong> Search by Perkara / Subject Heading alongside Title, Author, and Call Number, with live topic cloud tag filtering.</li>
+            <li><strong>Patron Self-Service Login (Optional):</strong> Disabled by default; when toggled ON in Settings, students log in with their Student ID or Malaysian IC (<code>no_pengenalan</code>) to view active loans, due dates, fines, history, and place holds on borrowed books.</li>
+            <li><strong>Real-Time Copy Availability:</strong> Immediate visual indicators of shelf availability, on loan due dates, and hold status.</li>
+          </ul>
+        </div>
+
+        <!-- Feature 8 -->
+        <div class="card" id="static-opac">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+            <h3 class="card-title" style="margin-bottom: 0;">Static Hosting &amp; GitHub Pages Export</h3>
+            <span class="badge badge-blue">STATIC OPAC</span>
+          </div>
+          <p class="card-text">
+            Schools without a dedicated server or constant computer uptime can host their OPAC 24/7 for free:
+          </p>
+          <ul class="step-list" style="margin-left: 16px;">
+            <li><strong>1-Click Export:</strong> Go to Settings → "Export Static OPAC (GitHub Pages)" to generate a complete deployment package (<code>index.html</code>, <code>catalog.json</code>, <code>opac-standalone.html</code>, and <code>README.md</code>).</li>
+            <li><strong>100% In-Browser Search:</strong> Fast multi-token fuzzy search, subject heading filtering, and sorting run entirely client-side with zero external dependencies.</li>
+            <li><strong>Zero Server Costs:</strong> Deploy to GitHub Pages, Cloudflare Pages, Netlify, or static school hosting with zero maintenance and zero IT administration.</li>
+            <li><strong>Standalone Single-File Mode:</strong> Includes <code>opac-standalone.html</code> with embedded catalog data that can be double-clicked directly off a USB drive or local network share without even a web server.</li>
           </ul>
         </div>
       </div>
@@ -355,8 +391,29 @@
               <td>Complex formula</td>
             </tr>
             <tr>
+              <td><strong>Online Public Access Catalog (OPAC)</strong></td>
+              <td class="highlight">Built-in local OPAC (<code>/opac</code>) &amp; 1-click GitHub Pages export</td>
+              <td>Web OPAC (requires Apache &amp; Perl server)</td>
+              <td>PHP/MySQL web server required</td>
+              <td>None</td>
+            </tr>
+            <tr>
+              <td><strong>Subject Heading (Perkara) Search</strong></td>
+              <td class="highlight">Dedicated subject filters, topic clouds &amp; A-Z sorting</td>
+              <td>MARC 650 subject indexing</td>
+              <td>Subject heading tags</td>
+              <td>Manual filter only</td>
+            </tr>
+            <tr>
+              <td><strong>Patron Self-Service Login</strong></td>
+              <td class="highlight">Optional Student ID / IC login for loans &amp; holds (off by default)</td>
+              <td>Yes (requires LDAP or server accounts)</td>
+              <td>Member area with database login</td>
+              <td>None</td>
+            </tr>
+            <tr>
               <td><strong>Backup &amp; Migration</strong></td>
-              <td class="highlight">Copy 1 JSON file or 1-click ZIP</td>
+              <td class="highlight">Copy 1 SQLite file or 1-click backup</td>
               <td>mysqldump &amp; zebra re-indexing</td>
               <td>MySQL database export</td>
               <td>File copy</td>
@@ -382,7 +439,7 @@
             </tr>
             <tr>
               <td><strong>Current Release</strong></td>
-              <td><span class="badge badge-gold">v1.3.2</span> (Production Stable)</td>
+              <td><span class="badge badge-gold">v1.3.3</span> (Production Stable)</td>
             </tr>
             <tr>
               <td><strong>Programming Language</strong></td>
@@ -421,7 +478,7 @@
       </div>
 
       <div style="text-align: center; margin-top: 40px;">
-        <a href="download.html" class="btn btn-primary btn-lg">Download ErrinILS v1.3.2</a>
+        <a href="download.html" class="btn btn-primary btn-lg">Download ErrinILS v1.3.3</a>
         <a href="guide.html" class="btn btn-secondary btn-lg" style="margin-left: 12px;">Read the User Guide</a>
       </div>
     </section>
@@ -462,7 +519,7 @@
             <li><a href="download.html#requirements">System Requirements</a></li>
             <li><a href="guide.html#circ">Circulation Desk Guide</a></li>
             <li><a href="guide.html#simple">Simplified View Setup</a></li>
-            <li><a href="assets/ErrinILS-User-Guide.pdf" download="ErrinILS-User-Guide-v1.3.2.pdf">Official Manual (PDF)</a></li>
+            <li><a href="assets/ErrinILS-User-Guide.pdf" download="ErrinILS-User-Guide-v1.3.3.pdf">Official Manual (PDF)</a></li>
             <li><a href="assets/ErrinILS-User-Guide.md" download>Download Manual (.md)</a></li>
           </ul>
         </div>
@@ -470,9 +527,9 @@
         <div>
           <div class="footer-col-title">Releases</div>
           <ul class="footer-links">
-            <li><a href="https://github.com/RZSY/ErrinILS/releases/tag/v1.3.2" target="_blank" rel="noopener">ErrinILS v1.3.2 on GitHub</a></li>
-            <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.3.2/ErrinILS-Setup-1.3.2.exe">Setup Installer (.exe)</a></li>
-            <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.3.2/ErrinILS-Windows.zip">Portable Package (.zip)</a></li>
+            <li><a href="https://github.com/RZSY/ErrinILS/releases/tag/v1.3.3" target="_blank" rel="noopener">ErrinILS v1.3.3 on GitHub</a></li>
+            <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.3.3/ErrinILS-Setup-1.3.3.exe">Setup Installer (.exe)</a></li>
+            <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.3.3/ErrinILS-Windows.zip">Portable Package (.zip)</a></li>
             <li><a href="https://github.com/RZSY/ErrinILS" target="_blank" rel="noopener">GitHub Repository</a></li>
           </ul>
         </div>
