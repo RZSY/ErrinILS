@@ -1,4 +1,4 @@
-// ErrinILS main window: header tabs, status bar and the eight pages.
+﻿// ErrinILS main window: header tabs, status bar and the eight pages.
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -30,9 +30,10 @@ namespace Errin
         DataGridView catGrid, patGrid; Label catNote, patNote;
         static readonly string[][] NAV = { new[] { "dash", "Dashboard" }, new[] { "circ", "Circulation" }, new[] { "cat", "Catalog" }, new[] { "pat", "Students" }, new[] { "fine", "Fines" }, new[] { "rep", "Reports" }, new[] { "bak", "Backup" }, new[] { "set", "Settings" } };
 
-        public MainForm()
+        public MainForm() : this(null) { }
+        public MainForm(Store customStore)
         {
-            store = new Store(null);
+            store = customStore ?? new Store(null);
             Text = "ErrinILS"; Font = Th.F; BackColor = Th.Bg; ForeColor = Th.Ink;
             var screen = Screen.FromControl(this).WorkingArea;
             int initW = Math.Min(Ui.S(1240), Math.Max(Ui.S(850), screen.Width - Ui.S(40)));
