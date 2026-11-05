@@ -507,6 +507,7 @@ static class SelfTest
             nama_penjaga1 = "Hassan Bin Ali",
             tel_penjaga1 = "012-3456789",
             nama_penjaga2 = "Fatimah Binti Omar",
+            tel_penjaga2 = "019-9876543",
             alamat1 = "No 12, Jalan Murni 3",
             alamat2 = "Taman Murni Jaya",
             alamat3 = "Batu 5",
@@ -522,6 +523,7 @@ static class SelfTest
 
         // Test field accessors
         Ok(apdmPat.Get("id_murid") == "M100456" && apdmPat.Get("negeri") == "Selangor", "Patron.Get returns correct APDM values");
+        Ok(apdmPat.Get("tel_penjaga2") == "019-9876543", "Patron.Get returns tel_penjaga2");
         apdmPat.Set("negeri", "Perak");
         Ok(apdmPat.negeri == "Perak", "Patron.Set updates field correctly");
         apdmPat.negeri = "Selangor";
@@ -539,6 +541,7 @@ static class SelfTest
         Ok(defSet.IsPatronFieldRequired("nama_penjaga1") == true, "Nama Penjaga 1 is (R) by default");
         Ok(defSet.IsPatronFieldRequired("tel_penjaga1") == true, "No. Tel. Bimbit Penjaga 1 is (R) by default");
         Ok(defSet.IsPatronFieldRequired("alamat1") == true, "Alamat 1 is (R) by default");
+        Ok(defSet.IsPatronFieldRequired("tel_penjaga2") == false, "No. Telefon Penjaga 2 is optional by default");
         Ok(defSet.IsPatronFieldRequired("dob") == false, "Tarikh Lahir is optional by default");
         Ok(defSet.IsPatronFieldRequired("kaum") == false, "Kaum is optional by default");
         Ok(defSet.IsPatronFieldRequired("agama") == false, "Agama is optional by default");

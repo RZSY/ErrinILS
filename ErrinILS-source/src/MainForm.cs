@@ -45,6 +45,9 @@ namespace Errin
             db = store.Load(); bool fresh = db == null; if (fresh) db = Lib.Seed();
             lib = new Lib(db); lib.FixItems(); if (db.Set == null) db.Set = new Settings(); lib.Purge(); lib.CheckDec31ClassArchive();
             BuildFrame(); Save(); LoadCfg(); ApplyZ(); ApplyWeb(); Render();
+            BeginInvoke(new Action(() => {
+                try { if (setPageCached == null) setPageCached = SetPage(); } catch { }
+            }));
             if (autoUpdate)
             {
                 ThreadPool.QueueUserWorkItem(stObj =>
@@ -119,17 +122,37 @@ namespace Errin
             if (v != "rep") { archiveUnlocked = false; repSubTab = "analytics"; }
             view = v; Render();
         }
+        Control setPageCached;
+        Action refreshSetPage;
+
         void Render()
         {
             foreach (var kv in tabs) { bool on = kv.Key == view; kv.Value.BackColor = on ? Th.Yel : Th.Bg; kv.Value.ForeColor = on ? Th.Dark : Th.Ink; }
             tabBar.Visible = view != "simple";
             host.SuspendLayout();
-            var old = host.Controls.Cast<Control>().ToList(); host.Controls.Clear(); foreach (var c in old) c.Dispose();
+            var old = host.Controls.Cast<Control>().ToList();
+            host.Controls.Clear();
+            foreach (var c in old)
+            {
+                if (c == setPageCached) continue;
+                c.Dispose();
+            }
             Control page;
             switch (view)
             {
-                case "simple": page = SimplePage(); break; case "circ": page = CircPage(); break; case "cat": page = CatPage(); break; case "pat": page = PatPage(); break; case "fine": page = FinePage(); break;
-                case "rep": page = RepPage(); break; case "bak": page = BakPage(); break; case "set": page = SetPage(); break; default: page = DashPage(); break;
+                case "simple": page = SimplePage(); break;
+                case "circ": page = CircPage(); break;
+                case "cat": page = CatPage(); break;
+                case "pat": page = PatPage(); break;
+                case "fine": page = FinePage(); break;
+                case "rep": page = RepPage(); break;
+                case "bak": page = BakPage(); break;
+                case "set":
+                    if (setPageCached == null) setPageCached = SetPage();
+                    if (refreshSetPage != null) refreshSetPage();
+                    page = setPageCached;
+                    break;
+                default: page = DashPage(); break;
             }
             page.Dock = DockStyle.Fill; host.Controls.Add(page); host.ResumeLayout(true);
             if (view == "cat") FilterCat(); if (view == "pat") FilterPat();
@@ -138,9 +161,14 @@ namespace Errin
         {
             var p = new Panel { AutoScroll = true, BackColor = Th.Bg };
             var t = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, ColumnCount = 1, BackColor = Th.Bg, Margin = new Padding(0), Padding = Ui.S(new Padding(0, 0, 18, 0)) };
+            p.SuspendLayout();
+            t.SuspendLayout();
             t.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             for (int k = 0; k < rows.Length; k++) { t.RowStyles.Add(new RowStyle(SizeType.AutoSize)); rows[k].Dock = DockStyle.Fill; t.Controls.Add(rows[k], 0, k); }
-            p.Controls.Add(t); return p;
+            p.Controls.Add(t);
+            t.ResumeLayout(false);
+            p.ResumeLayout(false);
+            return p;
         }
         static Control Cols(int h, params Control[] cells)
         {
@@ -157,7 +185,14 @@ namespace Errin
             grid.Dock = DockStyle.Fill; t.Controls.Add(grid, 0, 0);
             var f = Ui.Flow(true); f.Padding = Ui.S(new Padding(0, 8, 0, 0)); f.Dock = DockStyle.Fill; foreach (var b in btns) f.Controls.Add(b); t.Controls.Add(f, 0, 1); return t;
         }
-        static Control Vbox(params Control[] c) { var f = Ui.Flow(false, FlowDirection.TopDown); foreach (var x in c) f.Controls.Add(x); return f; }
+        static Control Vbox(params Control[] c)
+        {
+            var f = Ui.Flow(false, FlowDirection.TopDown);
+            f.SuspendLayout();
+            foreach (var x in c) f.Controls.Add(x);
+            f.ResumeLayout(false);
+            return f;
+        }
         string Mn(double v) { return Lib.Money(v); }
 
         /* ---------- Dashboard ---------- */
@@ -279,11 +314,22 @@ namespace Errin
             btnRow.Controls.Add(Ui.Btn("Print labels", 1, (s, e) => PrintShown()));
             btnRow.Controls.Add(Ui.Btn("Print spine labels", 1, (s, e) => PrintSpines()));
 
-            var toolBox = Ui.Flow(false, FlowDirection.TopDown);
-            toolBox.Controls.Add(filterRow);
-            toolBox.Controls.Add(btnRow);
+            var toolBox = new TableLayoutPanel { ColumnCount = 1, RowCount = 2, Dock = DockStyle.Fill, BackColor = Color.Transparent, Margin = new Padding(0) };
+            toolBox.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+            toolBox.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            toolBox.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            filterRow.Dock = DockStyle.Top;
+            btnRow.Dock = DockStyle.Top;
+            toolBox.Controls.Add(filterRow, 0, 0);
+            toolBox.Controls.Add(btnRow, 0, 1);
 
-            var tool = Ui.Card(null, toolBox);
+            var tool = Ui.Card(null, toolBox, 114);
+            Action updateToolH = () => {
+                int h = filterRow.Height + btnRow.Height + Ui.S(24);
+                if (h != tool.Height && h >= Ui.S(70)) tool.Height = h;
+            };
+            filterRow.SizeChanged += (s, e) => updateToolH();
+            btnRow.SizeChanged += (s, e) => updateToolH();
             catGrid = Ui.Grid(); catNote = Ui.Lbl("", true);
             catGrid.CellDoubleClick += (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i != null) ItemForm(i); };
             catGrid.KeyDown += (s, e) => {
@@ -524,7 +570,7 @@ namespace Errin
         void FilterPat()
         {
             if (patGrid == null || patGrid.IsDisposed) return; string q = (patQ ?? "").ToLowerInvariant();
-            var r = db.Patrons.Where(p => (p.id + " " + p.name + " " + p.cls + " " + p.id_murid + " " + p.no_pengenalan + " " + p.nama_guru_kelas + " " + p.nama_penjaga1).ToLowerInvariant().Contains(q) || (Lib.NormIc(q) != null && (Lib.NormIc(p.id) == Lib.NormIc(q) || Lib.NormIc(p.no_pengenalan) == Lib.NormIc(q)))).ToList();
+            var r = db.Patrons.Where(p => (p.id + " " + p.name + " " + p.cls + " " + p.id_murid + " " + p.no_pengenalan + " " + p.nama_guru_kelas + " " + p.nama_penjaga1 + " " + p.tel_penjaga1 + " " + p.nama_penjaga2 + " " + p.tel_penjaga2).ToLowerInvariant().Contains(q) || (Lib.NormIc(q) != null && (Lib.NormIc(p.id) == Lib.NormIc(q) || Lib.NormIc(p.no_pengenalan) == Lib.NormIc(q)))).ToList();
 
             switch (patSort)
             {
@@ -1378,7 +1424,9 @@ namespace Errin
                 }
                 catch { Toast("Not a valid Errin backup"); return; }
                 if (!Ui.Confirm(this, "Replace ALL current data with this backup?")) return;
-                db = n; lib = new Lib(db); lib.FixItems(); Commit("Backup restored");
+                db = n; lib = new Lib(db); lib.FixItems();
+                if (setPageCached != null) { setPageCached.Dispose(); setPageCached = null; refreshSetPage = null; }
+                Commit("Backup restored");
             }
         }
 
@@ -1390,15 +1438,14 @@ namespace Errin
             var sch = Ui.Txt(300); sch.Text = s.school; var pol = Ui.Flow(); pol.Controls.Add(Ui.Field("School / library name (printed on library cards)", sch, 400)); pol.Controls.Add(Ui.Field("Fine per day late", rate, 190)); pol.Controls.Add(Ui.Field("Max items per student", mx, 210)); pol.Controls.Add(Ui.Field("Block checkout at unpaid fines of", blk, 290));
             var polBody = Vbox(pol, Ui.Lbl("Loan period fixed at " + Lib.LOAN + " days \u00B7 max 2 renewals.", true), Spacer(6), Ui.Btn("Save", 0, (a, b) => { db.Set.school = sch.Text.Trim(); db.Set.rate = (double)rate.Value; db.Set.maxLoans = (int)mx.Value; db.Set.block = (double)blk.Value; Save(); Toast("Settings saved"); }));
 
-            // Student Registration Required Fields Card
-            var reqFlow = new FlowLayoutPanel
-            {
-                FlowDirection = FlowDirection.TopDown,
-                WrapContents = false,
-                AutoSize = true,
-                AutoSizeMode = AutoSizeMode.GrowAndShrink,
-                BackColor = Th.Card
-            };
+            // Student Registration Required Fields Card (optimized direct-layout table)
+            var reqPanel = new Panel { AutoSize = true, Width = Ui.S(820), Dock = DockStyle.Top, BackColor = Color.Transparent };
+            reqPanel.SuspendLayout();
+
+            int curY = 0;
+            var descLbl = new Label { UseMnemonic = false, Text = "Pilih medan yang diwajibkan (R) semasa pendaftaran murid. Medan bertanda disahkan sebelum rekod boleh disimpan. (R) menandakan nilai asal sistem.\nConfigure which fields are mandatory (R) during student registration. Checked fields are validated before saving. (R) marks default fields.", AutoSize = false, Size = new Size(Ui.S(820), Ui.S(44)), Location = new Point(0, curY), ForeColor = Th.Ink };
+            reqPanel.Controls.Add(descLbl);
+            curY += Ui.S(48);
 
             var chkBoxes = new Dictionary<string, CheckBox>();
             var regSections = new[] {
@@ -1411,20 +1458,39 @@ namespace Errin
 
             foreach (var sec in regSections)
             {
-                reqFlow.Controls.Add(new Label
+                var secLbl = new Label
                 {
                     UseMnemonic = false,
                     Text = sec,
                     Font = Th.FB,
                     ForeColor = Th.Ink,
                     AutoSize = true,
-                    Margin = Ui.S(new Padding(0, 8, 0, 2))
-                });
+                    Location = new Point(0, curY)
+                };
+                reqPanel.Controls.Add(secLbl);
+                curY += Ui.S(24);
 
-                var secFlow = Ui.Flow(true);
-                secFlow.MaximumSize = new Size(Ui.S(800), 0);
-                foreach (var f in Patron.PatronFields.Where(x => x.Section == sec))
+                var fields = Patron.PatronFields.Where(x => x.Section == sec).ToList();
+                int rows = (int)Math.Ceiling(fields.Count / 3.0);
+                var table = new TableLayoutPanel
                 {
+                    Location = new Point(0, curY),
+                    Width = Ui.S(820),
+                    ColumnCount = 3,
+                    RowCount = rows,
+                    AutoSize = true,
+                    BackColor = Color.Transparent,
+                    Margin = new Padding(0),
+                    Padding = new Padding(0)
+                };
+                table.SuspendLayout();
+                table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33f));
+                table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.33f));
+                table.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33.34f));
+
+                for (int i = 0; i < fields.Count; i++)
+                {
+                    var f = fields[i];
                     bool isReq = db.Set.IsPatronFieldRequired(f.Key);
                     var cb = new CheckBox
                     {
@@ -1433,16 +1499,19 @@ namespace Errin
                         AutoSize = true,
                         ForeColor = Th.Ink,
                         Font = Th.F,
-                        Margin = Ui.S(new Padding(0, 4, 14, 4))
+                        Dock = DockStyle.Fill,
+                        Margin = Ui.S(new Padding(0, 3, 8, 3))
                     };
                     chkBoxes[f.Key] = cb;
-                    secFlow.Controls.Add(cb);
+                    table.Controls.Add(cb, i % 3, i / 3);
                 }
-                reqFlow.Controls.Add(secFlow);
+                table.ResumeLayout(false);
+                reqPanel.Controls.Add(table);
+                curY += table.PreferredSize.Height + Ui.S(8);
             }
 
             var reqBtns = Ui.Flow(false);
-            reqBtns.Margin = Ui.S(new Padding(0, 10, 0, 0));
+            reqBtns.Location = new Point(0, curY);
             reqBtns.Controls.Add(Ui.Btn("Save field requirements", 0, (a, b) =>
             {
                 var reqList = new List<string>();
@@ -1473,12 +1542,11 @@ namespace Errin
             {
                 foreach (var cb in chkBoxes.Values) cb.Checked = false;
             }));
+            reqPanel.Controls.Add(reqBtns);
+            reqPanel.ResumeLayout(false);
 
-            var reqBody = Vbox(
-                new Label { UseMnemonic = false, Text = "Pilih medan yang diwajibkan (R) semasa pendaftaran murid. Medan bertanda disahkan sebelum rekod boleh disimpan. (R) menandakan nilai asal sistem.\nConfigure which fields are mandatory (R) during student registration. Checked fields are validated before saving. (R) marks default fields.", AutoSize = false, Size = new Size(Ui.S(820), Ui.S(44)), ForeColor = Th.Ink },
-                reqFlow,
-                reqBtns
-            );
+            var reqBody = reqPanel;
+
             Func<string, int, Control> para = (t, h) => new Label { UseMnemonic = false, Text = t, AutoSize = false, Size = new Size(Ui.S(820), Ui.S(h)), ForeColor = Th.Ink };
             var zE = Ui.Combo(150, "Off", "On"); var zP = Ui.Num(110, 1, 65535, zc.port); var zD = Ui.Txt(150); zD.Text = zc.db; var zB = Ui.Combo(170, "Other computers", "This computer only");
             zE.SelectedIndex = zc.enabled ? 1 : 0; zB.SelectedIndex = zc.bind == "local" ? 1 : 0;
@@ -1610,6 +1678,33 @@ namespace Errin
                 opacNote,
                 opacBtns
             );
+
+            refreshSetPage = () =>
+            {
+                var cur = db.Set;
+                sch.Text = cur.school ?? "";
+                rate.Value = (decimal)cur.rate;
+                mx.Value = cur.maxLoans;
+                blk.Value = (decimal)cur.block;
+                foreach (var f in Patron.PatronFields)
+                {
+                    if (chkBoxes.ContainsKey(f.Key))
+                        chkBoxes[f.Key].Checked = db.Set.IsPatronFieldRequired(f.Key);
+                }
+                opacLoginCheck.Checked = db.Set.opacLogin;
+                pc.Text = ""; pn.Text = ""; pn2.Text = "";
+                wE.SelectedIndex = wc.enabled ? 1 : 0;
+                wP.Value = wc.port;
+                wB.SelectedIndex = wc.bind == "local" ? 1 : 0;
+                wSsl.SelectedIndex = wc.ssl ? 1 : 0;
+                WebShow();
+                WebRefreshGrid();
+                zE.SelectedIndex = zc.enabled ? 1 : 0;
+                zP.Value = zc.port;
+                zD.Text = zc.db ?? "";
+                zB.SelectedIndex = zc.bind == "local" ? 1 : 0;
+                ZShow();
+            };
 
             return ScrollPage(Ui.Heading("Settings", "Policies and data management"), Ui.Card("Policies", polBody), Ui.Card("Student registration fields", reqBody), Ui.Card("Admin password", pwBody),
                 Ui.Card("Remote Access", webBody),

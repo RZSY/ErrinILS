@@ -487,6 +487,7 @@ namespace Errin
                     nama_penjaga1 TEXT,
                     tel_penjaga1 TEXT,
                     nama_penjaga2 TEXT,
+                    tel_penjaga2 TEXT,
                     alamat1 TEXT,
                     alamat2 TEXT,
                     alamat3 TEXT,
@@ -573,7 +574,7 @@ namespace Errin
                 "tarikh_masuk_sekolah", "tarikh_masuk_kelas", "tahun_tingkatan",
                 "nama_kelas", "nama_guru_kelas", "jantina", "kaum", "agama",
                 "warganegara", "status_oku", "status_yatim", "nama_penjaga1",
-                "tel_penjaga1", "nama_penjaga2", "alamat1", "alamat2", "alamat3",
+                "tel_penjaga1", "nama_penjaga2", "tel_penjaga2", "alamat1", "alamat2", "alamat3",
                 "poskod", "bandar", "daerah", "negeri"
             };
             foreach (var col in patronCols)
@@ -624,7 +625,7 @@ namespace Errin
                 using (var cmd = sdb.CreateCommand(@"SELECT id, name, cls, contact, reg, last,
                     id_murid, no_pengenalan, dob, status_pengajian, tarikh_masuk_sekolah, tarikh_masuk_kelas,
                     tahun_tingkatan, nama_kelas, nama_guru_kelas, jantina, kaum, agama,
-                    warganegara, status_oku, status_yatim, nama_penjaga1, tel_penjaga1, nama_penjaga2,
+                    warganegara, status_oku, status_yatim, nama_penjaga1, tel_penjaga1, nama_penjaga2, tel_penjaga2,
                     alamat1, alamat2, alamat3, poskod, bandar, daerah, negeri FROM patrons;"))
                 {
                     while (cmd.Step())
@@ -655,13 +656,14 @@ namespace Errin
                             nama_penjaga1 = cmd.GetText(21),
                             tel_penjaga1 = cmd.GetText(22),
                             nama_penjaga2 = cmd.GetText(23),
-                            alamat1 = cmd.GetText(24),
-                            alamat2 = cmd.GetText(25),
-                            alamat3 = cmd.GetText(26),
-                            poskod = cmd.GetText(27),
-                            bandar = cmd.GetText(28),
-                            daerah = cmd.GetText(29),
-                            negeri = cmd.GetText(30)
+                            tel_penjaga2 = cmd.GetText(24),
+                            alamat1 = cmd.GetText(25),
+                            alamat2 = cmd.GetText(26),
+                            alamat3 = cmd.GetText(27),
+                            poskod = cmd.GetText(28),
+                            bandar = cmd.GetText(29),
+                            daerah = cmd.GetText(30),
+                            negeri = cmd.GetText(31)
                         };
                         if (string.IsNullOrEmpty(p.no_pengenalan)) p.no_pengenalan = p.id;
                         if (string.IsNullOrEmpty(p.id_murid)) p.id_murid = p.id;
@@ -958,9 +960,9 @@ namespace Errin
                         id, name, cls, contact, reg, last,
                         id_murid, no_pengenalan, dob, status_pengajian, tarikh_masuk_sekolah, tarikh_masuk_kelas,
                         tahun_tingkatan, nama_kelas, nama_guru_kelas, jantina, kaum, agama,
-                        warganegara, status_oku, status_yatim, nama_penjaga1, tel_penjaga1, nama_penjaga2,
+                        warganegara, status_oku, status_yatim, nama_penjaga1, tel_penjaga1, nama_penjaga2, tel_penjaga2,
                         alamat1, alamat2, alamat3, poskod, bandar, daerah, negeri
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"))
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"))
                     {
                         foreach (var p in db.Patrons)
                         {
@@ -989,13 +991,14 @@ namespace Errin
                             cmd.Bind(22, p.nama_penjaga1);
                             cmd.Bind(23, p.tel_penjaga1);
                             cmd.Bind(24, p.nama_penjaga2);
-                            cmd.Bind(25, p.alamat1);
-                            cmd.Bind(26, p.alamat2);
-                            cmd.Bind(27, p.alamat3);
-                            cmd.Bind(28, p.poskod);
-                            cmd.Bind(29, p.bandar);
-                            cmd.Bind(30, p.daerah);
-                            cmd.Bind(31, p.negeri);
+                            cmd.Bind(25, p.tel_penjaga2);
+                            cmd.Bind(26, p.alamat1);
+                            cmd.Bind(27, p.alamat2);
+                            cmd.Bind(28, p.alamat3);
+                            cmd.Bind(29, p.poskod);
+                            cmd.Bind(30, p.bandar);
+                            cmd.Bind(31, p.daerah);
+                            cmd.Bind(32, p.negeri);
                             cmd.ExecuteNonQuery();
                         }
                     }

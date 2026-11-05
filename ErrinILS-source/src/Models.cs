@@ -113,6 +113,7 @@ namespace Errin
         public string nama_penjaga1 = "";
         public string tel_penjaga1 = "";
         public string nama_penjaga2 = "";
+        public string tel_penjaga2 = "";
         public string alamat1 = "";
         public string alamat2 = "";
         public string alamat3 = "";
@@ -149,6 +150,7 @@ namespace Errin
             new PatronFieldDef("nama_penjaga1", "Nama Penjaga 1", true, "Maklumat Ibu Bapa / Penjaga"),
             new PatronFieldDef("tel_penjaga1", "No. Tel. Bimbit Penjaga 1", true, "Maklumat Ibu Bapa / Penjaga"),
             new PatronFieldDef("nama_penjaga2", "Nama Penjaga 2", false, "Maklumat Ibu Bapa / Penjaga"),
+            new PatronFieldDef("tel_penjaga2", "No. Telefon Penjaga 2", false, "Maklumat Ibu Bapa / Penjaga"),
 
             // Alamat Tempat Tinggal
             new PatronFieldDef("alamat1", "Alamat 1", true, "Alamat Tempat Tinggal"),
@@ -165,7 +167,7 @@ namespace Errin
             "id", "name", "cls", "contact", "reg", "last",
             "id_murid", "no_pengenalan", "dob", "status_pengajian", "tarikh_masuk_sekolah", "tarikh_masuk_kelas",
             "tahun_tingkatan", "nama_kelas", "nama_guru_kelas", "jantina", "kaum", "agama",
-            "warganegara", "status_oku", "status_yatim", "nama_penjaga1", "tel_penjaga1", "nama_penjaga2",
+            "warganegara", "status_oku", "status_yatim", "nama_penjaga1", "tel_penjaga1", "nama_penjaga2", "tel_penjaga2",
             "alamat1", "alamat2", "alamat3", "poskod", "bandar", "daerah", "negeri"
         };
 
@@ -179,7 +181,7 @@ namespace Errin
                 case "tahun_tingkatan": return tahun_tingkatan; case "nama_kelas": return nama_kelas; case "nama_guru_kelas": return nama_guru_kelas;
                 case "jantina": return jantina; case "kaum": return kaum; case "agama": return agama;
                 case "warganegara": return warganegara; case "status_oku": return status_oku; case "status_yatim": return status_yatim;
-                case "nama_penjaga1": return nama_penjaga1; case "tel_penjaga1": return tel_penjaga1; case "nama_penjaga2": return nama_penjaga2;
+                case "nama_penjaga1": return nama_penjaga1; case "tel_penjaga1": return tel_penjaga1; case "nama_penjaga2": return nama_penjaga2; case "tel_penjaga2": return tel_penjaga2;
                 case "alamat1": return alamat1; case "alamat2": return alamat2; case "alamat3": return alamat3;
                 case "poskod": return poskod; case "bandar": return bandar; case "daerah": return daerah; case "negeri": return negeri;
             }
@@ -197,7 +199,7 @@ namespace Errin
                 case "tahun_tingkatan": tahun_tingkatan = v; break; case "nama_kelas": nama_kelas = v; break; case "nama_guru_kelas": nama_guru_kelas = v; break;
                 case "jantina": jantina = v; break; case "kaum": kaum = v; break; case "agama": agama = v; break;
                 case "warganegara": warganegara = v; break; case "status_oku": status_oku = v; break; case "status_yatim": status_yatim = v; break;
-                case "nama_penjaga1": nama_penjaga1 = v; break; case "tel_penjaga1": tel_penjaga1 = v; break; case "nama_penjaga2": nama_penjaga2 = v; break;
+                case "nama_penjaga1": nama_penjaga1 = v; break; case "tel_penjaga1": tel_penjaga1 = v; break; case "nama_penjaga2": nama_penjaga2 = v; break; case "tel_penjaga2": tel_penjaga2 = v; break;
                 case "alamat1": alamat1 = v; break; case "alamat2": alamat2 = v; break; case "alamat3": alamat3 = v; break;
                 case "poskod": poskod = v; break; case "bandar": bandar = v; break; case "daerah": daerah = v; break; case "negeri": negeri = v; break;
             }
@@ -299,7 +301,7 @@ namespace Errin
             tarikh_masuk_sekolah = "", tarikh_masuk_kelas = "", tahun_tingkatan = "",
             nama_kelas = "", nama_guru_kelas = "", jantina = "", kaum = "", agama = "",
             warganegara = "", status_oku = "", status_yatim = "", nama_penjaga1 = "",
-            tel_penjaga1 = "", nama_penjaga2 = "", alamat1 = "", alamat2 = "", alamat3 = "",
+            tel_penjaga1 = "", nama_penjaga2 = "", tel_penjaga2 = "", alamat1 = "", alamat2 = "", alamat3 = "",
             poskod = "", bandar = "", daerah = "", negeri = "";
         public List<Loan> loans = new List<Loan>();
         public List<Fine> fines = new List<Fine>();
@@ -314,7 +316,7 @@ namespace Errin
                 case "tahun_tingkatan": return tahun_tingkatan; case "nama_kelas": return nama_kelas; case "nama_guru_kelas": return nama_guru_kelas;
                 case "jantina": return jantina; case "kaum": return kaum; case "agama": return agama;
                 case "warganegara": return warganegara; case "status_oku": return status_oku; case "status_yatim": return status_yatim;
-                case "nama_penjaga1": return nama_penjaga1; case "tel_penjaga1": return tel_penjaga1; case "nama_penjaga2": return nama_penjaga2;
+                case "nama_penjaga1": return nama_penjaga1; case "tel_penjaga1": return tel_penjaga1; case "nama_penjaga2": return nama_penjaga2; case "tel_penjaga2": return tel_penjaga2;
                 case "alamat1": return alamat1; case "alamat2": return alamat2; case "alamat3": return alamat3;
                 case "poskod": return poskod; case "bandar": return bandar; case "daerah": return daerah; case "negeri": return negeri;
             }
@@ -332,7 +334,7 @@ namespace Errin
                 case "tahun_tingkatan": tahun_tingkatan = v; break; case "nama_kelas": nama_kelas = v; break; case "nama_guru_kelas": nama_guru_kelas = v; break;
                 case "jantina": jantina = v; break; case "kaum": kaum = v; break; case "agama": agama = v; break;
                 case "warganegara": warganegara = v; break; case "status_oku": status_oku = v; break; case "status_yatim": status_yatim = v; break;
-                case "nama_penjaga1": nama_penjaga1 = v; break; case "tel_penjaga1": tel_penjaga1 = v; break; case "nama_penjaga2": nama_penjaga2 = v; break;
+                case "nama_penjaga1": nama_penjaga1 = v; break; case "tel_penjaga1": tel_penjaga1 = v; break; case "nama_penjaga2": nama_penjaga2 = v; break; case "tel_penjaga2": tel_penjaga2 = v; break;
                 case "alamat1": alamat1 = v; break; case "alamat2": alamat2 = v; break; case "alamat3": alamat3 = v; break;
                 case "poskod": poskod = v; break; case "bandar": bandar = v; break; case "daerah": daerah = v; break; case "negeri": negeri = v; break;
             }

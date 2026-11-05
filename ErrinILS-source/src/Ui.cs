@@ -110,8 +110,10 @@ namespace Errin
         public static Panel Card(string title, Control body, int height = 0)
         {
             var p = new Panel { BackColor = Th.Card, Padding = S(new Padding(18, 12, 14, 12)), Margin = S(new Padding(0, 0, 0, 14)), Dock = DockStyle.Fill };
+            p.SuspendLayout();
             var bar = new Panel { Dock = DockStyle.Left, Width = Math.Max(1, S(2)), BackColor = Th.Ink };
             var tl = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, BackColor = Color.Transparent, RowCount = 2, Margin = new Padding(0) };
+            tl.SuspendLayout();
             tl.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             if (title != null) { tl.RowStyles.Add(new RowStyle(SizeType.AutoSize)); var t = new Label { UseMnemonic = false, Text = title.ToLowerInvariant(), Font = Th.FT, ForeColor = Th.Ink, AutoSize = true, Margin = S(new Padding(0, 0, 0, 8)) }; tl.Controls.Add(t, 0, 0); }
             else tl.RowStyles.Add(new RowStyle(SizeType.Absolute, 0));
@@ -119,6 +121,8 @@ namespace Errin
             else { tl.RowStyles.Add(new RowStyle(SizeType.AutoSize)); body.Dock = DockStyle.Top; p.AutoSize = true; p.AutoSizeMode = AutoSizeMode.GrowAndShrink; tl.AutoSize = true; tl.Dock = DockStyle.Top; }
             tl.Controls.Add(body, 0, 1);
             p.Controls.Add(tl); p.Controls.Add(bar);
+            tl.ResumeLayout(false);
+            p.ResumeLayout(false);
             return p;
         }
         public static TableLayoutPanel Stack(Control[] rows, int fill = -1)

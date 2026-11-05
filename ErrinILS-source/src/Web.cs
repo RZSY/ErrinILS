@@ -977,6 +977,7 @@ namespace Errin
                     if (string.IsNullOrEmpty(p.id_murid)) p.id_murid = norm;
                     if (string.IsNullOrEmpty(p.cls) && !string.IsNullOrEmpty(p.nama_kelas)) p.cls = p.nama_kelas;
                     if (string.IsNullOrEmpty(p.contact) && !string.IsNullOrEmpty(p.tel_penjaga1)) p.contact = p.tel_penjaga1;
+                    if (string.IsNullOrEmpty(p.contact) && !string.IsNullOrEmpty(p.tel_penjaga2)) p.contact = p.tel_penjaga2;
                     p.last = Lib.Today();
 
                     // Validation of required fields
@@ -1577,6 +1578,9 @@ namespace Errin
                 string field = query.ContainsKey("field") ? query["field"].Trim().ToLowerInvariant() : "all";
                 bool availOnly = query.ContainsKey("avail") && (query["avail"] == "1" || string.Equals(query["avail"], "true", StringComparison.OrdinalIgnoreCase));
                 string sort = query.ContainsKey("sort") ? query["sort"].Trim().ToLowerInvariant() : "title_asc";
+                int limit = 300;
+                if (query.ContainsKey("limit")) int.TryParse(query["limit"], out limit);
+                if (limit <= 0) limit = 300;
 
                 var activeLoans = new Dictionary<string, Loan>(StringComparer.Ordinal);
                 var holdsCount = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -1690,8 +1694,10 @@ namespace Errin
                         break;
                 }
 
-                var itemsJson = new List<object>();
-                for (int i = 0; i < list.Count; i++)
+                int totalMatches = list.Count;
+                int take = Math.Min(list.Count, limit);
+                var itemsJson = new List<object>(take);
+                for (int i = 0; i < take; i++)
                 {
                     var it = list[i];
                     Loan l = null;
@@ -1723,7 +1729,8 @@ namespace Errin
                 SendJson(stream, 200, new Dictionary<string, object>
                 {
                     { "ok", true },
-                    { "total", (double)itemsJson.Count },
+                    { "total", (double)totalMatches },
+                    { "limit", (double)take },
                     { "items", itemsJson }
                 });
             }
@@ -2115,17 +2122,19 @@ namespace Errin
             return s.Replace("&", "&amp;").Replace("<", "&lt;").Replace(">", "&gt;").Replace("\"", "&quot;");
         }
 
-        public static string BuildOpacHtml(string embeddedJson = null, string school = null, bool opacLogin = false)
+        public static string BuildOpacHtml(string embeddedJson = null, string school = null, bool opacLogin = false, bool isStaticExport = false)
         {
             string html = OpacHtmlTemplate;
             string title = !string.IsNullOrEmpty(school) ? school + " - OPAC" : "ErrinILS Library OPAC";
             html = html.Replace("__TITLE__", EscapeHtml(title));
-            html = html.Replace("__SCHOOL_NAME__", EscapeHtml(!string.IsNullOrEmpty(school) ? school : "School Library"));
 
             var configScript = new StringBuilder();
             configScript.AppendLine("<script>");
-            configScript.AppendLine("window.__SCHOOL_NAME__ = " + Json.Quote(school ?? "") + ";");
-            configScript.AppendLine("window.__OPAC_LOGIN_ENABLED__ = " + (opacLogin ? "true" : "false") + ";");
+            configScript.AppendLine("window.__OPAC_CONFIG__ = {");
+            configScript.AppendLine("  school: " + Json.Quote(school ?? "") + ",");
+            configScript.AppendLine("  opacLogin: " + (opacLogin ? "true" : "false") + ",");
+            configScript.AppendLine("  mode: " + Json.Quote(isStaticExport ? "static" : "live"));
+            configScript.AppendLine("};");
             if (!string.IsNullOrEmpty(embeddedJson))
             {
                 configScript.AppendLine("window.__CATALOG_DATA__ = " + embeddedJson + ";");
@@ -2533,51 +2542,48 @@ let searchDebounce = null;
 let currentModalItem = null;
 let patronToken = localStorage.getItem('errin_patron_token') || '';
 let currentPatron = null;
+let searchSeq = 0;
+let currentItemsMap = {};
 try { currentPatron = JSON.parse(localStorage.getItem('errin_patron_data')); } catch(e){}
 
 async function init() {
-  // 1. Check if catalog data is embedded
-  if (window.__CATALOG_DATA__ && Array.isArray(window.__CATALOG_DATA__)) {
-    rawItems = window.__CATALOG_DATA__;
-    isStatic = true;
-    setModeBadge('Static Archive (Embedded)');
-  } else {
-    // 2. Try fetching catalog.json (for GitHub Pages or static host)
-    try {
-      const resp = await fetch('catalog.json');
-      if (resp.ok) {
-        const data = await resp.json();
-        if (Array.isArray(data)) {
-          rawItems = data;
-          isStatic = true;
-          setModeBadge('Static Archive (GitHub Pages)');
-        }
-      }
-    } catch(e) {}
-  }
+  const cfg = window.__OPAC_CONFIG__ || {};
+  if (cfg.school) updateSchoolName(cfg.school);
+  if (typeof cfg.opacLogin !== 'undefined') window.__OPAC_LOGIN_ENABLED__ = !!cfg.opacLogin;
 
-  // 3. Live Server Mode
-  if (!rawItems.length && !isStatic) {
-    setModeBadge('Live Server');
-    try {
-      const infoRes = await fetch('/api/opac/info');
-      if (infoRes.ok) {
-        const info = await infoRes.json();
-        if (info.school) updateSchoolName(info.school);
-        if (typeof info.opacLogin !== 'undefined') window.__OPAC_LOGIN_ENABLED__ = info.opacLogin;
-      }
-    } catch(e) {}
-  }
-
-  if (window.__SCHOOL_NAME__) updateSchoolName(window.__SCHOOL_NAME__);
   updateLoginUI();
 
-  if (isStatic || rawItems.length) {
+  if (cfg.mode === 'static' || window.__CATALOG_DATA__) {
+    if (window.__CATALOG_DATA__ && Array.isArray(window.__CATALOG_DATA__)) {
+      rawItems = window.__CATALOG_DATA__;
+      isStatic = true;
+      setModeBadge('Static Archive (Embedded)');
+    } else {
+      try {
+        const resp = await fetch('catalog.json');
+        if (resp.ok) {
+          const data = await resp.json();
+          if (Array.isArray(data)) {
+            rawItems = data;
+            isStatic = true;
+            setModeBadge('Static Archive (GitHub Pages)');
+          }
+        }
+      } catch(e) {}
+    }
     extractSubjects(rawItems);
     filterAndRenderLocal();
   } else {
+    setModeBadge('Live Server');
     loadSubjectsFromApi();
     loadSearchResultsFromApi();
+    fetch('/api/opac/info').then(r => r.json()).then(info => {
+      if (info && info.school) updateSchoolName(info.school);
+      if (info && typeof info.opacLogin !== 'undefined') {
+        window.__OPAC_LOGIN_ENABLED__ = !!info.opacLogin;
+        updateLoginUI();
+      }
+    }).catch(() => {});
   }
 
   if (patronToken && window.__OPAC_LOGIN_ENABLED__) {
@@ -2587,7 +2593,7 @@ async function init() {
 
 function setModeBadge(txt) {
   const b = document.getElementById('modeBadge');
-  if (b) b.innerHTML = `<span class=""dot-green""></span> ${escape(txt)}`;
+  if (b) b.innerHTML = `<span class=""dot-green""></span> ${escapeHtml(txt)}`;
 }
 
 function updateSchoolName(name) {
@@ -2617,10 +2623,9 @@ function updateLoginUI() {
 
 function setSearchField(f) {
   currentSearchField = f;
-  document.querySelectorAll('.field-pill').forEach(p => p.classList.remove('active'));
   const pills = document.querySelectorAll('.field-pill');
   const map = { 'all': 0, 'title': 1, 'author': 2, 'subject': 3, 'call': 4, 'barcode': 5 };
-  if (pills[map[f]]) pills[map[f]].classList.add('active');
+  pills.forEach((p, idx) => p.classList.toggle('active', idx === map[f]));
   runSearch();
 }
 
@@ -2628,7 +2633,7 @@ function onQueryInput() {
   const val = document.getElementById('opacQuery').value.trim();
   document.getElementById('opacClearBtn').style.display = val ? 'inline-block' : 'none';
   clearTimeout(searchDebounce);
-  searchDebounce = setTimeout(runSearch, 220);
+  searchDebounce = setTimeout(runSearch, 180);
 }
 
 function onQueryKeyDown(e) {
@@ -2665,8 +2670,8 @@ function onSubjectSelectChange() {
 }
 
 function selectSubject(s) {
-  selectedSubject = s;
-  document.getElementById('opacSubjectSelect').value = s;
+  selectedSubject = s || '';
+  document.getElementById('opacSubjectSelect').value = selectedSubject;
   runSearch();
 }
 
@@ -2691,7 +2696,6 @@ function extractSubjects(items) {
 
   const sorted = Object.keys(counts).map(k => ({ name: k, count: counts[k] })).sort((a,b) => b.count - a.count);
 
-  // Populate dropdown
   const sel = document.getElementById('opacSubjectSelect');
   sel.innerHTML = '<option value="""">(All Subjects)</option>';
   sorted.forEach(s => {
@@ -2701,7 +2705,6 @@ function extractSubjects(items) {
     sel.appendChild(opt);
   });
 
-  // Populate popular pills (top 20)
   const pop = document.getElementById('popularSubjects');
   pop.innerHTML = '';
   if (sorted.length === 0) {
@@ -2711,7 +2714,8 @@ function extractSubjects(items) {
   sorted.slice(0, 20).forEach(s => {
     const btn = document.createElement('button');
     btn.className = 'subject-tag' + (selectedSubject === s.name ? ' active' : '');
-    btn.innerHTML = `${escape(s.name)} <span class=""subject-count"">${s.count}</span>`;
+    btn.dataset.subject = s.name;
+    btn.innerHTML = `${escapeHtml(s.name)} <span class=""subject-count"">${s.count}</span>`;
     btn.onclick = () => selectSubject(selectedSubject === s.name ? '' : s.name);
     pop.appendChild(btn);
   });
@@ -2762,7 +2766,6 @@ function filterAndRenderLocal() {
     return true;
   });
 
-  // Sort
   list.sort((a, b) => {
     switch (sort) {
       case 'title_desc': return (b.title || '').localeCompare(a.title || '');
@@ -2775,10 +2778,11 @@ function filterAndRenderLocal() {
     }
   });
 
-  renderResults(list);
+  renderResults(list, rawItems.length);
 }
 
 async function loadSearchResultsFromApi() {
+  const seq = ++searchSeq;
   const q = document.getElementById('opacQuery').value.trim();
   const subj = selectedSubject || document.getElementById('opacSubjectSelect').value;
   const avail = document.getElementById('opacAvailSelect').value;
@@ -2787,9 +2791,10 @@ async function loadSearchResultsFromApi() {
   const url = `/api/opac/search?q=${encodeURIComponent(q)}&subject=${encodeURIComponent(subj)}&field=${encodeURIComponent(currentSearchField)}&avail=${avail}&sort=${encodeURIComponent(sort)}`;
   try {
     const res = await fetch(url);
-    if (!res.ok) return;
+    if (!res.ok || seq !== searchSeq) return;
     const data = await res.json();
-    renderResults(data.items || []);
+    if (seq !== searchSeq) return;
+    renderResults(data.items || [], data.total);
   } catch(e) {}
 }
 
@@ -2799,7 +2804,6 @@ async function loadSubjectsFromApi() {
     if (!res.ok) return;
     const subjects = await res.json();
 
-    // Populate dropdown
     const sel = document.getElementById('opacSubjectSelect');
     sel.innerHTML = '<option value="""">(All Subjects)</option>';
     subjects.forEach(s => {
@@ -2809,40 +2813,56 @@ async function loadSubjectsFromApi() {
       sel.appendChild(opt);
     });
 
-    // Populate popular pills
     const pop = document.getElementById('popularSubjects');
     pop.innerHTML = '';
+    if (!subjects || subjects.length === 0) {
+      pop.innerHTML = '<span style=""color:#9a9a94; font-size:12px;"">No subject headings specified yet.</span>';
+      return;
+    }
     subjects.slice(0, 20).forEach(s => {
       const btn = document.createElement('button');
       btn.className = 'subject-tag' + (selectedSubject === s.name ? ' active' : '');
-      btn.innerHTML = `${escape(s.name)} <span class=""subject-count"">${s.count}</span>`;
+      btn.dataset.subject = s.name;
+      btn.innerHTML = `${escapeHtml(s.name)} <span class=""subject-count"">${s.count}</span>`;
       btn.onclick = () => selectSubject(selectedSubject === s.name ? '' : s.name);
       pop.appendChild(btn);
     });
   } catch(e) {}
 }
 
-function renderResults(items) {
-  const availableCount = items.filter(x => x.available).length;
-  document.getElementById('resultsCount').innerHTML = `Showing <strong>${items.length}</strong> title(s) (${availableCount} available to borrow)`;
+function renderResults(items, totalCount) {
+  currentItemsMap = {};
+  items.forEach(it => { currentItemsMap[it.id] = it; });
 
-  // Update active filter pills
+  const total = typeof totalCount === 'number' ? totalCount : items.length;
+  const availableCount = items.filter(x => x.available).length;
+  let countTxt = `Showing <strong>${items.length}</strong>`;
+  if (total > items.length) countTxt += ` of ${total}`;
+  countTxt += ` title(s) (${availableCount} available to borrow)`;
+  document.getElementById('resultsCount').innerHTML = countTxt;
+
   const pWrap = document.getElementById('activeFilterPills');
   pWrap.innerHTML = '';
   const q = document.getElementById('opacQuery').value.trim();
   if (q) {
-    pWrap.innerHTML += `<span class=""filter-pill"" onclick=""clearQuery()"">Keyword: ""${escape(q)}"" &#x2715;</span>`;
+    const p = document.createElement('span');
+    p.className = 'filter-pill';
+    p.innerHTML = `Keyword: ""${escapeHtml(q)}"" &#x2715;`;
+    p.onclick = clearQuery;
+    pWrap.appendChild(p);
   }
   if (selectedSubject) {
-    pWrap.innerHTML += `<span class=""filter-pill"" onclick=""selectSubject('')"">Subject: ${escape(selectedSubject)} &#x2715;</span>`;
+    const p = document.createElement('span');
+    p.className = 'filter-pill';
+    p.innerHTML = `Subject: ${escapeHtml(selectedSubject)} &#x2715;`;
+    p.onclick = () => selectSubject('');
+    pWrap.appendChild(p);
   }
 
-  // Update subject pills active state
   document.querySelectorAll('.subject-tag').forEach(t => {
-    t.classList.toggle('active', t.textContent.startsWith(selectedSubject) && selectedSubject !== '');
+    t.classList.toggle('active', t.dataset.subject === selectedSubject && selectedSubject !== '');
   });
 
-  // Render Grid
   const grid = document.getElementById('resultsGrid');
   grid.innerHTML = '';
   if (items.length === 0) {
@@ -2852,44 +2872,75 @@ function renderResults(items) {
       const card = document.createElement('div');
       card.className = 'book-card';
 
-      let stBadge = it.available ? '<span class=""badge badge-ok"">&#x2713; Available</span>' : `<span class=""badge badge-warn"">&#x23F1; Due ${escape(it.due || '')}</span>`;
+      let stBadge = it.available ? '<span class=""badge badge-ok"">&#x2713; Available</span>' : `<span class=""badge badge-warn"">&#x23F1; Due ${escapeHtml(it.due || '')}</span>`;
 
-      let subjectsHtml = '';
+      const topDiv = document.createElement('div');
+      const titleEl = document.createElement('div');
+      titleEl.className = 'book-title';
+      titleEl.textContent = it.title || 'Untitled';
+      titleEl.onclick = () => openDetail(it);
+      topDiv.appendChild(titleEl);
+
+      if (it.sub) {
+        const subEl = document.createElement('div');
+        subEl.className = 'book-sub';
+        subEl.textContent = it.sub;
+        topDiv.appendChild(subEl);
+      }
+
+      const authorEl = document.createElement('div');
+      authorEl.className = 'book-author';
+      authorEl.textContent = it.author || 'Unknown author';
+      topDiv.appendChild(authorEl);
+
       if (it.subject) {
+        const subjsEl = document.createElement('div');
+        subjsEl.className = 'book-subjects';
         it.subject.split(/[;,|/]/).slice(0, 3).forEach(s => {
           const st = s.trim();
-          if (st) subjectsHtml += `<span class=""book-subject-pill"" onclick=""selectSubject('${escape(st)}')"">${escape(st)}</span>`;
+          if (st) {
+            const pill = document.createElement('span');
+            pill.className = 'book-subject-pill';
+            pill.textContent = st;
+            pill.onclick = (e) => { e.stopPropagation(); selectSubject(st); };
+            subjsEl.appendChild(pill);
+          }
         });
+        topDiv.appendChild(subjsEl);
       }
+      card.appendChild(topDiv);
 
-      let holdBtn = '';
-      if (window.__OPAC_LOGIN_ENABLED__ && patronToken && !it.available) {
-        holdBtn = `<button class=""btn btn-primary btn-sm"" onclick=""event.stopPropagation(); doHold('${escape(it.barcode)}', '${escape(it.title)}')"">Reserve</button>`;
-      }
-
-      card.innerHTML = `
-        <div>
-          <div class=""book-title"" onclick='openDetail(${JSON.stringify(it)})'>${escape(it.title)}</div>
-          ${it.sub ? `<div class=""book-sub"">${escape(it.sub)}</div>` : ''}
-          <div class=""book-author"">${escape(it.author || 'Unknown author')}</div>
-          ${subjectsHtml ? `<div class=""book-subjects"">${subjectsHtml}</div>` : ''}
-        </div>
-        <div>
-          <div class=""book-meta"">
-            <span class=""call-badge"">${escape(it.call || 'No call no.')}</span>
-            <div>${stBadge}</div>
-          </div>
-          <div style=""display: flex; justify-content: flex-end; gap: 6px; margin-top: 10px;"">
-            ${holdBtn}
-            <button class=""btn btn-sec btn-sm"" onclick='openDetail(${JSON.stringify(it)})'>View Details</button>
-          </div>
+      const botDiv = document.createElement('div');
+      botDiv.innerHTML = `
+        <div class=""book-meta"">
+          <span class=""call-badge"">${escapeHtml(it.call || 'No call no.')}</span>
+          <div>${stBadge}</div>
         </div>
       `;
+
+      const btnRow = document.createElement('div');
+      btnRow.style.cssText = 'display: flex; justify-content: flex-end; gap: 6px; margin-top: 10px;';
+
+      if (window.__OPAC_LOGIN_ENABLED__ && patronToken && !it.available) {
+        const hBtn = document.createElement('button');
+        hBtn.className = 'btn btn-primary btn-sm';
+        hBtn.textContent = 'Reserve';
+        hBtn.onclick = (e) => { e.stopPropagation(); doHold(it.barcode, it.title); };
+        btnRow.appendChild(hBtn);
+      }
+
+      const detBtn = document.createElement('button');
+      detBtn.className = 'btn btn-sec btn-sm';
+      detBtn.textContent = 'View Details';
+      detBtn.onclick = () => openDetail(it);
+      btnRow.appendChild(detBtn);
+
+      botDiv.appendChild(btnRow);
+      card.appendChild(botDiv);
       grid.appendChild(card);
     });
   }
 
-  // Render Table
   const tbody = document.querySelector('#resultsTable tbody');
   tbody.innerHTML = '';
   if (items.length === 0) {
@@ -2897,29 +2948,42 @@ function renderResults(items) {
   } else {
     items.forEach(it => {
       const tr = document.createElement('tr');
-      let stBadge = it.available ? '<span class=""badge badge-ok"">&#x2713; Available</span>' : `<span class=""badge badge-warn"">&#x23F1; Due ${escape(it.due || '')}</span>`;
-      let holdBtn = '';
-      if (window.__OPAC_LOGIN_ENABLED__ && patronToken && !it.available) {
-        holdBtn = `<button class=""btn btn-primary btn-sm"" style=""margin-right: 4px;"" onclick=""doHold('${escape(it.barcode)}', '${escape(it.title)}')"">Reserve</button>`;
-      }
+      let stBadge = it.available ? '<span class=""badge badge-ok"">&#x2713; Available</span>' : `<span class=""badge badge-warn"">&#x23F1; Due ${escapeHtml(it.due || '')}</span>`;
+
       tr.innerHTML = `
-        <td><code>${escape(it.barcode || '')}</code></td>
-        <td><strong>${escape(it.title)}</strong><div style=""font-size:11px; color:#9a9a94;"">${escape(it.sub || '')}</div></td>
-        <td>${escape(it.author || '')}</td>
-        <td><span class=""badge badge-dim"" style=""font-size:11px; cursor:pointer;"" onclick=""selectSubject('${escape(it.subject || '')}')"">${escape(it.subject || '\u2014')}</span></td>
-        <td><span class=""call-badge"">${escape(it.call || '')}</span></td>
+        <td><code>${escapeHtml(it.barcode || '')}</code></td>
+        <td><strong class=""tbl-title"" style=""cursor:pointer;"">${escapeHtml(it.title || '')}</strong><div style=""font-size:11px; color:#9a9a94;"">${escapeHtml(it.sub || '')}</div></td>
+        <td>${escapeHtml(it.author || '')}</td>
+        <td><span class=""badge badge-dim tbl-subj"" style=""font-size:11px; cursor:pointer;"">${escapeHtml(it.subject || '\u2014')}</span></td>
+        <td><span class=""call-badge"">${escapeHtml(it.call || '')}</span></td>
         <td>${stBadge}</td>
-        <td style=""text-align: right; white-space: nowrap;"">
-          ${holdBtn}
-          <button class=""btn btn-sec btn-sm"" onclick='openDetail(${JSON.stringify(it)})'>Details</button>
-        </td>
+        <td style=""text-align: right; white-space: nowrap;"" class=""tbl-actions""></td>
       `;
+
+      tr.querySelector('.tbl-title').onclick = () => openDetail(it);
+      if (it.subject) {
+        tr.querySelector('.tbl-subj').onclick = () => selectSubject(it.subject.split(/[;,|/]/)[0].trim());
+      }
+      const actCell = tr.querySelector('.tbl-actions');
+      if (window.__OPAC_LOGIN_ENABLED__ && patronToken && !it.available) {
+        const hBtn = document.createElement('button');
+        hBtn.className = 'btn btn-primary btn-sm';
+        hBtn.style.marginRight = '4px';
+        hBtn.textContent = 'Reserve';
+        hBtn.onclick = () => doHold(it.barcode, it.title);
+        actCell.appendChild(hBtn);
+      }
+      const dBtn = document.createElement('button');
+      dBtn.className = 'btn btn-sec btn-sm';
+      dBtn.textContent = 'Details';
+      dBtn.onclick = () => openDetail(it);
+      actCell.appendChild(dBtn);
+
       tbody.appendChild(tr);
     });
   }
 
-  // Update footer
-  document.getElementById('sbarText').textContent = `ErrinILS Public Access Catalog \u00B7 Total Active Titles: ${items.length}`;
+  document.getElementById('sbarText').textContent = `ErrinILS Public Access Catalog \u00B7 Titles: ${total}`;
 }
 
 function openDetail(it) {
@@ -2935,7 +2999,6 @@ function openDetail(it) {
   document.getElementById('dtPages').textContent = it.pages ? `${it.pages} pages` : '\u2014';
   document.getElementById('dtCtl').textContent = `${it.ctl || '\u2014'} / ${it.acq || '\u2014'}`;
 
-  // Subject pill tags
   const sBox = document.getElementById('dtSubject');
   sBox.innerHTML = '';
   if (it.subject) {
@@ -2961,7 +3024,7 @@ function openDetail(it) {
     stBox.innerHTML = '<span class=""badge badge-ok"">&#x2713; Available on shelf for checkout</span>';
     holdBtn.style.display = 'none';
   } else {
-    stBox.innerHTML = `<span class=""badge badge-warn"">&#x23F1; Currently on loan (Due date: ${escape(it.due || 'Soon')})</span>`;
+    stBox.innerHTML = `<span class=""badge badge-warn"">&#x23F1; Currently on loan (Due date: ${escapeHtml(it.due || 'Soon')})</span>`;
     holdBtn.style.display = (window.__OPAC_LOGIN_ENABLED__ && patronToken) ? 'inline-block' : 'none';
   }
 
@@ -3067,7 +3130,6 @@ async function openAccountModal() {
     document.getElementById('accFineTotal').textContent = `RM ${(data.patron.unpaidFines || 0).toFixed(2)}`;
     document.getElementById('accHoldCount').textContent = data.holds ? data.holds.length : 0;
 
-    // Populate loans
     const lt = document.getElementById('accLoansTbody');
     lt.innerHTML = '';
     if (!data.loans || data.loans.length === 0) {
@@ -3075,22 +3137,20 @@ async function openAccountModal() {
     } else {
       data.loans.forEach(l => {
         const badge = l.overdue ? `<span class=""badge badge-err"">${l.daysLate}d late</span>` : '<span class=""badge badge-ok"">On time</span>';
-        lt.innerHTML += `<tr><td><strong>${escape(l.title)}</strong></td><td><code>${escape(l.barcode)}</code></td><td>${l.out}</td><td>${l.due}</td><td>${badge}</td></tr>`;
+        lt.innerHTML += `<tr><td><strong>${escapeHtml(l.title)}</strong></td><td><code>${escapeHtml(l.barcode)}</code></td><td>${l.out}</td><td>${l.due}</td><td>${badge}</td></tr>`;
       });
     }
 
-    // Populate history
     const ht = document.getElementById('accHistoryTbody');
     ht.innerHTML = '';
     if (!data.history || data.history.length === 0) {
       ht.innerHTML = '<tr><td colspan=""4"" style=""text-align:center; color:#9a9a94; padding:16px;"">No past loans recorded.</td></tr>';
     } else {
       data.history.forEach(h => {
-        ht.innerHTML += `<tr><td><strong>${escape(h.title)}</strong></td><td><code>${escape(h.barcode)}</code></td><td>${h.out}</td><td>${h.ret}</td></tr>`;
+        ht.innerHTML += `<tr><td><strong>${escapeHtml(h.title)}</strong></td><td><code>${escapeHtml(h.barcode)}</code></td><td>${h.out}</td><td>${h.ret}</td></tr>`;
       });
     }
 
-    // Populate fines
     const ft = document.getElementById('accFinesTbody');
     ft.innerHTML = '';
     if (!data.fines || data.fines.length === 0) {
@@ -3098,18 +3158,17 @@ async function openAccountModal() {
     } else {
       data.fines.forEach(f => {
         const badge = f.paid ? '<span class=""badge badge-ok"">Paid</span>' : '<span class=""badge badge-err"">Unpaid</span>';
-        ft.innerHTML += `<tr><td>${escape(f.title)}</td><td>${f.date}</td><td>RM ${f.amt.toFixed(2)}</td><td>${badge}</td></tr>`;
+        ft.innerHTML += `<tr><td>${escapeHtml(f.title)}</td><td>${f.date}</td><td>RM ${f.amt.toFixed(2)}</td><td>${badge}</td></tr>`;
       });
     }
 
-    // Populate holds
     const hdt = document.getElementById('accHoldsTbody');
     hdt.innerHTML = '';
     if (!data.holds || data.holds.length === 0) {
       hdt.innerHTML = '<tr><td colspan=""5"" style=""text-align:center; color:#9a9a94; padding:16px;"">No reserved holds.</td></tr>';
     } else {
       data.holds.forEach(h => {
-        hdt.innerHTML += `<tr><td><strong>${escape(h.title)}</strong></td><td><code>${escape(h.barcode)}</code></td><td>${h.date}</td><td><span class=""badge badge-warn"">${escape(h.st)}</span></td><td><button class=""btn btn-danger btn-sm"" onclick=""cancelHold('${h.id}')"">Cancel</button></td></tr>`;
+        hdt.innerHTML += `<tr><td><strong>${escapeHtml(h.title)}</strong></td><td><code>${escapeHtml(h.barcode)}</code></td><td>${h.date}</td><td><span class=""badge badge-warn"">${escapeHtml(h.st)}</span></td><td><button class=""btn btn-danger btn-sm"" onclick=""cancelHold('${h.id}')"">Cancel</button></td></tr>`;
       });
     }
 
@@ -3189,7 +3248,7 @@ function downloadCatalogJson() {
   a.click();
 }
 
-function escape(s) {
+function escapeHtml(s) {
   if (s == null) return '';
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/""/g, '&quot;');
 }

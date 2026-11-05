@@ -551,6 +551,7 @@ namespace Errin
                     string clsVal = ctrls.ContainsKey("nama_kelas") ? ctrls["nama_kelas"].Text.Trim() : "";
                     if (string.IsNullOrEmpty(clsVal) && ctrls.ContainsKey("tahun_tingkatan")) clsVal = ctrls["tahun_tingkatan"].Text.Trim();
                     string telVal = ctrls.ContainsKey("tel_penjaga1") ? ctrls["tel_penjaga1"].Text.Trim() : "";
+                    if (string.IsNullOrEmpty(telVal) && ctrls.ContainsKey("tel_penjaga2")) telVal = ctrls["tel_penjaga2"].Text.Trim();
 
                     if (isEdit)
                     {
@@ -633,26 +634,170 @@ namespace Errin
         }
         void PatView(Patron p)
         {
-            using (var d = Ui.Dlg(p.name + " \u00B7 " + p.id, 780, 560))
+            using (var d = Ui.Dlg(p.name + " \u00B7 " + p.id, 800, 600))
             {
-                var fs = db.Fines.Where(f => f.pid == p.id && f.paid == "").ToList(); string later = Lib.AddD(string.CompareOrdinal(p.reg, p.last) > 0 ? p.reg : p.last, 365 * Lib.RET_YEARS);
-                d.Controls.Add(new Label { UseMnemonic = false, Text = p.name.ToLowerInvariant(), Font = Th.FT, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(14)) });
-                string extraLine = "ID: " + (!string.IsNullOrEmpty(p.id_murid) ? p.id_murid : p.id) +
-                    " \u00B7 IC: " + (!string.IsNullOrEmpty(p.no_pengenalan) ? p.no_pengenalan : p.id) +
-                    (!string.IsNullOrEmpty(p.jantina) ? " \u00B7 " + p.jantina : "") +
-                    (!string.IsNullOrEmpty(p.dob) ? " \u00B7 Lahir: " + p.dob : "") +
-                    (!string.IsNullOrEmpty(p.cls) ? " \u00B7 " + p.cls : "");
-                string contactLine = (!string.IsNullOrEmpty(p.nama_penjaga1) ? "Penjaga: " + p.nama_penjaga1 + " " : "") +
-                    (!string.IsNullOrEmpty(p.contact) ? "(" + p.contact + ") " : "") +
-                    (!string.IsNullOrEmpty(p.alamat1) ? "\u00B7 " + p.alamat1 + " " + p.bandar : "");
-                d.Controls.Add(new Label { UseMnemonic = false, Text = extraLine + "\n" + contactLine + "\nRegistered " + p.reg + " \u00B7 Scheduled for deletion after " + later + " if inactive", ForeColor = Th.Mut, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(42)) });
-                d.Controls.Add(new Label { UseMnemonic = false, Text = "Unpaid fines: " + Lib.Money(fs.Sum(f => f.amt)), Font = Th.FB, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(86)) });
+                var fs = db.Fines.Where(f => f.pid == p.id && f.paid == "").ToList();
+                string later = Lib.AddD(string.CompareOrdinal(p.reg, p.last) > 0 ? p.reg : p.last, 365 * Lib.RET_YEARS);
+
+                int curY = Ui.S(16);
+                int leftX = Ui.S(20);
+                int contentW = d.ClientSize.Width - leftX * 2;
+
+                // 1. Student Name
+                var lblName = new Label
+                {
+                    UseMnemonic = false,
+                    Text = p.name,
+                    Font = Th.FT,
+                    ForeColor = Th.Ink,
+                    AutoSize = true,
+                    Location = new Point(leftX, curY)
+                };
+                d.Controls.Add(lblName);
+                curY += lblName.PreferredHeight + Ui.S(4);
+
+                // 2. Student Identifiers & Profile line
+                var pInfo = new List<string>();
+                if (!string.IsNullOrEmpty(p.id_murid)) pInfo.Add("ID: " + p.id_murid);
+                string icVal = !string.IsNullOrEmpty(p.no_pengenalan) ? p.no_pengenalan : p.id;
+                if (!string.IsNullOrEmpty(icVal)) pInfo.Add("IC: " + icVal);
+                if (!string.IsNullOrEmpty(p.jantina)) pInfo.Add(p.jantina);
+                if (!string.IsNullOrEmpty(p.dob)) pInfo.Add("Lahir: " + p.dob);
+                string cVal = !string.IsNullOrEmpty(p.cls) ? p.cls : p.nama_kelas;
+                if (!string.IsNullOrEmpty(cVal)) pInfo.Add("Kelas: " + cVal);
+                if (!string.IsNullOrEmpty(p.nama_guru_kelas)) pInfo.Add("Guru: " + p.nama_guru_kelas);
+
+                if (pInfo.Count > 0)
+                {
+                    var lblProf = new Label
+                    {
+                        UseMnemonic = false,
+                        Text = string.Join(" \u00B7 ", pInfo.ToArray()),
+                        ForeColor = Th.Ink,
+                        Font = Th.F,
+                        AutoSize = true,
+                        Location = new Point(leftX, curY)
+                    };
+                    d.Controls.Add(lblProf);
+                    curY += lblProf.PreferredHeight + Ui.S(4);
+                }
+
+                // 3. Guardians Line (Penjaga 1 & Penjaga 2)
+                var gInfo = new List<string>();
+                if (!string.IsNullOrEmpty(p.nama_penjaga1))
+                {
+                    string tel1 = !string.IsNullOrEmpty(p.tel_penjaga1) ? p.tel_penjaga1 : p.contact;
+                    gInfo.Add("Penjaga 1: " + p.nama_penjaga1 + (!string.IsNullOrEmpty(tel1) ? " (" + tel1 + ")" : ""));
+                }
+                else if (!string.IsNullOrEmpty(p.contact))
+                {
+                    gInfo.Add("Penjaga: (" + p.contact + ")");
+                }
+
+                if (!string.IsNullOrEmpty(p.nama_penjaga2))
+                {
+                    gInfo.Add("Penjaga 2: " + p.nama_penjaga2 + (!string.IsNullOrEmpty(p.tel_penjaga2) ? " (" + p.tel_penjaga2 + ")" : ""));
+                }
+                else if (!string.IsNullOrEmpty(p.tel_penjaga2))
+                {
+                    gInfo.Add("Tel Penjaga 2: " + p.tel_penjaga2);
+                }
+
+                if (gInfo.Count > 0)
+                {
+                    var lblG = new Label
+                    {
+                        UseMnemonic = false,
+                        Text = string.Join(" \u00B7 ", gInfo.ToArray()),
+                        ForeColor = Th.Mut,
+                        Font = Th.F,
+                        AutoSize = true,
+                        Location = new Point(leftX, curY)
+                    };
+                    d.Controls.Add(lblG);
+                    curY += lblG.PreferredHeight + Ui.S(4);
+                }
+
+                // 4. Address (if present)
+                var addrParts = new List<string>();
+                if (!string.IsNullOrEmpty(p.alamat1)) addrParts.Add(p.alamat1);
+                if (!string.IsNullOrEmpty(p.alamat2)) addrParts.Add(p.alamat2);
+                if (!string.IsNullOrEmpty(p.alamat3)) addrParts.Add(p.alamat3);
+                string cityZip = (p.poskod + " " + p.bandar).Trim();
+                if (!string.IsNullOrEmpty(cityZip)) addrParts.Add(cityZip);
+                if (!string.IsNullOrEmpty(p.negeri)) addrParts.Add(p.negeri);
+
+                if (addrParts.Count > 0)
+                {
+                    var lblAddr = new Label
+                    {
+                        UseMnemonic = false,
+                        Text = "Alamat: " + string.Join(", ", addrParts.ToArray()),
+                        ForeColor = Th.Mut,
+                        Font = Th.FS,
+                        AutoSize = true,
+                        Location = new Point(leftX, curY)
+                    };
+                    d.Controls.Add(lblAddr);
+                    curY += lblAddr.PreferredHeight + Ui.S(4);
+                }
+
+                // 5. Registration & Data Retention Info
+                var lblReg = new Label
+                {
+                    UseMnemonic = false,
+                    Text = "Registered " + p.reg + " \u00B7 Scheduled for deletion after " + later + " if inactive",
+                    ForeColor = Th.Mut,
+                    Font = Th.FS,
+                    AutoSize = true,
+                    Location = new Point(leftX, curY)
+                };
+                d.Controls.Add(lblReg);
+                curY += lblReg.PreferredHeight + Ui.S(6);
+
+                // 6. Unpaid fines status
+                double totalFines = fs.Sum(f => f.amt);
+                var lblFines = new Label
+                {
+                    UseMnemonic = false,
+                    Text = "Unpaid fines: " + Lib.Money(totalFines),
+                    Font = Th.FB,
+                    ForeColor = totalFines > 0 ? Th.Red : Th.Green,
+                    AutoSize = true,
+                    Location = new Point(leftX, curY)
+                };
+                d.Controls.Add(lblFines);
+                curY += lblFines.PreferredHeight + Ui.S(10);
+
+                // Bottom Buttons
+                int btnH = Ui.S(34);
+                int btnY = d.ClientSize.Height - btnH - Ui.S(16);
+
+                var c = Ui.Btn("Close", 1);
+                c.Location = new Point(leftX, btnY);
+                c.Click += (s, e) => d.Close();
+                d.Controls.Add(c);
+
+                var pc = Ui.Btn("Print library card", 0);
+                pc.Location = new Point(c.Right + Ui.S(8), btnY);
+                pc.Click += (s, e) => CardDialog(p);
+                d.Controls.Add(pc);
+
+                var pe = Ui.Btn("Edit student", 1);
+                pe.Location = new Point(pc.Right + Ui.S(8), btnY);
+                pe.Click += (s, e) => { d.Close(); PatForm(p); };
+                d.Controls.Add(pe);
+
+                // Borrowing History Grid
                 var ls = db.Loans.Where(l => l.pid == p.id).Reverse().ToList();
                 var g = MakeGrid(new[] { "Title", "Out", "Due", "Returned" }, ls.Select(l => new[] { lib.Title(l.iid), l.@out, l.due, l.ret ?? "\u2014" }).ToList(), null, "No borrowing history");
-                g.Location = new Point(Ui.S(20), Ui.S(116)); g.Size = new Size(Ui.S(695), Ui.S(330)); g.Dock = DockStyle.None; d.Controls.Add(g);
-                var c = Ui.Btn("Close", 1); c.Location = new Point(Ui.S(20), Ui.S(458)); c.Click += (s, e) => d.Close(); d.Controls.Add(c);
-                var pc = Ui.Btn("Print library card", 0); pc.Location = new Point(Ui.S(114), Ui.S(458)); pc.Click += (s, e) => CardDialog(p); d.Controls.Add(pc);
-                var pe = Ui.Btn("Edit student", 1); pe.Location = new Point(Ui.S(270), Ui.S(458)); pe.Click += (s, e) => { d.Close(); PatForm(p); }; d.Controls.Add(pe);
+                g.Location = new Point(leftX, curY);
+                int gridH = btnY - curY - Ui.S(12);
+                if (gridH < Ui.S(160)) gridH = Ui.S(160);
+                g.Size = new Size(contentW, gridH);
+                g.Dock = DockStyle.None;
+                d.Controls.Add(g);
+
                 d.ShowDialog(this);
             }
         }
@@ -708,10 +853,10 @@ namespace Errin
                     File.WriteAllText(Path.Combine(targetDir, "catalog.json"), catJson, Encoding.UTF8);
 
                     string schoolName = db.Set != null ? (db.Set.school ?? "") : "";
-                    string html = Web.BuildOpacHtml(null, schoolName, db.Set != null && db.Set.opacLogin);
+                    string html = Web.BuildOpacHtml(null, schoolName, db.Set != null && db.Set.opacLogin, true);
                     File.WriteAllText(Path.Combine(targetDir, "index.html"), html, Encoding.UTF8);
 
-                    string standaloneHtml = Web.BuildOpacHtml(catJson, schoolName, db.Set != null && db.Set.opacLogin);
+                    string standaloneHtml = Web.BuildOpacHtml(catJson, schoolName, db.Set != null && db.Set.opacLogin, true);
                     File.WriteAllText(Path.Combine(targetDir, "opac-standalone.html"), standaloneHtml, Encoding.UTF8);
 
                     var readme = new StringBuilder();
@@ -869,17 +1014,28 @@ namespace Errin
             else
                 statusDesc = "Status: Available on shelf";
 
-            using (var d = Ui.Dlg("Item circulation history \u00B7 " + item.barcode, 800, 530))
+            using (var d = Ui.Dlg("Item circulation history \u00B7 " + item.barcode, 800, 560))
             {
-                d.Controls.Add(new Label { UseMnemonic = false, Text = "item circulation history", Font = Th.FT, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(14)), ForeColor = Th.Ink });
-                d.Controls.Add(new Label { UseMnemonic = false, Text = item.title + (string.IsNullOrEmpty(item.author) ? "" : " \u00B7 " + item.author) +
+                int curY = Ui.S(14);
+                int leftX = Ui.S(20);
+                int contentW = d.ClientSize.Width - leftX * 2;
+
+                var lblHead = new Label { UseMnemonic = false, Text = "item circulation history", Font = Th.FT, AutoSize = true, Location = new Point(leftX, curY), ForeColor = Th.Ink };
+                d.Controls.Add(lblHead);
+                curY += lblHead.PreferredHeight + Ui.S(4);
+
+                var lblDesc = new Label { UseMnemonic = false, Text = item.title + (string.IsNullOrEmpty(item.author) ? "" : " \u00B7 " + item.author) +
                     "\nBarcode: " + item.barcode + " \u00B7 Call no: " + (string.IsNullOrEmpty(item.call) ? "(none)" : item.call) + " \u00B7 " + statusDesc,
-                    Font = Th.FB, AutoSize = true, ForeColor = Th.Mut, Location = new Point(Ui.S(20), Ui.S(40)) });
+                    Font = Th.FB, AutoSize = true, ForeColor = Th.Mut, Location = new Point(leftX, curY) };
+                d.Controls.Add(lblDesc);
+                curY += lblDesc.PreferredHeight + Ui.S(6);
 
                 int lateCount = loans.Count(l => l.ret != null && string.CompareOrdinal(l.ret, l.due) > 0);
                 string statSummary = string.Format("Total checkouts: {0} time(s) \u00B7 Returned late: {1} time(s) \u00B7 Currently active: {2}",
                     loans.Count, lateCount, open != null ? "Yes" : "No");
-                d.Controls.Add(new Label { UseMnemonic = false, Text = statSummary, Font = Th.FB, AutoSize = true, ForeColor = Th.Yel, Location = new Point(Ui.S(20), Ui.S(88)) });
+                var lblStat = new Label { UseMnemonic = false, Text = statSummary, Font = Th.FB, AutoSize = true, ForeColor = Th.Yel, Location = new Point(leftX, curY) };
+                d.Controls.Add(lblStat);
+                curY += lblStat.PreferredHeight + Ui.S(10);
 
                 var rows = loans.Select(l =>
                 {
@@ -887,10 +1043,15 @@ namespace Errin
                     return new[] { lib.PName(l.pid), l.pid, lib.PClass(l.pid), l.@out, l.due, retStr, l.ren.ToString() };
                 }).ToList();
 
+                int btnH = Ui.S(34);
+                int btnY = d.ClientSize.Height - btnH - Ui.S(16);
+
                 var g = MakeGrid(new[] { "Student", "IC / ID", "Class", "Checked Out", "Due Date", "Returned", "Renewals" },
                     rows, loans.Cast<object>().ToList(), "This item has no circulation history yet.");
-                g.Location = new Point(Ui.S(20), Ui.S(118));
-                g.Size = new Size(Ui.S(755), Ui.S(335));
+                g.Location = new Point(leftX, curY);
+                int gridH = btnY - curY - Ui.S(12);
+                if (gridH < Ui.S(160)) gridH = Ui.S(160);
+                g.Size = new Size(contentW, gridH);
                 g.Dock = DockStyle.None;
                 g.CellDoubleClick += (s, e) =>
                 {
@@ -905,7 +1066,7 @@ namespace Errin
                 d.Controls.Add(g);
 
                 var btnRow = Ui.Flow(false);
-                btnRow.Location = new Point(Ui.S(20), Ui.S(468));
+                btnRow.Location = new Point(leftX, btnY);
                 var btnClose = Ui.Btn("Close", 1, (s, e) => d.Close());
                 var btnExport = Ui.Btn("Export history (CSV)", 1, (s, e) =>
                 {

@@ -542,7 +542,8 @@ namespace Errin
                     {
                         if (h.Contains("1") && h.Contains("bimbit")) tel1Col = c;
                         else if (h.Contains("1") && (h.Contains("rumah") || h.Contains("home"))) telRumahCol = c;
-                        else if (h.Contains("2") && h.Contains("bimbit")) tel2Col = c;
+                        else if (h.Contains("2")) tel2Col = c;
+                        else if (h.Contains("1")) tel1Col = c;
                         else if (tel1Col < 0) tel1Col = c;
                         else if (genericContactCol < 0) genericContactCol = c;
                     }
@@ -635,6 +636,9 @@ namespace Errin
 
                 if (phone.StartsWith("'")) phone = phone.Substring(1).Trim();
 
+                string phone2 = getVal(tel2Col);
+                if (phone2.StartsWith("'")) phone2 = phone2.Substring(1).Trim();
+
                 string guardian = getVal(penjaga1Col);
                 string contact = phone;
                 if (!string.IsNullOrEmpty(phone) && !string.IsNullOrEmpty(guardian))
@@ -683,6 +687,7 @@ namespace Errin
                     nama_penjaga1 = guardian,
                     tel_penjaga1 = phone,
                     nama_penjaga2 = getVal(penjaga2Col),
+                    tel_penjaga2 = phone2,
                     alamat1 = getVal(alamat1Col),
                     alamat2 = getVal(alamat2Col),
                     alamat3 = getVal(alamat3Col),
