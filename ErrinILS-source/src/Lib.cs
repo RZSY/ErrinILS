@@ -18,7 +18,7 @@ namespace Errin
         public static string AddD(string d, int n) { return Dt(d).AddDays(n).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture); }
         public static int Diff(string a, string b) { return (int)Math.Round((Dt(a) - Dt(b)).TotalDays); }
         public static string Money(double n) { return "RM " + n.ToString("0.00", CultureInfo.InvariantCulture); }
-        public static string Uid() { return Guid.NewGuid().ToString("N").Substring(0, 7); }
+        public static string Uid() { return Guid.NewGuid().ToString("N").Substring(0, 16); }
         public static string Isb(string s) { return Regex.Replace(s ?? "", @"[\s-]", ""); }
 
         public Item ItemByBarcode(string bc) { return D.Items.FirstOrDefault(i => string.Equals(i.barcode, bc, StringComparison.OrdinalIgnoreCase)); }
@@ -59,8 +59,10 @@ namespace Errin
         public static bool IcOk(string ic)
         {
             string n = NormIc(ic); if (n == null) return false;
+            int y = int.Parse(n.Substring(0, 2));
             int m = int.Parse(n.Substring(2, 2)), d = int.Parse(n.Substring(4, 2));
-            return m >= 1 && m <= 12 && d >= 1 && d <= DateTime.DaysInMonth(2000, m);
+            int fullYear = y > 30 ? 1900 + y : 2000 + y;
+            return m >= 1 && m <= 12 && d >= 1 && d <= DateTime.DaysInMonth(fullYear, m);
         }
         /// <summary>Simple wording for young students (used by the Simplified View).</summary>
         public static string Friendly(string err)
@@ -154,7 +156,8 @@ namespace Errin
             if (p == null || i == null) return "Student or item not found";
             if (!IsActive(p)) return "Blocked: student account is deactivated or inactive";
             if (IsWeeded(i)) return "Cannot place hold on a weeded item";
-            if (OpenLoan(i.id) == null) return "Item is available. Check it out instead";
+            bool hasActiveHold = D.Holds.Any(h => h.iid == i.id && h.st != "done");
+            if (OpenLoan(i.id) == null && !hasActiveHold) return "Item is available. Check it out instead";
             double un = Unpaid(p.id);
             if (D.Set != null && un >= D.Set.block) return "Blocked: unpaid fines " + Money(un);
             if (D.Loans.Any(l => l.pid == p.id && Overdue(l))) return "Blocked: student has overdue items";

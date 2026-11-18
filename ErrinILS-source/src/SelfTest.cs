@@ -139,6 +139,19 @@ static class SelfTest
         ldb.Holds.RemoveAll(h => h.pid == "HOLD01");
         ldb.Patrons.Remove(testP);
 
+        // 4. Hold deadlock resolution: allow secondary hold when an active hold exists even if not on loan
+        var pA = new Patron { id = "HOLD_A", name = "Hold A", status_pengajian = "Aktif" };
+        var pB = new Patron { id = "HOLD_B", name = "Hold B", status_pengajian = "Aktif" };
+        ldb.Patrons.Add(pA); ldb.Patrons.Add(pB);
+        lib.Checkout(pA.id, "B1002", out msg);
+        lib.PlaceHold(pA.id, "B1002", out msg);
+        lib.Return("B1002", out msg);
+        string holdBMsg;
+        string holdBRes = lib.PlaceHold(pB.id, "B1002", out holdBMsg);
+        Ok(holdBRes == null && holdBMsg == "Hold placed", "hold queue deadlock resolved: secondary hold allowed while item is held/ready");
+        ldb.Holds.RemoveAll(h => h.iid == ldb.Items.First(x => x.barcode == "B1002").id || h.pid == pA.id || h.pid == pB.id);
+        ldb.Patrons.Remove(pA); ldb.Patrons.Remove(pB);
+
         ldb.Patrons.Add(new Patron { id = "OLD", name = "Old", reg = "2010-01-01", last = "2010-01-01" });
         Ok(lib.Purge() == 1 && lib.PatronById("OLD") == null, "6-year retention purge");
         Ok(ldb.ArchivedPatrons != null && ldb.ArchivedPatrons.Any(p => p.id == "OLD" && p.status_pengajian == "Deactivated"), "6-year retention preserves data as Deactivated in Archive");
@@ -233,7 +246,8 @@ static class SelfTest
         // IC numbers, Simplified View wording, admin password
         Ok(Lib.NormIc("120315100001") == "120315-10-0001" && Lib.NormIc("120315-10-0001") == "120315-10-0001" && Lib.NormIc(" 120315 10 0001 ") == "120315-10-0001", "IC normalised with dashes");
         Ok(Lib.NormIc("12345") == null && Lib.NormIc("S0001") == null, "non-IC input rejected");
-        Ok(Lib.IcOk("120315-10-0001") && Lib.IcOk("000229-10-0001") && !Lib.IcOk("121306-10-0001") && !Lib.IcOk("120332-10-0001"), "IC birth-date digits checked");
+        Ok(Lib.IcOk("120315-10-0001") && Lib.IcOk("000229-10-0001") && Lib.IcOk("120229-10-0001") && !Lib.IcOk("110229-10-0001") && !Lib.IcOk("121306-10-0001") && !Lib.IcOk("120332-10-0001"), "IC birth-date digits checked with leap year accuracy");
+        Ok(Lib.Uid().Length == 16, "Lib.Uid produces 16-hex-character 64-bit entropy identifier");
         Ok(S1 == "120315-10-0001" && lib.PatronById("120315100001") == ldb.Patrons[0] && lib.PatronById("120315-10-0001") == ldb.Patrons[0], "scanner without dashes finds the student");
         ldb.Patrons.Add(new Patron { id = "S0042", name = "Legacy", reg = Lib.Today(), last = Lib.Today() }); Ok(lib.PatronById("s0042") != null, "older non-IC IDs still work");
         Ok(Lib.Friendly("Loan limit reached").Contains("most books") && Lib.Friendly("Blocked: unpaid fines RM 5.00").Contains("librarian") && Lib.Friendly("whatever").StartsWith("Oops"), "child-friendly messages");

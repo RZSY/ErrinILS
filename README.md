@@ -6,7 +6,7 @@
 
 <p align="center">
   <strong>Lightweight school library management system for Windows.</strong><br>
-  Fast barcode circulation, 5-source ISBN cataloguing, simplified student interface, and an offline JSON database.
+  Fast barcode circulation, 5-source ISBN cataloguing, simplified student interface, and a high-performance SQLite database.
 </p>
 
 <p align="center">
@@ -30,7 +30,7 @@
 
 ErrinILS is a zero-dependency school library management system (ILS) designed for standard Windows PCs. Rather than requiring dedicated Linux servers, complex database administration, or web server setups like Koha or SLiMS, ErrinILS runs as a standalone executable on any computer running Windows 7 or newer.
 
-It covers everyday school library operations: barcode checkouts and returns, copy-cataloguing across international library databases, simplified self-service mode for students, and mobile stock audits over local Wi-Fi. All library data is stored locally in a single JSON database without external database drivers.
+It covers everyday school library operations: barcode checkouts and returns, copy-cataloguing across international library databases, simplified self-service mode for students, and mobile stock audits over local Wi-Fi. All library data is stored locally in a single SQLite database without external database drivers.
 
 ```text
                 _       ___ _     ____  
@@ -245,6 +245,7 @@ ErrinILS targets .NET Framework 4.0 / C# 5 syntax and requires only base framewo
     /out:dist\ErrinILS.exe `
     ErrinILS-source\src\Json.cs `
     ErrinILS-source\src\Models.cs `
+    ErrinILS-source\src\Sqlite.cs `
     ErrinILS-source\src\Marc.cs `
     ErrinILS-source\src\Z3950.cs `
     ErrinILS-source\src\Lib.cs `
@@ -253,6 +254,8 @@ ErrinILS targets .NET Framework 4.0 / C# 5 syntax and requires only base framewo
     ErrinILS-source\src\Auth.cs `
     ErrinILS-source\src\NetHelper.cs `
     ErrinILS-source\src\Qr.cs `
+    ErrinILS-source\src\CertHelper.cs `
+    ErrinILS-source\src\Updater.cs `
     ErrinILS-source\src\AssemblyInfo.cs `
     ErrinILS-source\src\Ui.cs `
     ErrinILS-source\src\Simple.cs `

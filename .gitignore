@@ -8,3 +8,4 @@ selftest.exe
 *.xlsx
 *.xls
 .vscode/
+.agents/

@@ -1498,7 +1498,7 @@ namespace Errin
                     "Connection: close\r\n" +
                     "Access-Control-Allow-Origin: *\r\n" +
                     "Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n" +
-                    "Access-Control-Allow-Headers: Content-Type, X-Errin-Token\r\n" +
+                    "Access-Control-Allow-Headers: Content-Type, X-Errin-Token, X-Errin-Patron-Token\r\n" +
                     "Content-Length: 0\r\n\r\n";
                 byte[] b = Encoding.ASCII.GetBytes(header);
                 stream.Write(b, 0, b.Length);
@@ -1529,7 +1529,7 @@ namespace Errin
                     "Connection: close\r\n" +
                     "Access-Control-Allow-Origin: *\r\n" +
                     "Access-Control-Allow-Methods: GET, POST, OPTIONS\r\n" +
-                    "Access-Control-Allow-Headers: Content-Type, X-Errin-Token\r\n\r\n";
+                    "Access-Control-Allow-Headers: Content-Type, X-Errin-Token, X-Errin-Patron-Token\r\n\r\n";
                 byte[] hBytes = Encoding.ASCII.GetBytes(header);
                 stream.Write(hBytes, 0, hBytes.Length);
                 if (body.Length > 0) stream.Write(body, 0, body.Length);
@@ -1560,35 +1560,33 @@ namespace Errin
 
             void HandleOpacInfo(Stream stream)
             {
-                var db = GetDb != null ? GetDb() : null;
-                string school = (db != null && db.Set != null) ? (db.Set.school ?? "") : "";
-                int activeCount = 0;
-                if (db != null)
+                Dictionary<string, object> res = null;
+                ExecuteOnUi(() =>
                 {
-                    for (int i = 0; i < db.Items.Count; i++)
+                    var db = GetDb != null ? GetDb() : null;
+                    string school = (db != null && db.Set != null) ? (db.Set.school ?? "") : "";
+                    int activeCount = 0;
+                    if (db != null)
                     {
-                        if (string.IsNullOrEmpty(db.Items[i].weeded)) activeCount++;
+                        for (int i = 0; i < db.Items.Count; i++)
+                        {
+                            if (string.IsNullOrEmpty(db.Items[i].weeded)) activeCount++;
+                        }
                     }
-                }
-                bool opacLogin = (db != null && db.Set != null) && db.Set.opacLogin;
-                SendJson(stream, 200, new Dictionary<string, object>
-                {
-                    { "ok", true },
-                    { "school", school },
-                    { "totalTitles", (double)activeCount },
-                    { "opacLogin", opacLogin }
+                    bool opacLogin = (db != null && db.Set != null) && db.Set.opacLogin;
+                    res = new Dictionary<string, object>
+                    {
+                        { "ok", true },
+                        { "school", school },
+                        { "totalTitles", (double)activeCount },
+                        { "opacLogin", opacLogin }
+                    };
                 });
+                SendJson(stream, 200, res ?? new Dictionary<string, object> { { "ok", false } });
             }
 
             void HandleOpacSearch(Stream stream, Dictionary<string, string> query)
             {
-                var db = GetDb != null ? GetDb() : null;
-                if (db == null)
-                {
-                    SendJson(stream, 200, new Dictionary<string, object> { { "ok", true }, { "total", (double)0 }, { "items", new List<object>() } });
-                    return;
-                }
-
                 string q = query.ContainsKey("q") ? query["q"].Trim() : "";
                 string subj = query.ContainsKey("subject") ? query["subject"].Trim() : "";
                 string field = query.ContainsKey("field") ? query["field"].Trim().ToLowerInvariant() : "all";
@@ -1598,214 +1596,223 @@ namespace Errin
                 if (query.ContainsKey("limit")) int.TryParse(query["limit"], out limit);
                 if (limit <= 0) limit = 300;
 
-                var activeLoans = new Dictionary<string, Loan>(StringComparer.Ordinal);
-                var holdsCount = new Dictionary<string, int>(StringComparer.Ordinal);
-                for (int i = 0; i < db.Loans.Count; i++)
+                Dictionary<string, object> res = null;
+                ExecuteOnUi(() =>
                 {
-                    var l = db.Loans[i];
-                    if (l.ret == null && !string.IsNullOrEmpty(l.iid)) activeLoans[l.iid] = l;
-                }
-                for (int i = 0; i < db.Holds.Count; i++)
-                {
-                    var h = db.Holds[i];
-                    if (h.st == "waiting" && !string.IsNullOrEmpty(h.iid))
+                    var db = GetDb != null ? GetDb() : null;
+                    if (db == null)
                     {
-                        int c = 0; holdsCount.TryGetValue(h.iid, out c); holdsCount[h.iid] = c + 1;
-                    }
-                }
-
-                string[] tokens = string.IsNullOrEmpty(q) ? null : q.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-
-                var list = new List<Item>();
-                for (int i = 0; i < db.Items.Count; i++)
-                {
-                    var it = db.Items[i];
-                    if (!string.IsNullOrEmpty(it.weeded)) continue;
-
-                    bool isLoaned = activeLoans.ContainsKey(it.id);
-                    if (availOnly && isLoaned) continue;
-
-                    if (!string.IsNullOrEmpty(subj))
-                    {
-                        if (string.IsNullOrEmpty(it.subject) || it.subject.IndexOf(subj, StringComparison.OrdinalIgnoreCase) < 0)
-                            continue;
+                        res = new Dictionary<string, object> { { "ok", true }, { "total", (double)0 }, { "items", new List<object>() } };
+                        return;
                     }
 
-                    if (tokens != null && tokens.Length > 0)
+                    var activeLoans = new Dictionary<string, Loan>(StringComparer.Ordinal);
+                    var holdsCount = new Dictionary<string, int>(StringComparer.Ordinal);
+                    for (int i = 0; i < db.Loans.Count; i++)
                     {
-                        if (field == "title")
+                        var l = db.Loans[i];
+                        if (l.ret == null && !string.IsNullOrEmpty(l.iid)) activeLoans[l.iid] = l;
+                    }
+                    for (int i = 0; i < db.Holds.Count; i++)
+                    {
+                        var h = db.Holds[i];
+                        if (h.st != "done" && !string.IsNullOrEmpty(h.iid))
                         {
-                            bool match = true;
-                            for (int t = 0; t < tokens.Length; t++)
-                                if ((it.title ?? "").IndexOf(tokens[t], StringComparison.OrdinalIgnoreCase) < 0) { match = false; break; }
-                            if (!match) continue;
+                            int c = 0; holdsCount.TryGetValue(h.iid, out c); holdsCount[h.iid] = c + 1;
                         }
-                        else if (field == "author")
+                    }
+
+                    string[] tokens = string.IsNullOrEmpty(q) ? null : q.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+
+                    var list = new List<Item>();
+                    for (int i = 0; i < db.Items.Count; i++)
+                    {
+                        var it = db.Items[i];
+                        if (!string.IsNullOrEmpty(it.weeded)) continue;
+
+                        bool isLoaned = activeLoans.ContainsKey(it.id);
+                        int hc = 0; holdsCount.TryGetValue(it.id, out hc);
+                        if (availOnly && (isLoaned || hc > 0)) continue;
+
+                        if (!string.IsNullOrEmpty(subj))
                         {
-                            bool match = true;
-                            for (int t = 0; t < tokens.Length; t++)
-                                if ((it.author ?? "").IndexOf(tokens[t], StringComparison.OrdinalIgnoreCase) < 0) { match = false; break; }
-                            if (!match) continue;
+                            if (string.IsNullOrEmpty(it.subject) || it.subject.IndexOf(subj, StringComparison.OrdinalIgnoreCase) < 0)
+                                continue;
                         }
-                        else if (field == "subject")
+
+                        if (tokens != null && tokens.Length > 0)
                         {
-                            bool match = true;
-                            for (int t = 0; t < tokens.Length; t++)
-                                if ((it.subject ?? "").IndexOf(tokens[t], StringComparison.OrdinalIgnoreCase) < 0) { match = false; break; }
-                            if (!match) continue;
-                        }
-                        else if (field == "call")
-                        {
-                            bool match = true;
-                            for (int t = 0; t < tokens.Length; t++)
-                                if ((it.call ?? "").IndexOf(tokens[t], StringComparison.OrdinalIgnoreCase) < 0) { match = false; break; }
-                            if (!match) continue;
-                        }
-                        else if (field == "barcode" || field == "isbn")
-                        {
-                            bool match = true;
-                            for (int t = 0; t < tokens.Length; t++)
+                            if (field == "title")
                             {
-                                bool bMatch = (it.barcode ?? "").IndexOf(tokens[t], StringComparison.OrdinalIgnoreCase) >= 0;
-                                bool iMatch = (it.isbn ?? "").IndexOf(tokens[t], StringComparison.OrdinalIgnoreCase) >= 0;
-                                if (!bMatch && !iMatch) { match = false; break; }
+                                bool match = true;
+                                for (int t = 0; t < tokens.Length; t++)
+                                    if ((it.title ?? "").IndexOf(tokens[t], StringComparison.OrdinalIgnoreCase) < 0) { match = false; break; }
+                                if (!match) continue;
                             }
-                            if (!match) continue;
+                            else if (field == "author")
+                            {
+                                bool match = true;
+                                for (int t = 0; t < tokens.Length; t++)
+                                    if ((it.author ?? "").IndexOf(tokens[t], StringComparison.OrdinalIgnoreCase) < 0) { match = false; break; }
+                                if (!match) continue;
+                            }
+                            else if (field == "subject")
+                            {
+                                bool match = true;
+                                for (int t = 0; t < tokens.Length; t++)
+                                    if ((it.subject ?? "").IndexOf(tokens[t], StringComparison.OrdinalIgnoreCase) < 0) { match = false; break; }
+                                if (!match) continue;
+                            }
+                            else if (field == "call")
+                            {
+                                bool match = true;
+                                for (int t = 0; t < tokens.Length; t++)
+                                    if ((it.call ?? "").IndexOf(tokens[t], StringComparison.OrdinalIgnoreCase) < 0) { match = false; break; }
+                                if (!match) continue;
+                            }
+                            else if (field == "barcode" || field == "isbn")
+                            {
+                                bool match = true;
+                                for (int t = 0; t < tokens.Length; t++)
+                                {
+                                    bool bMatch = (it.barcode ?? "").IndexOf(tokens[t], StringComparison.OrdinalIgnoreCase) >= 0;
+                                    bool iMatch = (it.isbn ?? "").IndexOf(tokens[t], StringComparison.OrdinalIgnoreCase) >= 0;
+                                    if (!bMatch && !iMatch) { match = false; break; }
+                                }
+                                if (!match) continue;
+                            }
+                            else
+                            {
+                                if (!it.MatchesAll(tokens)) continue;
+                            }
                         }
-                        else
-                        {
-                            if (!it.MatchesAll(tokens)) continue;
-                        }
+
+                        list.Add(it);
                     }
 
-                    list.Add(it);
-                }
+                    switch (sort)
+                    {
+                        case "title_desc":
+                            list.Sort((a, b) => string.Compare(b.title ?? "", a.title ?? "", StringComparison.OrdinalIgnoreCase));
+                            break;
+                        case "author_asc":
+                            list.Sort((a, b) => {
+                                int c = string.Compare(a.author ?? "", b.author ?? "", StringComparison.OrdinalIgnoreCase);
+                                return c != 0 ? c : string.Compare(a.title ?? "", b.title ?? "", StringComparison.OrdinalIgnoreCase);
+                            });
+                            break;
+                        case "subject_asc":
+                            list.Sort((a, b) => {
+                                int c = string.Compare(a.subject ?? "", b.subject ?? "", StringComparison.OrdinalIgnoreCase);
+                                return c != 0 ? c : string.Compare(a.title ?? "", b.title ?? "", StringComparison.OrdinalIgnoreCase);
+                            });
+                            break;
+                        case "call_asc":
+                            list.Sort((a, b) => string.Compare(a.call ?? "", b.call ?? "", StringComparison.OrdinalIgnoreCase));
+                            break;
+                        case "newest":
+                            list.Reverse();
+                            break;
+                        case "title_asc":
+                        default:
+                            list.Sort((a, b) => string.Compare(a.title ?? "", b.title ?? "", StringComparison.OrdinalIgnoreCase));
+                            break;
+                    }
 
-                switch (sort)
-                {
-                    case "title_desc":
-                        list.Sort((a, b) => string.Compare(b.title ?? "", a.title ?? "", StringComparison.OrdinalIgnoreCase));
-                        break;
-                    case "author_asc":
-                        list.Sort((a, b) => {
-                            int c = string.Compare(a.author ?? "", b.author ?? "", StringComparison.OrdinalIgnoreCase);
-                            return c != 0 ? c : string.Compare(a.title ?? "", b.title ?? "", StringComparison.OrdinalIgnoreCase);
-                        });
-                        break;
-                    case "subject_asc":
-                        list.Sort((a, b) => {
-                            int c = string.Compare(a.subject ?? "", b.subject ?? "", StringComparison.OrdinalIgnoreCase);
-                            return c != 0 ? c : string.Compare(a.title ?? "", b.title ?? "", StringComparison.OrdinalIgnoreCase);
-                        });
-                        break;
-                    case "call_asc":
-                        list.Sort((a, b) => string.Compare(a.call ?? "", b.call ?? "", StringComparison.OrdinalIgnoreCase));
-                        break;
-                    case "newest":
-                        list.Reverse();
-                        break;
-                    case "title_asc":
-                    default:
-                        list.Sort((a, b) => string.Compare(a.title ?? "", b.title ?? "", StringComparison.OrdinalIgnoreCase));
-                        break;
-                }
+                    int totalMatches = list.Count;
+                    int take = Math.Min(list.Count, limit);
+                    var itemsJson = new List<object>(take);
+                    for (int i = 0; i < take; i++)
+                    {
+                        var it = list[i];
+                        Loan l = null;
+                        activeLoans.TryGetValue(it.id, out l);
+                        int hc = 0;
+                        holdsCount.TryGetValue(it.id, out hc);
 
-                int totalMatches = list.Count;
-                int take = Math.Min(list.Count, limit);
-                var itemsJson = new List<object>(take);
-                for (int i = 0; i < take; i++)
-                {
-                    var it = list[i];
-                    Loan l = null;
-                    activeLoans.TryGetValue(it.id, out l);
-                    int hc = 0;
-                    holdsCount.TryGetValue(it.id, out hc);
+                        var d = new Dictionary<string, object>();
+                        d["id"] = it.id;
+                        d["barcode"] = it.barcode ?? "";
+                        d["ctl"] = it.ctl ?? "";
+                        d["acq"] = it.acq ?? "";
+                        d["title"] = it.title ?? "";
+                        d["sub"] = it.sub ?? "";
+                        d["author"] = it.author ?? "";
+                        d["isbn"] = it.isbn ?? "";
+                        d["publisher"] = it.publisher ?? "";
+                        d["place"] = it.place ?? "";
+                        d["year"] = it.year ?? "";
+                        d["pages"] = it.pages ?? "";
+                        d["subject"] = it.subject ?? "";
+                        d["call"] = it.call ?? "";
+                        d["available"] = l == null && hc == 0;
+                        d["due"] = l != null ? l.due : "";
+                        d["holds"] = (double)hc;
+                        itemsJson.Add(d);
+                    }
 
-                    var d = new Dictionary<string, object>();
-                    d["id"] = it.id;
-                    d["barcode"] = it.barcode ?? "";
-                    d["ctl"] = it.ctl ?? "";
-                    d["acq"] = it.acq ?? "";
-                    d["title"] = it.title ?? "";
-                    d["sub"] = it.sub ?? "";
-                    d["author"] = it.author ?? "";
-                    d["isbn"] = it.isbn ?? "";
-                    d["publisher"] = it.publisher ?? "";
-                    d["place"] = it.place ?? "";
-                    d["year"] = it.year ?? "";
-                    d["pages"] = it.pages ?? "";
-                    d["subject"] = it.subject ?? "";
-                    d["call"] = it.call ?? "";
-                    d["available"] = l == null;
-                    d["due"] = l != null ? l.due : "";
-                    d["holds"] = (double)hc;
-                    itemsJson.Add(d);
-                }
-
-                SendJson(stream, 200, new Dictionary<string, object>
-                {
-                    { "ok", true },
-                    { "total", (double)totalMatches },
-                    { "limit", (double)take },
-                    { "items", itemsJson }
+                    res = new Dictionary<string, object>
+                    {
+                        { "ok", true },
+                        { "total", (double)totalMatches },
+                        { "limit", (double)take },
+                        { "items", itemsJson }
+                    };
                 });
+
+                SendJson(stream, 200, res ?? new Dictionary<string, object> { { "ok", false }, { "total", (double)0 }, { "items", new List<object>() } });
             }
 
             void HandleOpacSubjects(Stream stream)
             {
-                var db = GetDb != null ? GetDb() : null;
-                if (db == null)
+                List<object> list = null;
+                ExecuteOnUi(() =>
                 {
-                    SendJson(stream, 200, new List<object>());
-                    return;
-                }
-                var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-                for (int i = 0; i < db.Items.Count; i++)
-                {
-                    var it = db.Items[i];
-                    if (!string.IsNullOrEmpty(it.weeded)) continue;
-                    if (string.IsNullOrEmpty(it.subject)) continue;
-                    var parts = it.subject.Split(new[] { ';', ',', '|', '/' }, StringSplitOptions.RemoveEmptyEntries);
-                    for (int p = 0; p < parts.Length; p++)
+                    var db = GetDb != null ? GetDb() : null;
+                    if (db == null)
                     {
-                        string s = parts[p].Trim();
-                        if (s.Length >= 2)
+                        list = new List<object>();
+                        return;
+                    }
+                    var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                    for (int i = 0; i < db.Items.Count; i++)
+                    {
+                        var it = db.Items[i];
+                        if (!string.IsNullOrEmpty(it.weeded)) continue;
+                        if (string.IsNullOrEmpty(it.subject)) continue;
+                        var parts = it.subject.Split(new[] { ';', ',', '|', '/' }, StringSplitOptions.RemoveEmptyEntries);
+                        for (int p = 0; p < parts.Length; p++)
                         {
-                            int c = 0; counts.TryGetValue(s, out c); counts[s] = c + 1;
+                            string s = parts[p].Trim();
+                            if (s.Length >= 2)
+                            {
+                                int c = 0; counts.TryGetValue(s, out c); counts[s] = c + 1;
+                            }
                         }
                     }
-                }
-                var list = counts.OrderByDescending(kv => kv.Value).Take(50).Select(kv => (object)new Dictionary<string, object>
-                {
-                    { "name", kv.Key },
-                    { "count", (double)kv.Value }
-                }).ToList();
+                    list = counts.OrderByDescending(kv => kv.Value).Take(50).Select(kv => (object)new Dictionary<string, object>
+                    {
+                        { "name", kv.Key },
+                        { "count", (double)kv.Value }
+                    }).ToList();
+                });
 
-                SendJson(stream, 200, list);
+                SendJson(stream, 200, list ?? new List<object>());
             }
 
             void HandleOpacCatalogJson(Stream stream)
             {
-                var db = GetDb != null ? GetDb() : null;
-                string json = ExportOpacCatalogJson(db);
+                string json = "[]";
+                ExecuteOnUi(() =>
+                {
+                    var db = GetDb != null ? GetDb() : null;
+                    json = ExportOpacCatalogJson(db);
+                });
                 SendResponse(stream, "200 OK", "application/json; charset=utf-8", Encoding.UTF8.GetBytes(json));
             }
 
             void HandleOpacLogin(Stream stream, string body)
             {
-                var db = GetDb != null ? GetDb() : null;
-                if (db == null)
-                {
-                    SendJson(stream, 500, new Dictionary<string, object> { { "ok", false }, { "error", "Database unavailable" } });
-                    return;
-                }
-
-                if (!db.Set.opacLogin)
-                {
-                    SendJson(stream, 403, new Dictionary<string, object> { { "ok", false }, { "error", "Patron login is not enabled on this OPAC." } });
-                    return;
-                }
-
                 var json = Json.Parse(body) as Dictionary<string, object>;
                 string idInput = json != null ? Json.Str(json, "id").Trim() : "";
                 if (string.IsNullOrEmpty(idInput))
@@ -1814,38 +1821,77 @@ namespace Errin
                     return;
                 }
 
-                string normId = Lib.NormIc(idInput);
                 Patron patron = null;
-                for (int i = 0; i < db.Patrons.Count; i++)
+                int status = 200;
+                string errMsg = null;
+
+                ExecuteOnUi(() =>
                 {
-                    var p = db.Patrons[i];
-                    if (string.Equals(p.id, idInput, StringComparison.OrdinalIgnoreCase) ||
-                        string.Equals(p.no_pengenalan, idInput, StringComparison.OrdinalIgnoreCase) ||
-                        string.Equals(p.id_murid, idInput, StringComparison.OrdinalIgnoreCase) ||
-                        (!string.IsNullOrEmpty(normId) && (string.Equals(Lib.NormIc(p.id), normId, StringComparison.OrdinalIgnoreCase) ||
-                                                           string.Equals(Lib.NormIc(p.no_pengenalan), normId, StringComparison.OrdinalIgnoreCase))))
+                    var db = GetDb != null ? GetDb() : null;
+                    if (db == null)
                     {
-                        patron = p;
-                        break;
+                        status = 500;
+                        errMsg = "Database unavailable";
+                        return;
                     }
-                }
 
-                if (patron == null)
-                {
-                    SendJson(stream, 404, new Dictionary<string, object> { { "ok", false }, { "error", "Student ID or IC Number not found in library records." } });
-                    return;
-                }
+                    if (db.Set == null || !db.Set.opacLogin)
+                    {
+                        status = 403;
+                        errMsg = "Patron login is not enabled on this OPAC.";
+                        return;
+                    }
 
-                var lib = GetLib != null ? GetLib() : null;
-                if (lib != null && !lib.IsActive(patron))
+                    string normId = Lib.NormIc(idInput);
+                    for (int i = 0; i < db.Patrons.Count; i++)
+                    {
+                        var p = db.Patrons[i];
+                        if (string.Equals(p.id, idInput, StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(p.no_pengenalan, idInput, StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(p.id_murid, idInput, StringComparison.OrdinalIgnoreCase) ||
+                            (!string.IsNullOrEmpty(normId) && (string.Equals(Lib.NormIc(p.id), normId, StringComparison.OrdinalIgnoreCase) ||
+                                                               string.Equals(Lib.NormIc(p.no_pengenalan), normId, StringComparison.OrdinalIgnoreCase))))
+                        {
+                            patron = p;
+                            break;
+                        }
+                    }
+
+                    if (patron == null)
+                    {
+                        status = 404;
+                        errMsg = "Student ID or IC Number not found in library records.";
+                        return;
+                    }
+
+                    var lib = GetLib != null ? GetLib() : null;
+                    if (lib != null && !lib.IsActive(patron))
+                    {
+                        status = 403;
+                        errMsg = "Student account is deactivated / inactive.";
+                        return;
+                    }
+                });
+
+                if (status != 200 || patron == null)
                 {
-                    SendJson(stream, 403, new Dictionary<string, object> { { "ok", false }, { "error", "Student account is deactivated / inactive." } });
+                    SendJson(stream, status, new Dictionary<string, object> { { "ok", false }, { "error", errMsg ?? "Login failed" } });
                     return;
                 }
 
                 string token = "pat-" + Guid.NewGuid().ToString("N");
                 lock (syncLock)
                 {
+                    if (patronSessions.Count > 100)
+                    {
+                        var now = DateTime.UtcNow;
+                        var expired = new List<string>();
+                        foreach (var kv in patronSessions)
+                        {
+                            if (kv.Value.expiresAt < now) expired.Add(kv.Key);
+                        }
+                        foreach (var k in expired) patronSessions.Remove(k);
+                    }
                     patronSessions[token] = new PatronSession
                     {
                         token = token,
@@ -1882,120 +1928,136 @@ namespace Errin
                     return;
                 }
 
-                var db = GetDb != null ? GetDb() : null;
-                var lib = GetLib != null ? GetLib() : null;
-                if (db == null || lib == null)
+                Dictionary<string, object> res = null;
+                int status = 200;
+                string errMsg = null;
+
+                ExecuteOnUi(() =>
                 {
-                    SendJson(stream, 500, new Dictionary<string, object> { { "ok", false }, { "error", "Database unavailable" } });
+                    var db = GetDb != null ? GetDb() : null;
+                    var lib = GetLib != null ? GetLib() : null;
+                    if (db == null || lib == null)
+                    {
+                        status = 500;
+                        errMsg = "Database unavailable";
+                        return;
+                    }
+
+                    var itemMap = db.Items.ToDictionary(i => i.id, StringComparer.Ordinal);
+                    string today = Lib.Today();
+
+                    // Active loans
+                    var loansJson = new List<object>();
+                    for (int i = 0; i < db.Loans.Count; i++)
+                    {
+                        var l = db.Loans[i];
+                        if (l.pid == patron.id && l.ret == null)
+                        {
+                            Item it = null; itemMap.TryGetValue(l.iid, out it);
+                            bool overdue = string.CompareOrdinal(today, l.due) > 0;
+                            int late = overdue ? Lib.Diff(today, l.due) : 0;
+                            double fine = late * (db.Set != null ? db.Set.rate : 0.1);
+                            loansJson.Add(new Dictionary<string, object>
+                            {
+                                { "id", l.id },
+                                { "barcode", it != null ? it.barcode : "" },
+                                { "title", it != null ? it.title : "Unknown" },
+                                { "author", it != null ? it.author : "" },
+                                { "out", l.@out },
+                                { "due", l.due },
+                                { "daysLate", (double)late },
+                                { "overdue", overdue },
+                                { "fine", fine }
+                            });
+                        }
+                    }
+
+                    // Returned loan history (last 20)
+                    var historyJson = new List<object>();
+                    for (int i = db.Loans.Count - 1; i >= 0 && historyJson.Count < 20; i--)
+                    {
+                        var l = db.Loans[i];
+                        if (l.pid == patron.id && l.ret != null)
+                        {
+                            Item it = null; itemMap.TryGetValue(l.iid, out it);
+                            historyJson.Add(new Dictionary<string, object>
+                            {
+                                { "id", l.id },
+                                { "barcode", it != null ? it.barcode : "" },
+                                { "title", it != null ? it.title : "Unknown" },
+                                { "out", l.@out },
+                                { "ret", l.ret }
+                            });
+                        }
+                    }
+
+                    // Fines
+                    var finesJson = new List<object>();
+                    double totalUnpaidFines = 0;
+                    for (int i = 0; i < db.Fines.Count; i++)
+                    {
+                        var f = db.Fines[i];
+                        if (f.pid == patron.id)
+                        {
+                            Item it = null; itemMap.TryGetValue(f.iid, out it);
+                            bool isPaid = !string.IsNullOrEmpty(f.paid);
+                            if (!isPaid) totalUnpaidFines += f.amt;
+                            finesJson.Add(new Dictionary<string, object>
+                            {
+                                { "id", f.id },
+                                { "title", it != null ? it.title : "Library Fine" },
+                                { "amt", f.amt },
+                                { "paid", isPaid },
+                                { "date", f.date }
+                            });
+                        }
+                    }
+
+                    // Holds
+                    var holdsJson = new List<object>();
+                    for (int i = 0; i < db.Holds.Count; i++)
+                    {
+                        var h = db.Holds[i];
+                        if (h.pid == patron.id)
+                        {
+                            Item it = null; itemMap.TryGetValue(h.iid, out it);
+                            holdsJson.Add(new Dictionary<string, object>
+                            {
+                                { "id", h.id },
+                                { "barcode", it != null ? it.barcode : "" },
+                                { "title", it != null ? it.title : "Reserved Item" },
+                                { "date", h.date },
+                                { "st", h.st }
+                            });
+                        }
+                    }
+
+                    res = new Dictionary<string, object>
+                    {
+                        { "ok", true },
+                        { "patron", new Dictionary<string, object>
+                            {
+                                { "id", patron.id },
+                                { "name", patron.name ?? "" },
+                                { "cls", patron.cls ?? "" },
+                                { "reg", patron.reg ?? "" },
+                                { "unpaidFines", totalUnpaidFines }
+                            }
+                        },
+                        { "loans", loansJson },
+                        { "history", historyJson },
+                        { "fines", finesJson },
+                        { "holds", holdsJson }
+                    };
+                });
+
+                if (status != 200 || res == null)
+                {
+                    SendJson(stream, status, new Dictionary<string, object> { { "ok", false }, { "error", errMsg ?? "Database unavailable" } });
                     return;
                 }
 
-                var itemMap = db.Items.ToDictionary(i => i.id, StringComparer.Ordinal);
-                string today = Lib.Today();
-
-                // Active loans
-                var loansJson = new List<object>();
-                for (int i = 0; i < db.Loans.Count; i++)
-                {
-                    var l = db.Loans[i];
-                    if (l.pid == patron.id && l.ret == null)
-                    {
-                        Item it = null; itemMap.TryGetValue(l.iid, out it);
-                        bool overdue = string.CompareOrdinal(today, l.due) > 0;
-                        int late = overdue ? Lib.Diff(today, l.due) : 0;
-                        double fine = late * (db.Set != null ? db.Set.rate : 0.1);
-                        loansJson.Add(new Dictionary<string, object>
-                        {
-                            { "id", l.id },
-                            { "barcode", it != null ? it.barcode : "" },
-                            { "title", it != null ? it.title : "Unknown" },
-                            { "author", it != null ? it.author : "" },
-                            { "out", l.@out },
-                            { "due", l.due },
-                            { "daysLate", (double)late },
-                            { "overdue", overdue },
-                            { "fine", fine }
-                        });
-                    }
-                }
-
-                // Returned loan history (last 20)
-                var historyJson = new List<object>();
-                for (int i = db.Loans.Count - 1; i >= 0 && historyJson.Count < 20; i--)
-                {
-                    var l = db.Loans[i];
-                    if (l.pid == patron.id && l.ret != null)
-                    {
-                        Item it = null; itemMap.TryGetValue(l.iid, out it);
-                        historyJson.Add(new Dictionary<string, object>
-                        {
-                            { "id", l.id },
-                            { "barcode", it != null ? it.barcode : "" },
-                            { "title", it != null ? it.title : "Unknown" },
-                            { "out", l.@out },
-                            { "ret", l.ret }
-                        });
-                    }
-                }
-
-                // Fines
-                var finesJson = new List<object>();
-                double totalUnpaidFines = 0;
-                for (int i = 0; i < db.Fines.Count; i++)
-                {
-                    var f = db.Fines[i];
-                    if (f.pid == patron.id)
-                    {
-                        Item it = null; itemMap.TryGetValue(f.iid, out it);
-                        bool isPaid = !string.IsNullOrEmpty(f.paid);
-                        if (!isPaid) totalUnpaidFines += f.amt;
-                        finesJson.Add(new Dictionary<string, object>
-                        {
-                            { "id", f.id },
-                            { "title", it != null ? it.title : "Library Fine" },
-                            { "amt", f.amt },
-                            { "paid", isPaid },
-                            { "date", f.date }
-                        });
-                    }
-                }
-
-                // Holds
-                var holdsJson = new List<object>();
-                for (int i = 0; i < db.Holds.Count; i++)
-                {
-                    var h = db.Holds[i];
-                    if (h.pid == patron.id)
-                    {
-                        Item it = null; itemMap.TryGetValue(h.iid, out it);
-                        holdsJson.Add(new Dictionary<string, object>
-                        {
-                            { "id", h.id },
-                            { "barcode", it != null ? it.barcode : "" },
-                            { "title", it != null ? it.title : "Reserved Item" },
-                            { "date", h.date },
-                            { "st", h.st }
-                        });
-                    }
-                }
-
-                SendJson(stream, 200, new Dictionary<string, object>
-                {
-                    { "ok", true },
-                    { "patron", new Dictionary<string, object>
-                        {
-                            { "id", patron.id },
-                            { "name", patron.name ?? "" },
-                            { "cls", patron.cls ?? "" },
-                            { "reg", patron.reg ?? "" },
-                            { "unpaidFines", totalUnpaidFines }
-                        }
-                    },
-                    { "loans", loansJson },
-                    { "history", historyJson },
-                    { "fines", finesJson },
-                    { "holds", holdsJson }
-                });
+                SendJson(stream, 200, res);
             }
 
             void HandleOpacHold(Stream stream, Dictionary<string, string> headers, Dictionary<string, string> query, string body)
@@ -2107,7 +2169,7 @@ namespace Errin
             for (int i = 0; i < db.Holds.Count; i++)
             {
                 var h = db.Holds[i];
-                if (h.st == "waiting" && !string.IsNullOrEmpty(h.iid))
+                if (h.st != "done" && !string.IsNullOrEmpty(h.iid))
                 {
                     int c = 0; holdsCount.TryGetValue(h.iid, out c); holdsCount[h.iid] = c + 1;
                 }
@@ -2139,7 +2201,7 @@ namespace Errin
                 d["pages"] = it.pages ?? "";
                 d["subject"] = it.subject ?? "";
                 d["call"] = it.call ?? "";
-                d["available"] = l == null;
+                d["available"] = l == null && hc == 0;
                 d["due"] = l != null ? l.due : "";
                 d["holds"] = (double)hc;
                 list.Add(d);
@@ -2903,7 +2965,7 @@ function renderResults(items, totalCount) {
       const card = document.createElement('div');
       card.className = 'book-card';
 
-      let stBadge = it.available ? '<span class=""badge badge-ok"">&#x2713; Available</span>' : `<span class=""badge badge-warn"">&#x23F1; Due ${escapeHtml(it.due || '')}</span>`;
+      let stBadge = it.available ? '<span class=""badge badge-ok"">&#x2713; Available</span>' : (it.due ? `<span class=""badge badge-warn"">&#x23F1; Due ${escapeHtml(it.due)}</span>` : '<span class=""badge badge-warn"">&#x23F1; Reserved</span>');
 
       const topDiv = document.createElement('div');
       const titleEl = document.createElement('div');
@@ -2979,7 +3041,7 @@ function renderResults(items, totalCount) {
   } else {
     items.forEach(it => {
       const tr = document.createElement('tr');
-      let stBadge = it.available ? '<span class=""badge badge-ok"">&#x2713; Available</span>' : `<span class=""badge badge-warn"">&#x23F1; Due ${escapeHtml(it.due || '')}</span>`;
+      let stBadge = it.available ? '<span class=""badge badge-ok"">&#x2713; Available</span>' : (it.due ? `<span class=""badge badge-warn"">&#x23F1; Due ${escapeHtml(it.due)}</span>` : '<span class=""badge badge-warn"">&#x23F1; Reserved</span>');
 
       tr.innerHTML = `
         <td><code>${escapeHtml(it.barcode || '')}</code></td>
@@ -3055,7 +3117,8 @@ function openDetail(it) {
     stBox.innerHTML = '<span class=""badge badge-ok"">&#x2713; Available on shelf for checkout</span>';
     holdBtn.style.display = 'none';
   } else {
-    stBox.innerHTML = `<span class=""badge badge-warn"">&#x23F1; Currently on loan (Due date: ${escapeHtml(it.due || 'Soon')})</span>`;
+    let msg = it.due ? `Currently on loan (Due date: ${escapeHtml(it.due)})` : 'Reserved on hold';
+    stBox.innerHTML = `<span class=""badge badge-warn"">&#x23F1; ${msg}</span>`;
     holdBtn.style.display = (window.__OPAC_LOGIN_ENABLED__ && !it.available) ? 'inline-block' : 'none';
   }
 
@@ -4009,7 +4072,9 @@ async function loadCatalog() {
     tbody.innerHTML = '<tr><td colspan=""6"" style=""text-align:center; color:#9a9a94;"">No items found.</td></tr>';
     return;
   }
+  const catMap = {};
   res.items.forEach(i => {
+    catMap[i.id] = i;
     const tr = document.createElement('tr');
     let stBadge = '<span class=""badge badge-ok"">Available</span>';
     if (i.weeded) stBadge = `<span class=""badge badge-dim"">Weeded (${escape(i.weed_reason || '')})</span>`;
@@ -4023,12 +4088,13 @@ async function loadCatalog() {
       <td>${escape(i.call)}</td>
       <td>${stBadge}</td>
       <td style=""text-align:right; white-space:nowrap;"">
-        <button class=""btn btn-sec btn-sm"" onclick='editItem(${JSON.stringify(i)})'>Edit</button>
+        <button class=""btn btn-sec btn-sm"" onclick=""editItemById('${escape(i.id)}')\"">Edit</button>
         ${i.weeded ? `<button class=""btn btn-sec btn-sm"" onclick=""unweedItem('${i.id}')"">Restore</button>` : `<button class=""btn btn-sec btn-sm"" onclick=""weedItemPrompt('${i.id}')"">Weed</button>`}
-        <button class=""btn btn-danger btn-sm"" onclick=""deleteItem('${i.id}', '${escape(i.title)}')"" style=""margin-left:4px;"">\u00D7</button>
+        <button class=""btn btn-danger btn-sm"" onclick=""deleteItemById('${escape(i.id)}')\"" style=""margin-left:4px;"">\u00D7</button>
       </td>`;
     tbody.appendChild(tr);
   });
+  window._currentCatMap = catMap;
 }
 
 function openItemModal(item = null) {
@@ -4048,6 +4114,8 @@ function openItemModal(item = null) {
 
 function closeItemModal() { document.getElementById('itemModal').style.display = 'none'; }
 function editItem(item) { openItemModal(item); }
+function editItemById(id) { const item = (window._currentCatMap || {})[id]; if (item) openItemModal(item); }
+function deleteItemById(id) { const item = (window._currentCatMap || {})[id]; if (item) deleteItem(item.id, item.title || ''); }
 
 async function saveItem(e) {
   e.preventDefault();
@@ -4114,7 +4182,9 @@ async function loadPatrons() {
     tbody.innerHTML = '<tr><td colspan=""6"" style=""text-align:center; color:#9a9a94;"">No students found.</td></tr>';
     return;
   }
+  const patMap = {};
   res.patrons.forEach(p => {
+    patMap[p.id] = p;
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td><code>${escape(p.id)}</code></td>
@@ -4123,11 +4193,12 @@ async function loadPatrons() {
       <td>${p.activeLoans > 0 ? `<span class=""badge badge-warn"">${p.activeLoans} books</span>` : '0'}</td>
       <td>${p.unpaidFines > 0 ? `<span class=""badge badge-err"">RM ${p.unpaidFines.toFixed(2)}</span>` : 'RM 0.00'}</td>
       <td style=""text-align:right; white-space:nowrap;"">
-        <button class=""btn btn-sec btn-sm"" onclick='editPatron(${JSON.stringify(p)})'>Edit</button>
-        <button class=""btn btn-danger btn-sm"" onclick=""deletePatron('${p.id}', '${escape(p.name)}')"" style=""margin-left:4px;"">\u00D7</button>
+        <button class=""btn btn-sec btn-sm"" onclick=""editPatronById('${escape(p.id)}')\"">Edit</button>
+        <button class=""btn btn-danger btn-sm"" onclick=""deletePatronById('${escape(p.id)}')\"" style=""margin-left:4px;"">\u00D7</button>
       </td>`;
     tbody.appendChild(tr);
   });
+  window._currentPatMap = patMap;
 }
 
 function openPatronModal(p = null) {
@@ -4143,6 +4214,8 @@ function openPatronModal(p = null) {
 
 function closePatronModal() { document.getElementById('patronModal').style.display = 'none'; }
 function editPatron(p) { openPatronModal(p); }
+function editPatronById(id) { const p = (window._currentPatMap || {})[id]; if (p) openPatronModal(p); }
+function deletePatronById(id) { const p = (window._currentPatMap || {})[id]; if (p) deletePatron(p.id, p.name || ''); }
 
 async function savePatron(e) {
   e.preventDefault();

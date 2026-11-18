@@ -218,6 +218,17 @@ namespace Errin
             Marshal.Copy(ptr, buf, 0, len);
             return Encoding.UTF8.GetString(buf);
         }
+
+        public static string Utf8NullTerminated(IntPtr ptr)
+        {
+            if (ptr == IntPtr.Zero) return "";
+            int len = 0;
+            while (Marshal.ReadByte(ptr, len) != 0) len++;
+            if (len == 0) return "";
+            byte[] buf = new byte[len];
+            Marshal.Copy(ptr, buf, 0, len);
+            return Encoding.UTF8.GetString(buf);
+        }
     }
 
     public class SqliteDb : IDisposable
@@ -249,7 +260,7 @@ namespace Errin
             if (db == IntPtr.Zero || SqliteNative.sqlite3_errmsg == null) return "Unknown error";
             IntPtr ptr = SqliteNative.sqlite3_errmsg(db);
             if (ptr == IntPtr.Zero) return "Unknown error";
-            return Marshal.PtrToStringAnsi(ptr);
+            return SqliteNative.Utf8NullTerminated(ptr);
         }
 
         public void Execute(string sql)
@@ -577,13 +588,45 @@ namespace Errin
                 "tel_penjaga1", "nama_penjaga2", "tel_penjaga2", "alamat1", "alamat2", "alamat3",
                 "poskod", "bandar", "daerah", "negeri"
             };
+            var pCols = GetTableColumns(db, "patrons");
             foreach (var col in patronCols)
             {
-                try { db.Execute("ALTER TABLE patrons ADD COLUMN " + col + " TEXT;"); } catch { }
+                if (!pCols.Contains(col))
+                {
+                    try { db.Execute("ALTER TABLE patrons ADD COLUMN " + col + " TEXT;"); } catch { }
+                }
             }
-            try { db.Execute("ALTER TABLE settings ADD COLUMN patron_req_json TEXT;"); } catch { }
-            try { db.Execute("ALTER TABLE settings ADD COLUMN opac_login INTEGER DEFAULT 0;"); } catch { }
-            try { db.Execute("ALTER TABLE archived_patrons ADD COLUMN extra_json TEXT;"); } catch { }
+            var sCols = GetTableColumns(db, "settings");
+            if (!sCols.Contains("patron_req_json"))
+            {
+                try { db.Execute("ALTER TABLE settings ADD COLUMN patron_req_json TEXT;"); } catch { }
+            }
+            if (!sCols.Contains("opac_login"))
+            {
+                try { db.Execute("ALTER TABLE settings ADD COLUMN opac_login INTEGER DEFAULT 0;"); } catch { }
+            }
+            var aCols = GetTableColumns(db, "archived_patrons");
+            if (!aCols.Contains("extra_json"))
+            {
+                try { db.Execute("ALTER TABLE archived_patrons ADD COLUMN extra_json TEXT;"); } catch { }
+            }
+        }
+
+        private static HashSet<string> GetTableColumns(SqliteDb db, string tableName)
+        {
+            var cols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            try
+            {
+                using (var cmd = db.CreateCommand("PRAGMA table_info(" + tableName + ");"))
+                {
+                    while (cmd.Step())
+                    {
+                        cols.Add(cmd.GetText(1));
+                    }
+                }
+            }
+            catch { }
+            return cols;
         }
 
         public static Db Load(string dbPath)
