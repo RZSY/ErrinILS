@@ -1,4 +1,8 @@
 # Build artifacts and temporary files
+bin/
+obj/
+**/bin/
+**/obj/
 dist/
 build/
 *.tmp
@@ -7,5 +11,16 @@ selftest.exe
 *.zip
 *.xlsx
 *.xls
-.vscode/
+.vs/
+*.user
+# User database and runtime data
+data/
+**/data/
+*.db
+*.db-journal
+*.db.bak
+*.suo
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
 .agents/

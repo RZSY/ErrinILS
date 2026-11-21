@@ -1,6 +1,7 @@
 // ErrinILS dialogs: record editor, weeding, MARC view, labels, students, export/import, Z39.50 search.
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.Drawing.Drawing2D;
 using System.Drawing.Text;
@@ -211,12 +212,24 @@ namespace Errin
                 var lk = Ui.Txt(420); var lks = Ui.Lbl("", true); lks.MaximumSize = new Size(Ui.S(740), 0);
                 var lkBtn = Ui.Btn("Look up", 1); lkBtn.Margin = Ui.S(new Padding(8, 18, 0, 0));
                 var lkSrc = Ui.Combo(250, new[] { "All sources (best match)" }.Concat(Lookup.SourceNames).ToArray());
+                lkSrc.DropDownWidth = Ui.S(420);
                 var lrow = Ui.Flow(false); lrow.Controls.Add(Ui.Field("Copy cataloguing: scan or type an ISBN", lk, 330)); lrow.Controls.Add(Ui.Field("Search in", lkSrc, 270)); lrow.Controls.Add(lkBtn);
                 root.Controls.Add(lrow); root.Controls.Add(lks);
                 Action<Item> fill = r => { foreach (var k in new[] { "title", "sub", "author", "isbn", "publisher", "place", "year", "pages", "subject", "call" }) if (r.Get(k) != "") boxes[k].Text = r.Get(k); };
                 Action doLookup = () =>
                 {
-                    string raw = lk.Text.Trim(); if (raw == "") return; string c = Lib.Isb(raw);
+                    string raw = lk.Text.Trim();
+                    if (string.IsNullOrEmpty(raw) && boxes.ContainsKey("isbn"))
+                    {
+                        raw = boxes["isbn"].Text.Trim();
+                        lk.Text = raw;
+                    }
+                    if (string.IsNullOrEmpty(raw))
+                    {
+                        lks.Text = "Please enter or scan an ISBN into the lookup box above first.";
+                        return;
+                    }
+                    string c = Lib.Isb(raw);
                     var own = db.Items.Where(i => i.isbn != "" && Lib.Isb(i.isbn) == c).ToList();
                     if (own.Count > 0) { fill(own[0]); lks.Text = "Already in your catalog (" + own.Count + " cop" + (own.Count > 1 ? "ies" : "y") + "). Details copied. Enter a new barcode for this copy."; return; }
                     lks.Text = "Searching\u2026"; lkBtn.Enabled = false;
@@ -1107,6 +1120,7 @@ namespace Errin
                 var topFlow = Ui.Flow(false);
                 topFlow.Location = new Point(Ui.S(20), Ui.S(172));
                 var lkSrc = Ui.Combo(240, new[] { "All sources (best match)" }.Concat(Lookup.SourceNames).ToArray());
+                lkSrc.DropDownWidth = Ui.S(420);
                 topFlow.Controls.Add(Ui.Field("Search in", lkSrc, 250));
 
                 var chkSkipExisting = new CheckBox { Text = "Skip titles already in catalog", Checked = false, AutoSize = true, ForeColor = Th.Ink, Margin = Ui.S(new Padding(0, 18, 12, 0)) };
@@ -1154,7 +1168,7 @@ namespace Errin
 
                 var botFlow = Ui.Flow(false);
                 botFlow.Location = new Point(Ui.S(20), botY);
-                var btnAddAll = Ui.Btn("Add found items to catalog", 0);
+                var btnAddAll = Ui.Btn("Add items to catalog", 0);
                 btnAddAll.Enabled = false;
                 var btnExportCsv = Ui.Btn("Export results (CSV)", 1);
                 var btnClose = Ui.Btn("Close", 1, (s, e) => d.Close());
@@ -1241,6 +1255,16 @@ namespace Errin
                                 }
                             }
 
+                            if (item == null && !status.StartsWith("Skipped"))
+                            {
+                                item = new Item
+                                {
+                                    title = "Empty Title (to be added later)",
+                                    isbn = norm ?? raw
+                                };
+                                foundItems.Add(item);
+                            }
+
                             string[] row = new[]
                             {
                                 norm ?? raw,
@@ -1285,7 +1309,16 @@ namespace Errin
                                     btnStop.Enabled = false;
                                     btnAddAll.Enabled = foundItems.Count > 0;
                                     stLbl.ForeColor = foundItems.Count > 0 ? Th.Green : Th.Red;
-                                    stLbl.Text = string.Format("Finished! Found {0} of {1} items." + (cancelRequested ? " (Stopped early)" : ""), foundItems.Count, tokens.Count);
+                                    int unfoundCount = foundItems.Count - foundCount;
+                                    string summary;
+                                    if (unfoundCount > 0 && foundCount > 0)
+                                        summary = string.Format("Finished! {0} of {1} items ready to add ({2} found, {3} with empty title).", foundItems.Count, tokens.Count, foundCount, unfoundCount);
+                                    else if (unfoundCount > 0 && foundCount == 0)
+                                        summary = string.Format("Finished! {0} of {1} items ready to add (all with empty title).", foundItems.Count, tokens.Count);
+                                    else
+                                        summary = string.Format("Finished! Found {0} of {1} items.", foundCount, tokens.Count);
+                                    if (cancelRequested) summary += " (Stopped early)";
+                                    stLbl.Text = summary;
                                 }));
                             }
                         }
@@ -1452,6 +1485,177 @@ namespace Errin
                 d.ShowDialog(this);
             }
             if (view == "pat") Render();
+        }
+
+        /* ---------- Direct Cloud Google Drive Setup Dialog ---------- */
+        void GoogleCloudSetupDialog()
+        {
+            var cfg = CloudSyncManager.Instance.Config;
+            using (var d = Ui.Dlg("Direct Google Drive & GitHub Cloud Sync", 700, 695))
+            {
+                d.Controls.Add(new Label
+                {
+                    UseMnemonic = false,
+                    Text = "cloud sync: " + (!string.IsNullOrEmpty(cfg.googleAccount) ? cfg.googleAccount : "google drive"),
+                    Font = Th.FT,
+                    AutoSize = true,
+                    Location = new Point(Ui.S(20), Ui.S(14))
+                });
+
+                var intro = new Label
+                {
+                    UseMnemonic = false,
+                    Text = "Syncs student records directly to Google Drive and catalog data directly to GitHub. Both services sync directly over HTTPS without needing Google Drive desktop apps or Git for Windows.",
+                    AutoSize = false,
+                    Size = new Size(Ui.S(650), Ui.S(40)),
+                    Location = new Point(Ui.S(20), Ui.S(42)),
+                    ForeColor = Th.Ink
+                };
+                d.Controls.Add(intro);
+
+                int curY = Ui.S(86);
+
+                // School Google Account & GitHub Repo
+                var acctTxt = Ui.Txt(620);
+                acctTxt.Text = cfg.googleAccount ?? "tamanria.sk@gmail.com";
+                var acctField = Ui.Field("School Google Account Email (e.g. tamanria.sk@gmail.com, skseribintang@gmail.com)", acctTxt, 650);
+                acctField.Location = new Point(Ui.S(20), curY);
+                d.Controls.Add(acctField);
+                curY += Ui.S(54);
+
+                var ghTxt = Ui.Txt(620);
+                ghTxt.Text = cfg.githubRepo ?? "pustaka-terbuka/sk-taman-ria";
+                var ghField = Ui.Field("GitHub Catalog Repository (e.g. pustaka-terbuka/sk-taman-ria, pustaka-terbuka/sk-seri-bintang)", ghTxt, 650);
+                ghField.Location = new Point(Ui.S(20), curY);
+                d.Controls.Add(ghField);
+                curY += Ui.S(54);
+
+                var ghTokenTxt = Ui.Txt(620);
+                ghTokenTxt.Text = cfg.githubToken ?? "";
+                var ghTokenField = Ui.Field("GitHub Personal Access Token (Optional: enables pushing updates without Git for Windows)", ghTokenTxt, 650);
+                ghTokenField.Location = new Point(Ui.S(20), curY);
+                d.Controls.Add(ghTokenField);
+                curY += Ui.S(54);
+
+                // Method 1: Google Apps Script Cloud Endpoint (Recommended)
+                var opt1Header = new Label
+                {
+                    UseMnemonic = false,
+                    Text = "Method 1: Cloud Web App URL (Recommended & Easiest)",
+                    Font = Th.FB,
+                    AutoSize = true,
+                    Location = new Point(Ui.S(20), curY),
+                    ForeColor = Th.Ink
+                };
+                d.Controls.Add(opt1Header);
+                curY += Ui.S(22);
+
+                var opt1Desc = new Label
+                {
+                    UseMnemonic = false,
+                    Text = "Deploy a simple Google Apps Script in this school's Google Account. It takes 1 minute, never expires, and allows all school PCs to sync directly.",
+                    AutoSize = false,
+                    Size = new Size(Ui.S(650), Ui.S(32)),
+                    Location = new Point(Ui.S(20), curY),
+                    ForeColor = Th.Mut
+                };
+                d.Controls.Add(opt1Desc);
+                curY += Ui.S(34);
+
+                var epTxt = Ui.Txt(620);
+                epTxt.Text = cfg.googleCloudEndpoint ?? "";
+                var epField = Ui.Field("Web App URL (https://script.google.com/macros/s/.../exec)", epTxt, 650);
+                epField.Location = new Point(Ui.S(20), curY);
+                d.Controls.Add(epField);
+                curY += Ui.S(54);
+
+                var scriptBtns = Ui.Flow(false);
+                scriptBtns.Location = new Point(Ui.S(20), curY);
+                scriptBtns.Controls.Add(Ui.Btn("Copy Google Script Code for This School", 1, (btnS, btnE) =>
+                {
+                    string sName = !string.IsNullOrEmpty(db.Set.school) ? db.Set.school : "School Library";
+                    string targetAcct = acctTxt.Text.Trim();
+                    string script = GoogleDriveCloudSync.GenerateAppsScript(sName, targetAcct);
+                    Clipboard.SetText(script);
+                    Toast("Google Apps Script code for " + targetAcct + " copied to clipboard!");
+                }));
+                scriptBtns.Controls.Add(Ui.Btn("Open script.google.com", 1, (btnS, btnE) =>
+                {
+                    try { Process.Start("https://script.google.com"); } catch { }
+                }));
+                d.Controls.Add(scriptBtns);
+                curY += Ui.S(40);
+
+                // Method 2: Direct REST API (OAuth 2.0 / Access Token)
+                var opt2Header = new Label
+                {
+                    UseMnemonic = false,
+                    Text = "Method 2: Google Drive API OAuth 2.0 / Token (Alternative)",
+                    Font = Th.FB,
+                    AutoSize = true,
+                    Location = new Point(Ui.S(20), curY),
+                    ForeColor = Th.Ink
+                };
+                d.Controls.Add(opt2Header);
+                curY += Ui.S(22);
+
+                var tokenTxt = Ui.Txt(620);
+                tokenTxt.Text = !string.IsNullOrEmpty(cfg.googleRefreshToken) ? cfg.googleRefreshToken : cfg.googleAccessToken;
+                var tokenField = Ui.Field("Refresh Token / Access Token", tokenTxt, 650);
+                tokenField.Location = new Point(Ui.S(20), curY);
+                d.Controls.Add(tokenField);
+                curY += Ui.S(58);
+
+                // Bottom Action Buttons
+                var bottomBtns = Ui.Flow(false);
+                bottomBtns.Location = new Point(Ui.S(20), curY);
+                bottomBtns.Controls.Add(Ui.Btn("Save & Test Cloud Sync", 0, (btnS, btnE) =>
+                {
+                    cfg.googleAccount = acctTxt.Text.Trim();
+                    if (string.IsNullOrEmpty(cfg.googleAccount)) cfg.googleAccount = "school.library@gmail.com";
+                    string repoInput = ghTxt.Text.Trim();
+                    if (!string.IsNullOrEmpty(repoInput) && repoInput.IndexOf('/') < 0) repoInput = "pustaka-terbuka/" + repoInput;
+                    cfg.githubRepo = !string.IsNullOrEmpty(repoInput) ? repoInput : "pustaka-terbuka/sk-taman-ria";
+                    cfg.githubToken = ghTokenTxt.Text.Trim();
+                    cfg.googleCloudEndpoint = epTxt.Text.Trim();
+                    string tok = tokenTxt.Text.Trim();
+                    if (!string.IsNullOrEmpty(tok))
+                    {
+                        if (tok.StartsWith("ya29.")) cfg.googleAccessToken = tok;
+                        else cfg.googleRefreshToken = tok;
+                    }
+                    SaveCfg();
+
+                    var prev = Cursor.Current;
+                    Cursor.Current = Cursors.WaitCursor;
+                    try
+                    {
+                        var res = GoogleDriveCloudSync.Sync(db, cfg);
+                        if (res.Success)
+                        {
+                            store.Save(db);
+                            SaveCfg();
+                            d.Close();
+                            Toast(res.Message);
+                            MessageBox.Show(this, res.Message, "Google Drive Cloud Sync", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                        }
+                        else
+                        {
+                            MessageBox.Show(this, res.Message, "Google Drive Cloud Sync", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        MessageBox.Show(this, "Connection failed: " + ex.Message, "Google Drive Cloud Sync", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    }
+                    finally { Cursor.Current = prev; }
+                }));
+
+                bottomBtns.Controls.Add(Ui.Btn("Close", 1, (btnS, btnE) => d.Close()));
+                d.Controls.Add(bottomBtns);
+
+                d.ShowDialog(this);
+            }
         }
     }
 }

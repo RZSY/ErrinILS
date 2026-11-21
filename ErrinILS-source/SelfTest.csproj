@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{B823D518-8A33-4D90-A882-C739227A8631}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>ErrinILS</RootNamespace>
+    <AssemblyName>selftest</AssemblyName>
+    <TargetFrameworkVersion Condition="Exists('$(ProgramFiles)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.0\mscorlib.dll') or Exists('$(ProgramFiles(x86))\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.0\mscorlib.dll')">v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion Condition="'$(TargetFrameworkVersion)' == ''">v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <LangVersion>5</LangVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <DebugType>none</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\bin\Debug\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <LangVersion>5</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="src\Auth.cs" />
+    <Compile Include="src\CertHelper.cs" />
+    <Compile Include="src\CloudSync.cs" />
+    <Compile Include="src\Json.cs" />
+    <Compile Include="src\Lib.cs" />
+    <Compile Include="src\Lookup.cs" />
+    <Compile Include="src\Marc.cs" />
+    <Compile Include="src\Models.cs" />
+    <Compile Include="src\NetHelper.cs" />
+    <Compile Include="src\Qr.cs" />
+    <Compile Include="src\SelfTest.cs" />
+    <Compile Include="src\Sqlite.cs" />
+    <Compile Include="src\Updater.cs" />
+    <Compile Include="src\Web.cs" />
+    <Compile Include="src\Z3950.cs" />
+    <Compile Include="src\Zip.cs" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+</Project>
+

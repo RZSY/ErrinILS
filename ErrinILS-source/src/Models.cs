@@ -470,20 +470,146 @@ namespace Errin
         }
     }
 
-    /// <summary>Reads and writes errin-data.db SQLite database in %APPDATA%\Errin.</summary>
+    /// <summary>Reads and writes errin-data.db SQLite database in local data folder or %APPDATA%\Errin.</summary>
     public class Store
     {
+        public static Store DefaultStore;
+
+        public static string AppDataDir
+        {
+            get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Errin"); }
+        }
+
+        public static bool IsDirectoryWritable(string dir)
+        {
+            try
+            {
+                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                string testFile = Path.Combine(dir, ".perm_test_" + Guid.NewGuid().ToString("N"));
+                File.WriteAllText(testFile, "ok");
+                File.Delete(testFile);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public static string GetAppDir()
+        {
+            try
+            {
+                string loc = typeof(Store).Assembly.Location;
+                if (!string.IsNullOrEmpty(loc))
+                {
+                    string d = Path.GetDirectoryName(loc);
+                    if (!string.IsNullOrEmpty(d) && Directory.Exists(d)) return d;
+                }
+            }
+            catch { }
+            return AppDomain.CurrentDomain.BaseDirectory;
+        }
+
+        public static string GetDefaultDataDir()
+        {
+            try
+            {
+                string appDir = GetAppDir();
+                string localData = Path.Combine(appDir, "data");
+                string localDb = Path.Combine(appDir, "errin-data.db");
+                string localMarker = Path.Combine(appDir, "portable.txt");
+
+                // 1. If data\ directory exists in the app folder -> Portable Mode (data subfolder)
+                if (Directory.Exists(localData) && IsDirectoryWritable(localData))
+                    return localData;
+
+                // 2. If portable.txt or portable marker exists in the app folder -> Portable Mode (data subfolder)
+                if ((File.Exists(localMarker) || File.Exists(Path.Combine(appDir, "portable.dat")) || File.Exists(Path.Combine(appDir, "portable"))) && IsDirectoryWritable(localData))
+                {
+                    return localData;
+                }
+
+                // 3. If errin-data.db exists directly in the app folder -> Portable Mode (app root)
+                if (File.Exists(localDb) && IsDirectoryWritable(appDir))
+                {
+                    return appDir;
+                }
+
+                // 4. Default: %APPDATA%\Errin
+                return AppDataDir;
+            }
+            catch
+            {
+                return AppDataDir;
+            }
+        }
+
+        public static string ActiveReposDir
+        {
+            get
+            {
+                try
+                {
+                    if (DefaultStore != null && DefaultStore.IsPortable)
+                        return Path.Combine(DefaultStore.Dir, "repos");
+                }
+                catch { }
+                string appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                return Path.Combine(appData, "Errin\\repos");
+            }
+        }
+
         public readonly string Dir;
         public string DataFile { get { return Path.Combine(Dir, "errin-data.db"); } }
         public string LegacyJsonFile { get { return Path.Combine(Dir, "errin-data.json"); } }
         public string ConfigFile { get { return Path.Combine(Dir, "errin-config.json"); } }
         public volatile string LastJson;
         public int Version;
-        public Store(string dir) { Dir = dir ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Errin"); }
+
+        public bool IsPortable
+        {
+            get
+            {
+                try
+                {
+                    string appData = AppDataDir;
+                    return !string.Equals(Path.GetFullPath(Dir).TrimEnd('\\', '/'), Path.GetFullPath(appData).TrimEnd('\\', '/'), StringComparison.OrdinalIgnoreCase);
+                }
+                catch { return false; }
+            }
+        }
+
+        public Store(string dir)
+        {
+            Dir = dir ?? GetDefaultDataDir();
+            if (DefaultStore == null) DefaultStore = this;
+        }
 
         public Db Load()
         {
             try { Directory.CreateDirectory(Dir); } catch { }
+
+            // Automatic migration into Portable folder on first run:
+            // If running in portable directory and no local db exists yet, but an existing %APPDATA%\Errin database exists,
+            // automatically copy it into the portable directory so existing data is preserved!
+            if (IsPortable && !File.Exists(DataFile) && !File.Exists(LegacyJsonFile))
+            {
+                try
+                {
+                    string appDataDb = Path.Combine(AppDataDir, "errin-data.db");
+                    string appDataCfg = Path.Combine(AppDataDir, "errin-config.json");
+                    if (File.Exists(appDataDb))
+                    {
+                        File.Copy(appDataDb, DataFile, true);
+                    }
+                    if (File.Exists(appDataCfg) && !File.Exists(ConfigFile))
+                    {
+                        File.Copy(appDataCfg, ConfigFile, true);
+                    }
+                }
+                catch { }
+            }
 
             // 1. Load active SQLite database if it exists
             if (SqliteNative.IsAvailable && File.Exists(DataFile))

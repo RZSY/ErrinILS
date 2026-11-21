@@ -80,6 +80,11 @@ static class SelfTest
             File.WriteAllText(store.LegacyJsonFile, db.ToJson(), Encoding.UTF8);
             var dbMigrated = store.Load();
             Ok(dbMigrated != null && dbMigrated.Items.Count == 4 && File.Exists(store.DataFile), "automatic migration from JSON to SQLite database");
+
+            // Test Store portable mode
+            Ok(store.IsPortable == true, "Store with custom test directory is marked as portable");
+            var defaultStore = new Store(Store.AppDataDir);
+            Ok(defaultStore.IsPortable == false, "Store with AppData directory is not marked as portable");
         }
         finally
         {
@@ -296,7 +301,23 @@ static class SelfTest
             var si = Lookup.ParseSru(sru, "9780547928227");
             Ok(si != null && si.title == "The hobbit" && si.sub == "or there and back again" && si.author == "J. R. R. Tolkien" && si.publisher == "Houghton Mifflin Harcourt" && si.year == "2012" && si.isbn == "9780547928227", "SRU record mapped, hidden sort marks removed: " + (si == null ? "null" : "[" + si.title + "]"));
             Ok(Lookup.ParseSru("<searchRetrieveResponse><numberOfRecords>0</numberOfRecords><records/></searchRetrieveResponse>", "1") == null, "SRU: zero records gives null");
-            Ok(Lookup.SourceNames.Length == 5 && Lookup.SourceNames.Contains("HathiTrust") && Lookup.SourceNames.Any(x => x.StartsWith("K10plus")), "five lookup sources listed");
+            Ok(Lookup.SourceNames.Length == 31 && Lookup.SourceNames[0] == "Pustaka Terbuka Union" && Lookup.SourceNames.Contains("Katalog Induk Kebangsaan (KIK)") && Lookup.SourceNames.Contains("Perpustakaan Negara Malaysia (PNM)") && Lookup.SourceNames.Contains("u-Pustaka") && Lookup.SourceNames.Contains("MALCat (Malaysian Academic Library Union Catalog)") && Lookup.SourceNames.Contains("Universiti Malaya (UM)") && Lookup.SourceNames.Contains("Dewan Bahasa dan Pustaka (DBP)") && Lookup.SourceNames.Contains("HathiTrust") && Lookup.SourceNames.Any(x => x.StartsWith("K10plus")), "31 lookup sources listed with Pustaka Terbuka Union, public libraries, u-Pustaka, MALCat, universities, and international catalogues");
+            var testVegaMarc = new Dictionary<string, object>
+            {
+                { "leader", Marc.LDR },
+                { "controlFields", new Dictionary<string, object> { { "001", new List<object> { "12345" } } } },
+                { "dataFields", new Dictionary<string, object> {
+                    { "245", new List<object> { new Dictionary<string, object> { { "ind1", "0" }, { "ind2", "0" }, { "subfields", new List<object> { new Dictionary<string, object> { { "code", "a" }, { "value", "Sample Malaysian Book" } } } } } } },
+                    { "100", new List<object> { new Dictionary<string, object> { { "ind1", "1" }, { "ind2", " " }, { "subfields", new List<object> { new Dictionary<string, object> { { "code", "a" }, { "value", "Ahmad, Ali" } } } } } } }
+                } }
+            };
+            var parsedVegaRec = Lookup.MarcRecordFromVegaJson(testVegaMarc);
+            var parsedVegaItem = Marc.ToItem(parsedVegaRec);
+            Ok(parsedVegaItem != null && parsedVegaItem.title == "Sample Malaysian Book" && parsedVegaItem.author == "Ali Ahmad", "Vega Discover MARC-in-JSON parsed to Item correctly");
+            Ok(Lookup.GetPustakaAliasShard("035:(ARKIB)195") == "00", "Pustaka Terbuka FNV-1a alias shard hash: 035:(ARKIB)195 -> 00");
+            string testPustakaXml = "<collection xmlns=\"http://www.loc.gov/MARC21/slim\"><record><controlfield tag=\"001\">B1001</controlfield><datafield tag=\"245\" ind1=\"1\" ind2=\"0\"><subfield code=\"a\">Charlotte's Web</subfield></datafield><datafield tag=\"100\" ind1=\"1\" ind2=\" \"><subfield code=\"a\">E. B. White</subfield></datafield></record></collection>";
+            var pustakaItem = Lookup.ParsePustakaXml(testPustakaXml, "9780064400558");
+            Ok(pustakaItem != null && pustakaItem.title == "Charlotte's Web" && pustakaItem.author == "E. B. White" && pustakaItem.isbn == "9780064400558", "Pustaka Terbuka MARCXML record parsed correctly");
         }
 
         // Z39.50 wire format must match what real servers (YAZ etc.) accept
@@ -430,6 +451,24 @@ static class SelfTest
             // 7. Test QR endpoint
             byte[] qrBytes = wc.DownloadData("http://127.0.0.1:" + wport + "/api/qr?text=http://127.0.0.1:" + wport);
             Ok(qrBytes != null && qrBytes.Length > 8 && qrBytes[0] == 0x89 && qrBytes[1] == 0x50 && qrBytes[2] == 0x4E && qrBytes[3] == 0x47, "QR PNG endpoint returned valid PNG");
+
+            // 7b. Test Lookup sources API
+            string srcJson = wc.DownloadString("http://127.0.0.1:" + wport + "/api/lookup/sources");
+            var srcObj = Json.Parse(srcJson) as Dictionary<string, object>;
+            Ok(srcObj != null && (bool)srcObj["ok"] && Json.Arr(srcObj, "sources").Count > 5, "Lookup sources API returns available sources");
+
+            // 7c. Test Lookup ISBN API (Local match)
+            string lkJson = wc.UploadString("http://127.0.0.1:" + wport + "/api/lookup/isbn", "{\"isbn\":\"9780064400558\",\"skipExisting\":false}");
+            var lkObj = Json.Parse(lkJson) as Dictionary<string, object>;
+            Ok(lkObj != null && (bool)lkObj["ok"] && (bool)lkObj["found"] && Json.Str(lkObj, "status") == "local", "Lookup ISBN API matches local catalog book");
+
+            // 7d. Test Batch Add Items API
+            int countBefore = wdb.Items.Count;
+            string batchJson = "{\"items\":[{\"title\":\"Batch Book 1\",\"author\":\"Author 1\",\"isbn\":\"9789672656593\"},{\"title\":\"Batch Book 2\",\"author\":\"Author 2\",\"isbn\":\"9789671144145\"}]}";
+            string addBatchResp = wc.UploadString("http://127.0.0.1:" + wport + "/api/items/batch-add", batchJson);
+            var batchObj = Json.Parse(addBatchResp) as Dictionary<string, object>;
+            Ok(batchObj != null && (bool)batchObj["ok"] && Json.Num(batchObj, "added") == 2, "Batch add items API adds multiple records");
+            Ok(wdb.Items.Count == countBefore + 2, "Db.Items count increased by 2 from batch add");
         }
 
         // 8. Revoke token
@@ -684,6 +723,111 @@ static class SelfTest
         string opacHtmlStatic = Web.BuildOpacHtml(catJson, opacDb.Set.school, false);
         Ok(opacHtmlStatic.Contains("window.__CATALOG_DATA__"), "Standalone OPAC HTML embeds catalog data");
         Ok(!opacHtmlStatic.Contains("btn-login-open"), "OPAC HTML hides patron login button when disabled");
+
+        // CloudSync: GoogleDriveSync and GitHubCatalogSync tests
+        string testSyncDir = Path.Combine(Path.GetTempPath(), "errin_sync_test_" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            Directory.CreateDirectory(testSyncDir);
+            var pc1Db = new Db();
+            pc1Db.Set.school = "SK Taman Ria";
+            var pat1 = new Patron { id = "120315-10-0001", name = "Aisha Rahman", cls = "6 Cemerlang", contact = "012-3456789" };
+            pc1Db.Patrons.Add(pat1);
+            var loan1 = new Loan { id = "L001", iid = "IT001", pid = pat1.id, @out = "2026-11-20", due = "2026-11-27", ret = null, ren = 0 };
+            pc1Db.Loans.Add(loan1);
+            var fine1 = new Fine { id = "F001", pid = pat1.id, iid = "IT001", loan = "L001", days = 2, amt = 0.20, date = "2026-11-20", paid = "" };
+            pc1Db.Fines.Add(fine1);
+
+            // Export to simulated Google Drive folder
+            string exportErr;
+            bool expOk = GoogleDriveSync.ExportUsers(pc1Db, testSyncDir, out exportErr);
+            Ok(expOk && string.IsNullOrEmpty(exportErr), "GoogleDriveSync.ExportUsers succeeds");
+            Ok(File.Exists(Path.Combine(testSyncDir, GoogleDriveSync.UsersJsonName)), "users_data.json exists in Google Drive folder");
+            string usersJson = File.ReadAllText(Path.Combine(testSyncDir, GoogleDriveSync.UsersJsonName), Encoding.UTF8);
+            Ok(usersJson.Contains("SK Taman Ria") && usersJson.Contains("Aisha Rahman") && usersJson.Contains("L001"), "users_data.json contains school, patron, and loan data");
+
+            // PC 2 simulation: Start with empty database and import from Google Drive
+            var pc2Db = new Db();
+            var impRes = GoogleDriveSync.ImportUsers(pc2Db, testSyncDir);
+            Ok(impRes.Success && impRes.PatronsAdded == 1 && pc2Db.Patrons.Count == 1, "PC 2 imports patron from Google Drive");
+            Ok(pc2Db.Patrons[0].name == "Aisha Rahman" && pc2Db.Loans.Count == 1 && pc2Db.Loans[0].id == "L001", "PC 2 has identical patron and loan records");
+            Ok(pc2Db.Fines.Count == 1 && pc2Db.Fines[0].id == "F001" && pc2Db.Fines[0].paid == "", "PC 2 has unpaid fine");
+
+            // PC 2 returns book and pays fine, then exports back to Google Drive
+            pc2Db.Loans[0].ret = "2026-11-21";
+            pc2Db.Fines[0].paid = "2026-11-21";
+            bool exp2Ok = GoogleDriveSync.ExportUsers(pc2Db, testSyncDir, out exportErr);
+            Ok(exp2Ok, "PC 2 exports returned loan and paid fine to Google Drive");
+
+            // PC 1 syncs from Google Drive: verifies return and paid fine are synced to PC 1
+            var syncRes1 = GoogleDriveSync.Sync(pc1Db, testSyncDir);
+            Ok(syncRes1.Success, "PC 1 GoogleDriveSync.Sync succeeds");
+            Ok(pc1Db.Loans[0].ret == "2026-11-21", "PC 1 observes loan returned on PC 2");
+            Ok(pc1Db.Fines[0].paid == "2026-11-21", "PC 1 observes fine paid on PC 2");
+
+            // GitHub Catalog Sync file generation
+            string testCatDir = Path.Combine(testSyncDir, "cat_repo");
+            var books = new List<Item>
+            {
+                new Item { id = "B1", barcode = "B1001", title = "Charlotte's Web", author = "E. B. White", isbn = "9780064400558", call = "F WHI" },
+                new Item { id = "B2", barcode = "B1002", title = "A Brief History of Time", author = "Stephen Hawking", isbn = "9780553380163", call = "523.1 HAW" }
+            };
+            GitHubCatalogSync.GenerateCatalogFiles(books, testCatDir, "SK Taman Ria");
+            Ok(File.Exists(Path.Combine(testCatDir, "catalog.json")), "catalog.json generated");
+            Ok(File.Exists(Path.Combine(testCatDir, "holdings.csv")), "holdings.csv generated");
+            Ok(File.Exists(Path.Combine(testCatDir, "catalog.mrc")), "catalog.mrc generated");
+            Ok(File.Exists(Path.Combine(testCatDir, "catalog.mrk")), "catalog.mrk generated");
+            Ok(File.Exists(Path.Combine(testCatDir, "catalog.xml")), "catalog.xml generated");
+            Ok(File.Exists(Path.Combine(testCatDir, "README.md")), "README.md generated");
+
+            string catJsonContent = File.ReadAllText(Path.Combine(testCatDir, "catalog.json"), Encoding.UTF8);
+            Ok(catJsonContent.Contains("Charlotte's Web") && catJsonContent.Contains("B1002"), "catalog.json contains book titles and barcodes");
+            string readmeContent = File.ReadAllText(Path.Combine(testCatDir, "README.md"), Encoding.UTF8);
+            Ok(readmeContent.Contains("pustaka-terbuka") && readmeContent.Contains("sk-taman-ria") && readmeContent.Contains("SK Taman Ria"), "README.md contains Pustaka Terbuka attribution and school name");
+
+            // Direct Google Drive Cloud Sync test (tamanria.sk@gmail.com)
+            string cloudJson = GoogleDriveCloudSync.BuildUsersJson(pc1Db);
+            Ok(cloudJson.Contains("tamanria.sk@gmail.com") && cloudJson.Contains("Aisha Rahman"), "GoogleDriveCloudSync.BuildUsersJson embeds tamanria.sk@gmail.com and patron data");
+            var cloudDb2 = new Db();
+            var cloudMergeRes = GoogleDriveCloudSync.MergeUsersJson(cloudDb2, cloudJson);
+            Ok(cloudMergeRes.Success && cloudDb2.Patrons.Count == 1 && cloudDb2.Patrons[0].name == "Aisha Rahman", "GoogleDriveCloudSync.MergeUsersJson succeeds");
+            Ok(GoogleDriveCloudSync.AppsScriptTemplate.Contains("tamanria.sk@gmail.com") && GoogleDriveCloudSync.AppsScriptTemplate.Contains("doPost"), "GoogleDriveCloudSync.AppsScriptTemplate is valid");
+
+            // Multi-school dynamic AppsScript generation & repo isolation test
+            string otherSchoolScript = GoogleDriveCloudSync.GenerateAppsScript("SK Seri Bintang", "skseribintang@gmail.com");
+            Ok(otherSchoolScript.Contains("skseribintang@gmail.com") && otherSchoolScript.Contains("ErrinILS - SK Seri Bintang"), "GenerateAppsScript tailors script for other schools and dedicated Gmail accounts");
+            string otherRepoDir = GitHubCatalogSync.GetRepoDir("pustaka-terbuka/sk-seri-bintang");
+            Ok(otherRepoDir.EndsWith("sk-seri-bintang"), "GetRepoDir generates dedicated isolated working directory per school repository");
+
+            // SyncConfig serialization test
+            var cfg = new SyncConfig();
+            Ok(cfg.syncOnSave == false, "syncOnSave (Instant On-Save) is disabled by default");
+            Ok(cfg.syncOnStartup == true, "syncOnStartup is enabled by default");
+            Ok(cfg.syncOnExit == true, "syncOnExit (Sync on Application Exit) is enabled by default");
+            cfg.googleAccount = "tamanria.sk@gmail.com";
+            cfg.googleCloudEndpoint = "https://script.google.com/macros/s/test/exec";
+            cfg.gdriveFolder = testSyncDir;
+            cfg.githubRepo = "pustaka-terbuka/sk-taman-ria";
+            cfg.githubToken = "test_token";
+            cfg.autoSync = true;
+            cfg.syncOnStartup = true;
+            cfg.syncOnSave = false;
+            cfg.syncOnExit = true;
+            var cfgJ = cfg.ToJ();
+            var cfg2 = SyncConfig.FromJ(cfgJ);
+            Ok(cfg2.googleAccount == "tamanria.sk@gmail.com" && cfg2.googleCloudEndpoint.Contains("macros") && cfg2.githubRepo == "pustaka-terbuka/sk-taman-ria" && cfg2.autoSync && cfg2.syncOnStartup && !cfg2.syncOnSave && cfg2.syncOnExit, "SyncConfig ToJ/FromJ roundtrips cleanly with syncOnExit enabled");
+
+            // GitHub Direct API Push without token validation test
+            var noTokenRes = GitHubCatalogSync.PushViaApi("pustaka-terbuka/sk-taman-ria", "", testCatDir, "test");
+            Ok(!noTokenRes.Success && noTokenRes.Message.Contains("Token is required"), "PushViaApi requires token validation check");
+        }
+        finally
+        {
+            if (Directory.Exists(testSyncDir))
+            {
+                try { Directory.Delete(testSyncDir, true); } catch { }
+            }
+        }
 
         Console.WriteLine("\nall " + n + " checks passed");
         return 0;

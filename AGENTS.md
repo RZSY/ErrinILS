@@ -27,11 +27,15 @@ d:/errin/
 ├── README.md                     # User-facing markdown readme
 ├── README.txt                    # Plain text user manual and installation guide
 ├── LICENSE                       # MIT License
+├── ErrinILS.sln                  # Visual Studio 2026 solution
 ├── ErrinILS-Windows/             # Distribution artifacts
 │   └── ErrinILS/
 │       ├── ErrinILS.exe          # Pre-compiled standalone executable
 │       └── README.txt            # Portable copy manual
 └── ErrinILS-source/              # Source tree & build tools
+    ├── ErrinILS.csproj           # WinForms main application project
+    ├── SelfTest.csproj           # Automated test project
+    ├── build.bat                 # Windows batch build script (debug/release/selftest)
     ├── icon.ico                  # Application icon (multi-resolution Win32 icon)
     ├── icon.png                  # High-resolution PNG logo
     ├── build.sh                  # Linux / Mono build script
@@ -40,6 +44,7 @@ d:/errin/
     ├── src/                      # C# application source files
     │   ├── AssemblyInfo.cs       # Assembly metadata, product info, version
     │   ├── Auth.cs               # Password hashing (PBKDF2/SHA256), salt, auth verification
+    │   ├── CloudSync.cs          # Zero-dependency cloud sync manager for Google Drive (users) & GitHub (catalog)
     │   ├── Dialogs.cs            # WinForms dialogs (Item edit, Patron edit, Barcode printing)
     │   ├── Json.cs               # Zero-dependency JSON parser and serializer
     │   ├── Lib.cs                # Core circulation rules, loan logic, fines, IC validation
@@ -96,12 +101,38 @@ d:/errin/
 ### 3.3 MARC & Cataloguing Protocols (`Marc.cs`, `Z3950.cs`, `Lookup.cs`)
 - **MARC21**: Full support for reading and writing raw binary ISO 2709 (`.mrc`), MARCXML (`.xml`), and human-readable MARC mnemonic (`.mrk`). Handles MARC-8 combining diacritics and UTF-8.
 - **Z39.50**: Native ASN.1 Basic Encoding Rules (BER) encoder/decoder (`Ber`) and Z39.50 v3 client/server (`Z`). Supports Init, Search (type-1 query, Use attributes for ISBN/Title/Author/Subject), and Present requests.
-- **Copy Cataloguing Chain**: `Lookup.cs` queries 5 free sources in priority order:
-  1. Library of Congress (Z39.50 `lx2.loc.gov:210`)
-  2. Open Library (HTTP JSON API)
-  3. Google Books (HTTP JSON API)
-  4. HathiTrust (HTTP JSON / MARCXML)
-  5. K10plus German union catalogue (SRU MARCXML)
+- **Copy Cataloguing Chain**: `Lookup.cs` queries 31 free sources in priority order, including all Malaysian national union, state public libraries, academic union, top universities, and heritage institutes (from `marc-retriever`):
+  1. Pustaka Terbuka Union (Local cloned sibling repositories & live Pustaka Terbuka Union OPAC alias shards)
+  2. Katalog Induk Kebangsaan (KIK - National Union Catalog)
+  3. Perpustakaan Negara Malaysia (PNM - Clarivate Vega Discover API)
+  4. Perbadanan Perpustakaan Awam Selangor (PPAS - Clarivate Vega Discover API)
+  5. Perbadanan Perpustakaan Awam Pulau Pinang (PPAP - Koha OPAC)
+  6. Perbadanan Perpustakaan Awam Negeri Perak (PPANPK - Koha OPAC)
+  7. Perbadanan Perpustakaan Awam Negeri Kedah (PPANK - Koha OPAC)
+  8. Perbadanan Perpustakaan Awam Negeri Perlis (PPANPS - Koha OPAC)
+  9. Perbadanan Perpustakaan Awam Negeri Johor (PPANJ)
+  10. Perbadanan Perpustakaan Awam Kelantan (PPAK)
+  11. Perbadanan Perpustakaan Awam Terengganu (PPAT)
+  12. Perbadanan Perpustakaan Awam Pahang (PPAPH)
+  13. Perbadanan Perpustakaan Awam Negeri Sembilan (PPANS)
+  14. Perbadanan Perpustakaan Awam Melaka (PERPUSTAM)
+  15. Pustaka Negeri Sarawak
+  16. Perpustakaan Negeri Sabah (PNS)
+  17. Perpustakaan Kuala Lumpur (PKL)
+  18. Perpustakaan Awam Putrajaya (PPJ)
+  19. Perpustakaan Awam Perbadanan Labuan (PPL)
+  20. u-Pustaka (National Information Hub & Consortium)
+  21. MALCat (Malaysian Academic Library Union Catalog - PERPUN / JKPUA)
+  22. Universiti Malaya (UM - Pendeta Discovery)
+  23. Universiti Kebangsaan Malaysia (UKM - Tun Seri Lanang Library)
+  24. Universiti Teknologi MARA (UiTM - PTAR Network)
+  25. Universiti Pendidikan Sultan Idris (UPSI - Education & Pedagogy)
+  26. Dewan Bahasa dan Pustaka (DBP - Language & Literature Archives)
+  27. Library of Congress (Z39.50 `lx2.loc.gov:210`)
+  28. Open Library (HTTP JSON API)
+  29. Google Books (HTTP JSON API)
+  30. HathiTrust (HTTP JSON / MARCXML)
+  31. K10plus German union catalogue (SRU MARCXML)
 - **Batch ISBN Lookup**: High-throughput multi-ISBN copy cataloguing designed for book donations and bulk cataloguing (`BatchLookupDialog`). Supports pasting ISBN lists, scanning barcodes continuously, or loading files, with live multithreaded lookups and bulk catalog additions.
 - **Item Circulation History**: Full historical borrowing lens for any item (`ItemHistoryDialog`), detailing which students borrowed it, loan dates, due dates, return timestamps, and overdue metrics.
 
@@ -131,6 +162,21 @@ d:/errin/
 - **Grid Paging & Low-Memory Optimization (`PagerBar`)**: Slices records on Catalog (`catGrid`) and Students (`patGrid`) with customizable page sizes (50, 100, 250, Show All), Previous/Next controls, page selector, and slice metrics. Keeps UI responsive and RAM usage near zero even with 10,000+ items on 1–2 GB RAM school hardware.
 - **Simplified View (`Simple.cs`)**: Child-friendly circulation kiosk tailored for young students with large colorful touch/mouse targets, cheerful emoji badges, high-contrast friendly banner boxes, barcode scanner focus, and friendly error dialogs (`Lib.Friendly(...)`).
 
+### 3.7 Cloud Sync & Multi-PC Operations (`CloudSync.cs`, `MainForm.cs`)
+- **Dual Cloud Architecture**:
+  - **User Records via Google Drive (Zero-Dependency Direct Cloud)**: Student records (Patrons, Loans, Holds, Fines, Class History, Archived Patrons, Settings) contain sensitive personal data (MyKid/IC, addresses, contact details, loan history). They are automatically saved and synced privately to Google Drive without requiring any 3rd party desktop application, using direct HTTP calls to the Google Drive v3 REST API (supporting Service Account key or OAuth token). Configurable for any school Google account (defaulting to `tamanria.sk@gmail.com`). Also falls back to local Google Drive folder if available.
+  - **Books & Catalog Data via GitHub (`pustaka-terbuka/sk-taman-ria`)**: Bibliographic records are public domain/open data. The repository strictly conforms to the **Pustaka Terbuka Data Provider Standard** (PPAPP model) enabling central indexing by `pustaka-terbuka/opac`:
+    - `data/sources.json` & `data/orgs.json`: Source code (`sk-taman-ria`), organization prefix (`SKTR`), institution metadata.
+    - `data/aliases.jsonl`: Canonical lexicographically sorted alias index (ISBN, 035, and fallback keys -> Crockford Base32 record IDs).
+    - `data/bib/<shard>/<id>.xml`: Partitioned single-record MARCXML files with `manifest.json` SHA-256 hashes.
+    - `data/holdings/SKTR.csv`: Institutional holdings table.
+    - `harvest/inbox/sk-taman-ria/<run-id>/`: Automated intake batches with `manifest.json`, `partition_state.json`, `provenance.jsonl`, and `records/batch_0.xml`.
+    - `tools/` & `tests/`: Zero-dependency and Node.js validation (`validate-inbox.js`, `merge.js`).
+    - Convenience root exports: `catalog.json`, `holdings.csv`, `catalog.mrc` (binary MARC 21), `catalog.mrk` (MarcEdit mnemonic), `catalog.xml` (MARCXML), and `README.md`.
+    - **Dual Push Mode (Git CLI or Direct HTTPS REST API)**: If Git for Windows is installed, ErrinILS uses standard `git.exe` commands. If Git is NOT installed (common on school netbooks), ErrinILS can still push commits, file trees, and blobs directly to GitHub over HTTPS using the GitHub Git Database REST API (`PushViaApi`), requiring only a GitHub Personal Access Token (PAT).
+- **Multi-PC Parity**: Installing ErrinILS on any other PC connects to Google Drive and pulls `pustaka-terbuka/sk-taman-ria`. Both PCs retrieve identical student and catalog records, allowing seamless multi-station circulation and cataloging.
+- **Auto-Sync & Offline Resilience**: Edits immediately trigger non-blocking background Google Drive updates. Catalog updates can be synchronized with one click ("Sync with GitHub") or fully unified in Settings ("Sync Everything Now"). Full functionality remains offline if the internet or cloud drives are temporarily unavailable.
+
 ---
 
 ## 4. Build, Test, and Packaging Instructions
@@ -144,7 +190,31 @@ The codebase targets .NET Framework 4.0 and C# 5 syntax. It can be built directl
 C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe
 ```
 
-#### Build Standalone Application:
+#### Visual Studio 2026 Enterprise / MSBuild:
+Open [`ErrinILS.sln`](file:///d:/GitHub/erinils/ErrinILS.sln) directly in Microsoft Visual Studio 2026 Enterprise.
+- Press **`F5`** to build and start debugging `ErrinILS`.
+- Set configuration to `Debug` (outputs to `bin\Debug\ErrinILS.exe`) or `Release` (outputs to `dist\ErrinILS.exe`).
+- Right-click `SelfTest` project -> **Debug** -> **Start New Instance** to run the test suite.
+- Or build from command line:
+  ```cmd
+  msbuild ErrinILS.sln /p:Configuration=Debug
+  ```
+
+#### Running via F5 in Antigravity IDE:
+Pressing **`F5`** in Antigravity IDE executes `run.ps1` via `.vscode/launch.json`, automatically compiling `bin\Debug\ErrinILS.exe` and launching the application without licensing blocks.
+
+*(Note: Microsoft's proprietary debugger `vsdbg` restricts line-by-line debugging to official Microsoft Visual Studio and Microsoft VS Code distributions per https://aka.ms/VSCode-DotNet-DbgLicense. For full interactive debugging with breakpoints, call stacks, and diagnostics, use Microsoft Visual Studio 2026 Enterprise via `ErrinILS.sln`).*
+
+You can also run builds directly using the Windows batch script:
+```cmd
+ErrinILS-source\build.bat debug     # Builds bin\Debug\ErrinILS.exe with debug symbols & PDB
+ErrinILS-source\build.bat release   # Builds dist\ErrinILS.exe (optimized release)
+ErrinILS-source\build.bat selftest  # Builds bin\Debug\selftest.exe
+run.ps1 -Target app                 # Builds and launches ErrinILS
+run.ps1 -Target selftest            # Builds and executes test suite
+```
+
+#### Manual PowerShell Build (Release):
 ```powershell
 & "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe" `
     /target:winexe `
@@ -162,6 +232,7 @@ C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe
     ErrinILS-source\src\Lookup.cs `
     ErrinILS-source\src\Zip.cs `
     ErrinILS-source\src\Auth.cs `
+    ErrinILS-source\src\CloudSync.cs `
     ErrinILS-source\src\NetHelper.cs `
     ErrinILS-source\src\Qr.cs `
     ErrinILS-source\src\CertHelper.cs `
@@ -190,6 +261,7 @@ C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe
     ErrinILS-source\src\Lookup.cs `
     ErrinILS-source\src\Zip.cs `
     ErrinILS-source\src\Auth.cs `
+    ErrinILS-source\src\CloudSync.cs `
     ErrinILS-source\src\NetHelper.cs `
     ErrinILS-source\src\Qr.cs `
     ErrinILS-source\src\CertHelper.cs `

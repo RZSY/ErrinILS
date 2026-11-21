@@ -135,6 +135,53 @@ namespace Errin
             sb.Append(Quote(o.ToString()));
         }
 
+        public static string WritePretty(object o) { var sb = new StringBuilder(); WP(sb, o, 0); return sb.ToString(); }
+        static void WP(StringBuilder sb, object o, int indent)
+        {
+            string pad = new string(' ', indent * 2);
+            string nextPad = new string(' ', (indent + 1) * 2);
+            if (o == null) { sb.Append("null"); return; }
+            if (o is string) { sb.Append(Quote((string)o)); return; }
+            if (o is bool) { sb.Append((bool)o ? "true" : "false"); return; }
+            if (o is double) { sb.Append(((double)o).ToString("R", CultureInfo.InvariantCulture)); return; }
+            if (o is int || o is long) { sb.Append(Convert.ToString(o, CultureInfo.InvariantCulture)); return; }
+            var d = o as IDictionary<string, object>;
+            if (d != null)
+            {
+                if (d.Count == 0) { sb.Append("{}"); return; }
+                sb.Append("{\n");
+                bool first = true;
+                foreach (var kv in d)
+                {
+                    if (!first) sb.Append(",\n");
+                    first = false;
+                    sb.Append(nextPad).Append(Quote(kv.Key)).Append(": ");
+                    WP(sb, kv.Value, indent + 1);
+                }
+                sb.Append("\n").Append(pad).Append('}');
+                return;
+            }
+            var l = o as IEnumerable;
+            if (l != null)
+            {
+                var list = new List<object>();
+                foreach (object x in l) list.Add(x);
+                if (list.Count == 0) { sb.Append("[]"); return; }
+                sb.Append("[\n");
+                bool first = true;
+                foreach (object x in list)
+                {
+                    if (!first) sb.Append(",\n");
+                    first = false;
+                    sb.Append(nextPad);
+                    WP(sb, x, indent + 1);
+                }
+                sb.Append("\n").Append(pad).Append(']');
+                return;
+            }
+            sb.Append(Quote(o.ToString()));
+        }
+
         // typed accessors used by the model classes
         public static string Str(IDictionary<string, object> d, string k)
         {

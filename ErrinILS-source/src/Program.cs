@@ -39,6 +39,7 @@ namespace Errin
         static void Main()
         {
             EnableDpiAwareness();
+            try { System.Net.ServicePointManager.SecurityProtocol |= (System.Net.SecurityProtocolType)3072 | (System.Net.SecurityProtocolType)768 | (System.Net.SecurityProtocolType)192; } catch { }
             bool created;
             using (var m = new Mutex(true, "Local\\ErrinILS.SingleInstance", out created))
             {

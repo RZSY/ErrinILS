@@ -101,6 +101,7 @@ namespace Errin
             public Action<Action> RunOnUi;
             public Action<string> OnRemoteWrite;
             public Action<Device> OnDevicePaired;
+            public Action<string, bool> OnBarcodeWedge;
             public Action<string> Log;
 
             public Server()
@@ -415,6 +416,18 @@ namespace Errin
                             HandleGetItems(stream, query);
                             break;
 
+                        case "/api/items/batch-add":
+                            if (method == "POST") HandleBatchAddItems(stream, body);
+                            break;
+
+                        case "/api/lookup/sources":
+                            HandleLookupSources(stream);
+                            break;
+
+                        case "/api/lookup/isbn":
+                            HandleLookupIsbn(stream, query, body);
+                            break;
+
                         case "/api/item":
                             if (method == "POST") HandleSaveItem(stream, body);
                             else HandleGetItem(stream, query);
@@ -485,6 +498,10 @@ namespace Errin
                             HandleReports(stream);
                             break;
 
+                        case "/api/wedge":
+                            if (method == "POST") HandleWedge(stream, body);
+                            break;
+
                         default:
                             SendJson(stream, 404, new Dictionary<string, object> { { "ok", false }, { "error", "Endpoint not found" } });
                             break;
@@ -494,6 +511,26 @@ namespace Errin
                 {
                     SendJson(stream, 500, new Dictionary<string, object> { { "ok", false }, { "error", ex.Message } });
                 }
+            }
+
+            void HandleWedge(Stream stream, string body)
+            {
+                var json = Json.Parse(body) as Dictionary<string, object>;
+                string barcode = json != null ? Json.Str(json, "barcode").Trim() : "";
+                bool enter = json != null && json.ContainsKey("enter") ? (json["enter"] is bool && (bool)json["enter"]) : true;
+
+                if (string.IsNullOrEmpty(barcode))
+                {
+                    SendJson(stream, 400, new Dictionary<string, object> { { "ok", false }, { "error", "No barcode provided" } });
+                    return;
+                }
+
+                if (OnBarcodeWedge != null)
+                {
+                    try { OnBarcodeWedge(barcode, enter); } catch { }
+                }
+
+                SendJson(stream, 200, new Dictionary<string, object> { { "ok", true }, { "barcode", barcode } });
             }
 
             void HandlePair(Stream stream, string body)
@@ -830,6 +867,168 @@ namespace Errin
 
                 if (error != null) SendJson(stream, 400, new Dictionary<string, object> { { "ok", false }, { "error", error } });
                 else SendJson(stream, 200, new Dictionary<string, object> { { "ok", true } });
+            }
+
+            void HandleLookupSources(Stream stream)
+            {
+                var list = new List<object>();
+                list.Add("All sources (best match)");
+                for (int i = 0; i < Lookup.SourceNames.Length; i++) list.Add(Lookup.SourceNames[i]);
+                SendJson(stream, 200, new Dictionary<string, object> { { "ok", true }, { "sources", list } });
+            }
+
+            void HandleLookupIsbn(Stream stream, Dictionary<string, string> query, string body)
+            {
+                string rawIsbn = (query.ContainsKey("isbn") ? query["isbn"] : "").Trim();
+                int srcIdx = -1;
+                bool skipExist = false;
+                if (query.ContainsKey("source")) int.TryParse(query["source"], out srcIdx);
+                if (query.ContainsKey("skipExisting")) bool.TryParse(query["skipExisting"], out skipExist);
+
+                if (!string.IsNullOrEmpty(body))
+                {
+                    var json = Json.Parse(body) as Dictionary<string, object>;
+                    if (json != null)
+                    {
+                        if (json.ContainsKey("isbn")) rawIsbn = Json.Str(json, "isbn").Trim();
+                        if (json.ContainsKey("source")) srcIdx = (int)Json.Num(json, "source");
+                        if (json.ContainsKey("skipExisting")) skipExist = json["skipExisting"] is bool && (bool)json["skipExisting"];
+                    }
+                }
+
+                string norm = Lookup.NormalizeIsbn(rawIsbn);
+                if (norm == null)
+                {
+                    SendJson(stream, 200, new Dictionary<string, object> {
+                        { "ok", true },
+                        { "found", false },
+                        { "status", "invalid" },
+                        { "message", "Invalid ISBN" },
+                        { "isbn", rawIsbn }
+                    });
+                    return;
+                }
+
+                Dictionary<string, object> res = null;
+                ExecuteOnUi(() =>
+                {
+                    var db = GetDb();
+                    string cleanIsbn = Lib.Isb(norm);
+                    var existing = db.Items.Where(it => it.isbn != "" && Lib.Isb(it.isbn) == cleanIsbn).ToList();
+                    if (existing.Count > 0 && skipExist)
+                    {
+                        res = new Dictionary<string, object> {
+                            { "ok", true },
+                            { "found", false },
+                            { "status", "skipped" },
+                            { "message", "Skipped (Already in catalog: " + existing[0].title + ")" },
+                            { "isbn", norm }
+                        };
+                    }
+                    else if (existing.Count > 0 && !skipExist)
+                    {
+                        var copy = existing[0].Clone();
+                        res = new Dictionary<string, object> {
+                            { "ok", true },
+                            { "found", true },
+                            { "status", "local" },
+                            { "message", "Found in local catalog (" + existing.Count + " cop" + (existing.Count > 1 ? "ies" : "y") + ")" },
+                            { "item", copy.ToJ() },
+                            { "isbn", norm }
+                        };
+                    }
+                });
+
+                if (res != null)
+                {
+                    SendJson(stream, 200, res);
+                    return;
+                }
+
+                try
+                {
+                    var r = Lookup.Find(norm, srcIdx);
+                    if (r != null && r.Ok && r.Rec != null && !string.IsNullOrEmpty(r.Rec.title))
+                    {
+                        string srcStr = (r.Src != null && r.Src.Count > 0) ? string.Join(" + ", r.Src.ToArray()) : "Online";
+                        SendJson(stream, 200, new Dictionary<string, object> {
+                            { "ok", true },
+                            { "found", true },
+                            { "status", "remote" },
+                            { "source", srcStr },
+                            { "message", "Found via " + srcStr },
+                            { "item", r.Rec.ToJ() },
+                            { "isbn", norm }
+                        });
+                    }
+                    else
+                    {
+                        string msg = (r != null && r.Err == "offline") ? "Offline (no network)" : "Not found";
+                        SendJson(stream, 200, new Dictionary<string, object> {
+                            { "ok", true },
+                            { "found", false },
+                            { "status", "not_found" },
+                            { "message", msg },
+                            { "isbn", norm }
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    SendJson(stream, 200, new Dictionary<string, object> {
+                        { "ok", true },
+                        { "found", false },
+                        { "status", "error" },
+                        { "message", "Lookup failed: " + ex.Message },
+                        { "isbn", norm }
+                    });
+                }
+            }
+
+            void HandleBatchAddItems(Stream stream, string body)
+            {
+                var json = Json.Parse(body) as Dictionary<string, object>;
+                if (json == null) { SendJson(stream, 400, new Dictionary<string, object> { { "ok", false }, { "error", "Invalid JSON" } }); return; }
+                var rawItems = Json.Arr(json, "items");
+                if (rawItems == null || rawItems.Count == 0)
+                {
+                    SendJson(stream, 400, new Dictionary<string, object> { { "ok", false }, { "error", "No items to add" } });
+                    return;
+                }
+
+                var itemsList = new List<Item>();
+                for (int i = 0; i < rawItems.Count; i++)
+                {
+                    var d = rawItems[i] as Dictionary<string, object>;
+                    if (d == null) continue;
+                    var it = Item.FromJ(d);
+                    if (string.IsNullOrEmpty(it.title) && string.IsNullOrEmpty(it.isbn)) continue;
+                    if (string.IsNullOrEmpty(it.title)) it.title = "Empty Title (to be added later)";
+                    itemsList.Add(it);
+                }
+
+                if (itemsList.Count == 0)
+                {
+                    SendJson(stream, 400, new Dictionary<string, object> { { "ok", false }, { "error", "No valid items found" } });
+                    return;
+                }
+
+                int added = 0;
+                int skipped = 0;
+                ExecuteOnUi(() =>
+                {
+                    var db = GetDb();
+                    var lib = GetLib();
+                    var dup = lib.DupSet(itemsList);
+                    added = lib.AddItems(itemsList, "copy", true, dup, out skipped);
+                    if (OnRemoteWrite != null) OnRemoteWrite(string.Format("Batch added {0} books to catalog", added));
+                });
+
+                SendJson(stream, 200, new Dictionary<string, object> {
+                    { "ok", true },
+                    { "added", (double)added },
+                    { "skipped", (double)skipped }
+                });
             }
 
             void HandleGetPatrons(Stream stream, Dictionary<string, string> query)
@@ -2249,7 +2448,8 @@ namespace Errin
             Action<string> onRemoteWrite,
             Action<Device> onDevicePaired,
             Action<string> log,
-            X509Certificate2 serverCert = null)
+            X509Certificate2 serverCert = null,
+            Action<string, bool> onBarcodeWedge = null)
         {
             var s = new Server
             {
@@ -2260,6 +2460,7 @@ namespace Errin
                 RunOnUi = runOnUi,
                 OnRemoteWrite = onRemoteWrite,
                 OnDevicePaired = onDevicePaired,
+                OnBarcodeWedge = onBarcodeWedge,
                 Log = log ?? (m => { })
             };
             s.Start(port, localOnly, serverCert);
@@ -3598,7 +3799,10 @@ tr:hover td { background: rgba(255,255,255,0.02); }
               <option value=""newest"">Sort: Newest</option>
             </select>
           </div>
-          <button class=""btn btn-primary"" onclick=""openItemModal()"">+ Add Book</button>
+          <div style=""display: flex; gap: 8px;"">
+            <button class=""btn btn-sec"" style=""color: #f6c61b; border-color: #f6c61b; font-weight: 700;"" onclick=""openBatchIsbnModal()"">&#x26A1; Batch ISBN</button>
+            <button class=""btn btn-primary"" onclick=""openItemModal()"">+ Add Book</button>
+          </div>
         </div>
       </div>
 
@@ -3726,6 +3930,80 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       </div>
     </div>
   </main>
+</div>
+
+<!-- BATCH ISBN COPY-CATALOGUING MODAL -->
+<div id=""batchIsbnModal"" class=""modal-overlay"" style=""display: none;"">
+  <div class=""modal-content"" style=""max-width: 880px; width: 95%; max-height: 92vh;"">
+    <div style=""display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;"">
+      <div>
+        <div class=""modal-title"" style=""margin-bottom: 4px;"">&#x26A1; Batch ISBN Copy-Cataloguing</div>
+        <div style=""font-size: 13px; color: #9a9a94;"">Quickly catalogue donated or newly acquired books by ISBN. Paste multiple ISBNs, scan with a barcode scanner, or load a text/CSV file.</div>
+      </div>
+      <button type=""button"" class=""btn btn-sm btn-sec"" onclick=""closeBatchIsbnModal()"" style=""font-size: 18px; line-height: 1; padding: 4px 10px;"">&times;</button>
+    </div>
+
+    <div class=""field-group"" style=""margin-top: 12px; margin-bottom: 8px;"">
+      <textarea id=""batchIsbnText"" class=""input-text"" rows=""4"" style=""font-family: Consolas, monospace; font-size: 13px; resize: vertical;"" placeholder=""Enter ISBNs here (one per line, comma or space separated)...&#10;e.g.&#10;9780547928227&#10;9780603566998&#10;9789672656593""></textarea>
+    </div>
+
+    <!-- Controls Toolbar -->
+    <div style=""display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; background: #232427; padding: 10px; border-radius: 6px; border: 1px solid #44454a;"">
+      <div style=""flex: 1; min-width: 220px;"">
+        <label class=""field-label"" style=""margin-bottom: 2px;"">Search in</label>
+        <select id=""batchIsbnSource"" class=""select-box"" style=""padding: 6px 10px; font-size: 13px;"">
+          <option value=""-1"">All sources (best match)</option>
+        </select>
+      </div>
+      <div style=""display: flex; align-items: center; margin-top: 16px; margin-right: 8px;"">
+        <label style=""display: inline-flex; align-items: center; cursor: pointer; font-size: 13px; color: #f1efe8; font-weight: 500;"">
+          <input type=""checkbox"" id=""batchIsbnSkip"" style=""margin-right: 6px; cursor: pointer;"" /> Skip titles already in catalog
+        </label>
+      </div>
+      <div style=""margin-top: 14px; display: flex; gap: 6px;"">
+        <input type=""file"" id=""batchIsbnFile"" accept="".txt,.csv"" style=""display: none;"" onchange=""handleIsbnFile(event)"" />
+        <button type=""button"" class=""btn btn-sm btn-sec"" onclick=""document.getElementById('batchIsbnFile').click()"">Load file...</button>
+        <button type=""button"" id=""btnStartBatch"" class=""btn btn-sm btn-primary"" onclick=""startBatchLookup()"">Start lookup</button>
+        <button type=""button"" id=""btnStopBatch"" class=""btn btn-sm btn-sec"" onclick=""stopBatchLookup()"" disabled>Stop</button>
+      </div>
+    </div>
+
+    <!-- Status Banner & Progress Bar -->
+    <div id=""batchStatus"" style=""font-weight: 600; font-size: 13px; margin-bottom: 6px; color: #f6c61b; min-height: 18px;"">Ready. Enter ISBNs above and click 'Start lookup'.</div>
+    <div id=""batchProgressWrap"" style=""display: none; width: 100%; background: #1b1b1b; height: 6px; border-radius: 3px; overflow: hidden; margin-bottom: 10px; border: 1px solid #38393e;"">
+      <div id=""batchProgressBar"" style=""width: 0%; height: 100%; background: #f6c61b; transition: width 0.15s;""></div>
+    </div>
+
+    <!-- Results Table -->
+    <div class=""card"" style=""margin-bottom: 14px; background: #1b1b1b; border: 1px solid #44454a; max-height: 260px; overflow-y: auto; padding: 0;"">
+      <table id=""batchTable"" style=""font-size: 13px;"">
+        <thead>
+          <tr>
+            <th style=""width: 125px;"">ISBN</th>
+            <th>Title</th>
+            <th>Author</th>
+            <th>Publisher</th>
+            <th style=""width: 60px;"">Year</th>
+            <th style=""width: 85px;"">Call no.</th>
+            <th style=""width: 175px;"">Status / Source</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan=""7"" style=""text-align: center; color: #9a9a94; padding: 24px;"">No ISBNs looked up yet</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Modal Actions Footer -->
+    <div style=""display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;"">
+      <div id=""batchSummaryText"" style=""font-size: 13px; color: #9a9a94;""></div>
+      <div class=""modal-actions"" style=""margin-top: 0;"">
+        <button type=""button"" id=""btnAddBatch"" class=""btn btn-primary"" onclick=""addBatchFoundItems()"" disabled>Add items to catalog</button>
+        <button type=""button"" id=""btnExportBatchCsv"" class=""btn btn-sec"" onclick=""exportBatchCsv()"">Export results (CSV)</button>
+        <button type=""button"" class=""btn btn-sec"" onclick=""closeBatchIsbnModal()"">Close</button>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ITEM EDIT MODAL -->
@@ -4162,6 +4440,271 @@ async function unweedItem(id) {
   const res = await api('/api/unweed', { method: 'POST', body: { id: id } });
   if (res.ok) { showToast('Book restored to circulation'); loadCatalog(); }
   else showToast(res.error, true);
+}
+
+// Batch ISBN Copy-Cataloguing
+let batchCancelled = false;
+let batchFoundItems = [];
+let batchDisplayRows = [];
+let batchSourcesLoaded = false;
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/""/g, '&quot;');
+}
+
+async function loadBatchSources() {
+  if (batchSourcesLoaded) return;
+  try {
+    const res = await api('/api/lookup/sources');
+    if (res && res.ok && Array.isArray(res.sources)) {
+      const sel = document.getElementById('batchIsbnSource');
+      sel.innerHTML = '';
+      res.sources.forEach((s, idx) => {
+        const opt = document.createElement('option');
+        opt.value = idx === 0 ? -1 : (idx - 1);
+        opt.textContent = s;
+        sel.appendChild(opt);
+      });
+      batchSourcesLoaded = true;
+    }
+  } catch (e) {}
+}
+
+function openBatchIsbnModal() {
+  loadBatchSources();
+  document.getElementById('batchIsbnModal').style.display = 'flex';
+  setTimeout(() => {
+    const txt = document.getElementById('batchIsbnText');
+    if (txt) txt.focus();
+  }, 100);
+}
+
+function closeBatchIsbnModal() {
+  batchCancelled = true;
+  document.getElementById('batchIsbnModal').style.display = 'none';
+}
+
+function handleIsbnFile(e) {
+  const file = e.target.files && e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    const text = evt.target.result;
+    const cur = document.getElementById('batchIsbnText').value.trim();
+    document.getElementById('batchIsbnText').value = cur ? (cur + '\n' + text) : text;
+    showToast('Loaded ' + file.name);
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+async function startBatchLookup() {
+  const raw = document.getElementById('batchIsbnText').value.trim();
+  if (!raw) {
+    showToast('Please enter at least one ISBN', true);
+    return;
+  }
+  const tokens = raw.split(/[\r\n,;\t]+/).map(x => x.trim()).filter(x => x.length > 0);
+  if (tokens.length === 0) {
+    showToast('No valid ISBN strings found', true);
+    return;
+  }
+
+  const srcIdx = parseInt(document.getElementById('batchIsbnSource').value, 10);
+  const skipExist = document.getElementById('batchIsbnSkip').checked;
+
+  batchCancelled = false;
+  batchFoundItems = [];
+  batchDisplayRows = [];
+
+  document.getElementById('btnStartBatch').disabled = true;
+  document.getElementById('btnStopBatch').disabled = false;
+  document.getElementById('btnAddBatch').disabled = true;
+  document.getElementById('batchProgressWrap').style.display = 'block';
+  document.getElementById('batchProgressBar').style.width = '0%';
+  document.getElementById('batchSummaryText').textContent = '';
+
+  const tbody = document.querySelector('#batchTable tbody');
+  tbody.innerHTML = '';
+
+  const total = tokens.length;
+  let foundCount = 0;
+
+  for (let i = 0; i < total; i++) {
+    if (batchCancelled) break;
+    const token = tokens[i];
+    const pct = Math.round(((i + 1) / total) * 100);
+    document.getElementById('batchProgressBar').style.width = pct + '%';
+    document.getElementById('batchStatus').style.color = '#f6c61b';
+    document.getElementById('batchStatus').textContent = `Processing ${i + 1} of ${total} \u00B7 Found ${foundCount} item(s) \u00B7 Current: ${token}`;
+
+    let rowData = { isbn: token, title: '(none)', author: '', publisher: '', year: '', call: '', status: 'Searching...' };
+
+    const tr = document.createElement('tr');
+    tr.id = 'batchRow_' + i;
+    tr.innerHTML = `<td><code>${escapeHtml(token)}</code></td><td>${rowData.title}</td><td></td><td></td><td></td><td></td><td><span class=""badge badge-dim"">Searching...</span></td>`;
+    tbody.appendChild(tr);
+    tr.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+    try {
+      const res = await api('/api/lookup/isbn', {
+        method: 'POST',
+        body: { isbn: token, source: srcIdx, skipExisting: skipExist }
+      });
+
+      if (res && res.ok) {
+        if (res.found && res.item) {
+          foundCount++;
+          batchFoundItems.push(res.item);
+          rowData.title = res.item.title || '(untitled)';
+          rowData.author = res.item.author || '';
+          rowData.publisher = res.item.publisher || '';
+          rowData.year = res.item.year || '';
+          rowData.call = res.item.call || '';
+          rowData.status = res.message || 'Found';
+
+          const badgeCls = res.status === 'local' ? 'badge-warn' : 'badge-ok';
+          tr.innerHTML = `<td><code>${escapeHtml(res.isbn || token)}</code></td>
+            <td style=""font-weight: 600; color: #f6c61b;"">${escapeHtml(rowData.title)}</td>
+            <td>${escapeHtml(rowData.author)}</td>
+            <td>${escapeHtml(rowData.publisher)}</td>
+            <td>${escapeHtml(rowData.year)}</td>
+            <td><code>${escapeHtml(rowData.call)}</code></td>
+            <td><span class=""badge ${badgeCls}"">${escapeHtml(rowData.status)}</span></td>`;
+        } else if (res.status === 'skipped') {
+          rowData.status = res.message || 'Skipped';
+          tr.innerHTML = `<td><code>${escapeHtml(res.isbn || token)}</code></td>
+            <td style=""color: #9a9a94;"">(none)</td>
+            <td></td><td></td><td></td><td></td>
+            <td><span class=""badge badge-dim"">${escapeHtml(rowData.status)}</span></td>`;
+        } else {
+          const emptyItem = {
+            title: 'Empty Title (to be added later)',
+            isbn: res.isbn || token,
+            author: '',
+            publisher: '',
+            year: '',
+            call: ''
+          };
+          batchFoundItems.push(emptyItem);
+          rowData.title = emptyItem.title;
+          rowData.status = res.message || 'Not found';
+          tr.innerHTML = `<td><code>${escapeHtml(res.isbn || token)}</code></td>
+            <td style=""font-style: italic; color: #f6c61b;"">${escapeHtml(rowData.title)}</td>
+            <td></td><td></td><td></td><td></td>
+            <td><span class=""badge badge-err"">${escapeHtml(rowData.status)}</span></td>`;
+        }
+      } else {
+        const emptyItem = {
+          title: 'Empty Title (to be added later)',
+          isbn: token,
+          author: '',
+          publisher: '',
+          year: '',
+          call: ''
+        };
+        batchFoundItems.push(emptyItem);
+        rowData.title = emptyItem.title;
+        rowData.status = (res && res.error) || 'Lookup failed';
+        tr.innerHTML = `<td><code>${escapeHtml(token)}</code></td>
+          <td style=""font-style: italic; color: #f6c61b;"">${escapeHtml(rowData.title)}</td>
+          <td></td><td></td><td></td><td></td>
+          <td><span class=""badge badge-err"">${escapeHtml(rowData.status)}</span></td>`;
+      }
+    } catch (err) {
+      const emptyItem = {
+        title: 'Empty Title (to be added later)',
+        isbn: token,
+        author: '',
+        publisher: '',
+        year: '',
+        call: ''
+      };
+      batchFoundItems.push(emptyItem);
+      rowData.title = emptyItem.title;
+      rowData.status = 'Error';
+      tr.innerHTML = `<td><code>${escapeHtml(token)}</code></td>
+        <td style=""font-style: italic; color: #f6c61b;"">${escapeHtml(rowData.title)}</td>
+        <td></td><td></td><td></td><td></td>
+        <td><span class=""badge badge-err"">Failed</span></td>`;
+    }
+
+    batchDisplayRows.push(rowData);
+    document.getElementById('batchStatus').textContent = `Processing ${i + 1} of ${total} \u00B7 Found ${foundCount} item(s) \u00B7 Last: ${rowData.title}`;
+  }
+
+  document.getElementById('btnStartBatch').disabled = false;
+  document.getElementById('btnStopBatch').disabled = true;
+  document.getElementById('btnAddBatch').disabled = (batchFoundItems.length === 0);
+
+  const unfoundCount = batchFoundItems.length - foundCount;
+  if (batchCancelled) {
+    document.getElementById('batchStatus').style.color = '#eab308';
+    document.getElementById('batchStatus').textContent = `Stopped early. ${batchFoundItems.length} of ${total} items ready to add.`;
+  } else {
+    document.getElementById('batchStatus').style.color = batchFoundItems.length > 0 ? '#4ade80' : '#ef4444';
+    if (unfoundCount > 0 && foundCount > 0) {
+      document.getElementById('batchStatus').textContent = `Finished! ${batchFoundItems.length} of ${total} items ready to add (${foundCount} found, ${unfoundCount} with empty title).`;
+    } else if (unfoundCount > 0 && foundCount === 0) {
+      document.getElementById('batchStatus').textContent = `Finished! ${batchFoundItems.length} of ${total} items ready to add (all with empty title).`;
+    } else {
+      document.getElementById('batchStatus').textContent = `Finished! Found ${foundCount} of ${total} items.`;
+    }
+  }
+  document.getElementById('batchSummaryText').textContent = `${batchFoundItems.length} item(s) ready to add to catalog.`;
+}
+
+function stopBatchLookup() {
+  batchCancelled = true;
+  document.getElementById('btnStopBatch').disabled = true;
+  document.getElementById('batchStatus').textContent = 'Stopping after current request...';
+}
+
+async function addBatchFoundItems() {
+  if (batchFoundItems.length === 0) return;
+  document.getElementById('btnAddBatch').disabled = true;
+  document.getElementById('batchStatus').textContent = `Adding ${batchFoundItems.length} items to catalog...`;
+  try {
+    const res = await api('/api/items/batch-add', {
+      method: 'POST',
+      body: { items: batchFoundItems }
+    });
+    if (res && res.ok) {
+      showToast(`Added ${res.added} items to catalog (${res.skipped} skipped)`);
+      closeBatchIsbnModal();
+      loadCatalog();
+    } else {
+      showToast((res && res.error) || 'Failed to add items', true);
+      document.getElementById('btnAddBatch').disabled = false;
+    }
+  } catch (e) {
+    showToast('Failed to add items to catalog', true);
+    document.getElementById('btnAddBatch').disabled = false;
+  }
+}
+
+function exportBatchCsv() {
+  if (!batchDisplayRows || batchDisplayRows.length === 0) {
+    showToast('No results to export', true);
+    return;
+  }
+  let csv = 'ISBN,Title,Author,Publisher,Year,Call Number,Status\r\n';
+  batchDisplayRows.forEach(r => {
+    const clean = val => '""' + String(val || '').split('""').join('""""') + '""';
+    csv += [clean(r.isbn), clean(r.title), clean(r.author), clean(r.publisher), clean(r.year), clean(r.call), clean(r.status)].join(',') + '\r\n';
+  });
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const now = new Date().toISOString().slice(0, 10);
+  a.download = `batch-isbn-lookup-${now}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Exported CSV file');
 }
 
 // Students (Patrons)

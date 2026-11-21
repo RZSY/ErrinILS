@@ -1,0 +1,38 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "ErrinILS (Run App - Antigravity IDE)",
+            "type": "PowerShell",
+            "request": "launch",
+            "script": "${workspaceFolder}/run.ps1",
+            "args": ["-Target", "app"],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "SelfTest (Run - Antigravity IDE)",
+            "type": "PowerShell",
+            "request": "launch",
+            "script": "${workspaceFolder}/run.ps1",
+            "args": ["-Target", "selftest"],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "ErrinILS (Visual Studio Code .NET Debugger - clr)",
+            "type": "clr",
+            "request": "launch",
+            "preLaunchTask": "build-debug",
+            "program": "${workspaceFolder}/bin/Debug/ErrinILS.exe",
+            "args": [],
+            "cwd": "${workspaceFolder}",
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        },
+        {
+            "name": "ErrinILS (C# DevKit)",
+            "type": "dotnet",
+            "request": "launch",
+            "projectPath": "${workspaceFolder}/ErrinILS-source/ErrinILS.csproj"
+        }
+    ]
+}

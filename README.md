@@ -45,7 +45,7 @@ It covers everyday school library operations: barcode checkouts and returns, cop
 ## Features
 
 - **Barcode Circulation**: Scan student IDs and book labels with instant visual feedback, automatic return dates, loan limit checks (default: 3 books for 7 days), and hold alerts.
-- **5-Source ISBN Cataloguing**: Enter or scan an ISBN to automatically pull title, author, publisher, publication year, and Dewey Decimal classification from Library of Congress (Z39.50), Open Library, Google Books, HathiTrust, and K10plus.
+- **6-Source ISBN Cataloguing**: Enter or scan an ISBN to automatically pull title, author, publisher, publication year, and Dewey Decimal classification from Pustaka Terbuka Union (Malaysian school & university union catalog), Library of Congress (Z39.50), Open Library, Google Books, HathiTrust, and K10plus.
 - **Simplified View**: Interface designed for students and young readers. Features oversized buttons, clear visual status banners, and a dedicated exit button back to librarian controls.
 - **Mobile Access and QR Pairing**: Built-in HTTP server (`0.0.0.0:8080`) serving a mobile web app. Pair a phone or tablet by scanning an on-screen QR code for cable-free shelf audits and inventory checks.
 - **School Localization**: Built-in Malaysian IC and MyKid validation (`YYMMDD-PB-###G`) with birthdate calendar checks, overdue fines calculated in Ringgit Malaysia (RM 0.10/day default), and Nilam reading reports.
@@ -53,6 +53,11 @@ It covers everyday school library operations: barcode checkouts and returns, cop
 - **MARC21 and Z39.50 Protocols**: Built-in parsers and generators for binary ISO 2709 (`.mrc`), MARCXML (`.xml`), and MRK mnemonic (`.mrk`), with MARC-8 diacritic conversion and an ASN.1 BER Z39.50 v3 client and server.
 - **High-DPI Display Support**: Native PerMonitorV2 awareness for sharp ClearType text and proper scaling at 125%, 150%, and 200% zoom.
 - **Weeding and Collection Maintenance**: Track withdrawn copies with status reasons (condition/damage, obsolete, lost, duplicate) while retaining circulation statistics.
+- **Android Companion App (ErrinILS Scanner)**: High-performance native Android app (Kotlin, Jetpack Compose, CameraX, Google ML Kit) with Standalone Cloud Mode (Google Drive & GitHub sync without requiring a PC) and 5 core scanning modes: Return, Borrow, ISBN Cataloging, Shelf Audit, and Virtual Barcode Gun. Available as `ErrinILS-Scanner.apk`.
+- **Direct Cloud Sync & Multi-PC Architecture**:
+  - **User & Student Records (Google Drive Cloud)**: Private student records, active loans, fines, and borrowing history sync directly to Google Drive cloud (`tamanria.sk@gmail.com`) via zero-dependency HTTPS—no Google Drive desktop app or third-party background software required.
+  - **Book & Catalog Records (Pustaka Terbuka Data Provider)**: Bibliographic catalog data syncs directly to the GitHub repository [`pustaka-terbuka/sk-taman-ria`](https://github.com/pustaka-terbuka/sk-taman-ria), structured according to the official Pustaka Terbuka Data Provider standard (PPAPP model) with canonical aliases (`data/aliases.jsonl`), partitioned MARCXML (`data/bib/`), holdings (`data/holdings/`), intake batches (`harvest/inbox/`), and standard convenience formats (JSON, CSV, `.mrc`, `.mrk`, `.xml`), ready for central indexing by [`pustaka-terbuka/opac`](https://github.com/pustaka-terbuka/opac). Supports both standard Git CLI and **zero-dependency direct HTTPS REST API pushing** (allowing school netbooks without Git installed to publish updates using a GitHub Personal Access Token).
+  - **Multi-Station Support**: Any classroom or library PC running ErrinILS connects to the same cloud data for seamless multi-PC circulation and cataloging.
 
 ---
 
@@ -252,6 +257,7 @@ ErrinILS targets .NET Framework 4.0 / C# 5 syntax and requires only base framewo
     ErrinILS-source\src\Lookup.cs `
     ErrinILS-source\src\Zip.cs `
     ErrinILS-source\src\Auth.cs `
+    ErrinILS-source\src\CloudSync.cs `
     ErrinILS-source\src\NetHelper.cs `
     ErrinILS-source\src\Qr.cs `
     ErrinILS-source\src\CertHelper.cs `
@@ -314,6 +320,7 @@ d:/errin/
         ├── Qr.cs                 # ISO/IEC 18004 QR code generator
         ├── Web.cs                # HTTP server and mobile web interface
         ├── Auth.cs               # PBKDF2 / SHA-256 password hashing
+        ├── CloudSync.cs          # Direct Google Drive Cloud & GitHub multi-PC sync
         ├── NetHelper.cs          # Network interface discovery
         ├── Zip.cs                # DEFLATE ZIP archive writer
         ├── Ui.cs                 # WinForms UI controls and styling
