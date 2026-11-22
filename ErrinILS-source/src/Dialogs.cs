@@ -1804,8 +1804,8 @@ namespace Errin
                 curY += Ui.S(54);
 
                 var ghTxt = Ui.Txt(620);
-                ghTxt.Text = cfg.githubRepo ?? "pustaka-terbuka/sk-taman-ria";
-                var ghField = Ui.Field("GitHub Catalog Repository (e.g. pustaka-terbuka/sk-taman-ria, pustaka-terbuka/sk-seri-bintang)", ghTxt, 650);
+                ghTxt.Text = cfg.githubRepo ?? "";
+                var ghField = Ui.Field("GitHub Catalog Repository (Optional, e.g. pustaka-terbuka/sk-seri-bintang or your-org/repo)", ghTxt, 650);
                 ghField.Location = new Point(Ui.S(20), curY);
                 d.Controls.Add(ghField);
                 curY += Ui.S(54);
@@ -1895,7 +1895,8 @@ namespace Errin
                     if (string.IsNullOrEmpty(cfg.googleAccount)) cfg.googleAccount = "school.library@gmail.com";
                     string repoInput = ghTxt.Text.Trim();
                     if (!string.IsNullOrEmpty(repoInput) && repoInput.IndexOf('/') < 0) repoInput = "pustaka-terbuka/" + repoInput;
-                    cfg.githubRepo = !string.IsNullOrEmpty(repoInput) ? repoInput : "pustaka-terbuka/sk-taman-ria";
+                    cfg.githubRepo = repoInput;
+                    cfg.githubConfigured = !string.IsNullOrEmpty(repoInput);
                     cfg.githubToken = ghTokenTxt.Text.Trim();
                     cfg.googleCloudEndpoint = epTxt.Text.Trim();
                     string tok = tokenTxt.Text.Trim();

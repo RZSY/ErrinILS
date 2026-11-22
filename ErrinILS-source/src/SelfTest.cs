@@ -105,7 +105,7 @@ static class SelfTest
         Ok(Math.Abs(lib.Unpaid(S1) - 0.30) < 1e-9, "fine recorded");
         ldb.Set.block = 0.25; Ok(lib.Checkout(S1, "B1002", out msg).StartsWith("Blocked: unpaid fines"), "fines block checkout");
         ldb.Fines[0].paid = "paid"; Ok(lib.Checkout(S1, "B1001", out msg) == null, "held item goes to the hold owner");
-        var imp = new List<Item> { new Item { title = "New", isbn = "9780064400558", ctl = "ER00000001" }, new Item { title = "Dup", barcode = "B1002" }, new Item { title = "Fresh", barcode = "Z9" } };
+        var imp = new List<Item> { new Item { title = "New", isbn = ldb.Items[0].isbn, ctl = "ER00000001" }, new Item { title = "Dup", barcode = "B1002" }, new Item { title = "Fresh", barcode = "Z9" } };
         var dups = lib.DupSet(imp); int sk; int added = lib.AddItems(imp, "skip", true, dups, out sk);
         Ok(added == 1 && sk == 2, "import skips duplicates by barcode or ISBN: " + added + "/" + sk);
         Ok(ldb.Items.Select(i => i.ctl).Distinct().Count() == ldb.Items.Count && ldb.Items.Select(i => i.barcode).Distinct().Count() == ldb.Items.Count, "control numbers and barcodes stay unique");
@@ -253,7 +253,8 @@ static class SelfTest
         Ok(Lib.NormIc("12345") == null && Lib.NormIc("S0001") == null, "non-IC input rejected");
         Ok(Lib.IcOk("120315-10-0001") && Lib.IcOk("000229-10-0001") && Lib.IcOk("120229-10-0001") && !Lib.IcOk("110229-10-0001") && !Lib.IcOk("121306-10-0001") && !Lib.IcOk("120332-10-0001"), "IC birth-date digits checked with leap year accuracy");
         Ok(Lib.Uid().Length == 16, "Lib.Uid produces 16-hex-character 64-bit entropy identifier");
-        Ok(S1 == "120315-10-0001" && lib.PatronById("120315100001") == ldb.Patrons[0] && lib.PatronById("120315-10-0001") == ldb.Patrons[0], "scanner without dashes finds the student");
+        string s1NoDash = S1.Replace("-", "");
+        Ok(lib.PatronById(s1NoDash) == ldb.Patrons[0] && lib.PatronById(S1) == ldb.Patrons[0], "scanner without dashes finds the student");
         ldb.Patrons.Add(new Patron { id = "S0042", name = "Legacy", reg = Lib.Today(), last = Lib.Today() }); Ok(lib.PatronById("s0042") != null, "older non-IC IDs still work");
         Ok(Lib.Friendly("Loan limit reached").Contains("most books") && Lib.Friendly("Blocked: unpaid fines RM 5.00").Contains("librarian") && Lib.Friendly("whatever").StartsWith("Oops"), "child-friendly messages");
         Ok(Auth.Verify("admin123", "", "", 0) == true, "default hash accepts admin123");
@@ -458,7 +459,7 @@ static class SelfTest
             Ok(srcObj != null && (bool)srcObj["ok"] && Json.Arr(srcObj, "sources").Count > 5, "Lookup sources API returns available sources");
 
             // 7c. Test Lookup ISBN API (Local match)
-            string lkJson = wc.UploadString("http://127.0.0.1:" + wport + "/api/lookup/isbn", "{\"isbn\":\"9780064400558\",\"skipExisting\":false}");
+            string lkJson = wc.UploadString("http://127.0.0.1:" + wport + "/api/lookup/isbn", "{\"isbn\":\"" + wdb.Items[0].isbn + "\",\"skipExisting\":false}");
             var lkObj = Json.Parse(lkJson) as Dictionary<string, object>;
             Ok(lkObj != null && (bool)lkObj["ok"] && (bool)lkObj["found"] && Json.Str(lkObj, "status") == "local", "Lookup ISBN API matches local catalog book");
 
@@ -806,18 +807,20 @@ static class SelfTest
             Ok(cfg.syncOnSave == false, "syncOnSave (Instant On-Save) is disabled by default");
             Ok(cfg.syncOnStartup == true, "syncOnStartup is enabled by default");
             Ok(cfg.syncOnExit == true, "syncOnExit (Sync on Application Exit) is enabled by default");
+            Ok(!cfg.IsGitHubConfigured, "default SyncConfig has IsGitHubConfigured == false");
             cfg.googleAccount = "school.library@gmail.com";
             cfg.googleCloudEndpoint = "https://script.google.com/macros/s/test/exec";
             cfg.gdriveFolder = testSyncDir;
             cfg.githubRepo = "pustaka-terbuka/sk-taman-ria";
             cfg.githubToken = "test_token";
+            cfg.githubConfigured = true;
             cfg.autoSync = true;
             cfg.syncOnStartup = true;
             cfg.syncOnSave = false;
             cfg.syncOnExit = true;
             var cfgJ = cfg.ToJ();
             var cfg2 = SyncConfig.FromJ(cfgJ);
-            Ok(cfg2.googleAccount == "school.library@gmail.com" && cfg2.googleCloudEndpoint.Contains("macros") && cfg2.githubRepo == "pustaka-terbuka/sk-taman-ria" && cfg2.autoSync && cfg2.syncOnStartup && !cfg2.syncOnSave && cfg2.syncOnExit, "SyncConfig ToJ/FromJ roundtrips cleanly with syncOnExit enabled");
+            Ok(cfg2.googleAccount == "school.library@gmail.com" && cfg2.googleCloudEndpoint.Contains("macros") && cfg2.githubRepo == "pustaka-terbuka/sk-taman-ria" && cfg2.githubConfigured && cfg2.IsGitHubConfigured && cfg2.autoSync && cfg2.syncOnStartup && !cfg2.syncOnSave && cfg2.syncOnExit, "SyncConfig ToJ/FromJ roundtrips cleanly with syncOnExit enabled");
 
             // GitHub Direct API Push without token validation test
             var noTokenRes = GitHubCatalogSync.PushViaApi("pustaka-terbuka/sk-taman-ria", "", testCatDir, "test");

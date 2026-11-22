@@ -775,16 +775,74 @@ namespace Errin
 
         public static Db Seed()
         {
+            // Default 6 catalog books
             string[][] b = {
-                new[]{"Charlotte's Web","E. B. White","9780064400558","Harper","2001","F WHI","Animals--Fiction","184"},
-                new[]{"A Brief History of Time","Stephen Hawking","9780553380163","Bantam","1998","523.1 HAW","Cosmology","212"},
-                new[]{"Hatchet","Gary Paulsen","9781416936473","Simon & Schuster","2006","F PAU","Wilderness survival--Fiction","195"},
-                new[]{"The Hobbit","J. R. R. Tolkien","9780547928227","Houghton Mifflin","2012","F TOL","Fantasy","300"},
-                new[]{"Atlas of the World","National Geographic","9781426220654","National Geographic","2015","912 ATL","Atlases","304"} };
+                new[]{"Hikayat Hang Tuah","Kassim Ahmad","9789836200211","Dewan Bahasa dan Pustaka","1968","899.231 HIK","Kesusasteraan Melayu--Klasik; Hang Tuah (Watak legenda)","523"},
+                new[]{"The Great Gatsby","F. Scott Fitzgerald","9780743273565","Charles Scribner's Sons","1925","813.52 FIT","American fiction--20th century; Long Island (N.Y.)--Fiction","180"},
+                new[]{"1984","George Orwell","9780451524935","Secker & Warburg","1949","823.912 ORW","Dystopian fiction; Totalitarianism--Fiction","328"},
+                new[]{"The Art of War","Sun Tzu","9780195014761","Oxford University Press","1963","355.02 SUN","Military art and science--Early works to 1800; Strategy","156"},
+                new[]{"Macbeth","William Shakespeare","9780521606868","Cambridge University Press","1606","822.33 SHA","English drama (Tragedy); Regicide--Drama; Scotland--Drama","120"},
+                new[]{"Hikayat Seri Rama Perbandingan Versi Melayu, Sanskrit Dan Tamil","Rajantheran Muniandy","9789836247070","Dewan Bahasa dan Pustaka","1995","899.231 RAJ","Hikayat Seri Rama--Kajian perbandingan; Ramayana--Pengaruh; Kesusasteraan Melayu","354"}
+            };
+
             var db = new Db();
             for (int k = 0; k < b.Length; k++)
-                db.Items.Add(new Item { id = Uid(), ctl = FCtl(k + 1), barcode = "B" + (1001 + k), title = b[k][0], author = b[k][1], isbn = b[k][2], publisher = b[k][3], year = b[k][4], call = b[k][5], subject = b[k][6], pages = b[k][7] });
-            db.Patrons.Add(new Patron { id = "120315-10-0001", name = "Aisha Rahman", cls = "Grade 7A", contact = "guardian@example.com", reg = Today(), last = Today() });
+            {
+                db.Items.Add(new Item
+                {
+                    id = Uid(),
+                    ctl = FCtl(k + 1),
+                    barcode = "B" + (1001 + k),
+                    title = b[k][0],
+                    author = b[k][1],
+                    isbn = b[k][2],
+                    publisher = b[k][3],
+                    year = b[k][4],
+                    call = b[k][5],
+                    subject = b[k][6],
+                    pages = b[k][7]
+                });
+            }
+
+            // Default 6 students representing diverse Malaysian communities:
+            // 1. Melayu, 2. Cina, 3. India, 4. Bumiputera Sarawak, 5. Bumiputera Sabah, 6. Orang Asli
+            string[][] pData = {
+                // id/IC, name, kaum, agama, jantina, class, guardian, phone, state
+                new[]{"140315-02-5013", "Muhammad Danial bin Razak", "Melayu", "Islam", "Lelaki", "Tahun 6 Arif", "Razak bin Abdullah", "012-4567890", "Kedah"},
+                new[]{"140520-07-5121", "Tan Wei Loon", "Cina", "Buddha", "Lelaki", "Tahun 6 Arif", "Tan Hock Seng", "016-4123456", "Pulau Pinang"},
+                new[]{"140812-08-5242", "Priya a/p Subramaniam", "India", "Hindu", "Perempuan", "Tahun 6 Arif", "Subramaniam a/l Murugan", "017-5234567", "Perak"},
+                new[]{"141004-13-5314", "Fiona anak Clement", "Bumiputera Sarawak", "Kristian", "Perempuan", "Tahun 6 Bijak", "Clement anak Peter", "019-8234567", "Sarawak"},
+                new[]{"141118-12-5422", "Jovita binti Michael", "Bumiputera Sabah", "Kristian", "Perempuan", "Tahun 6 Bijak", "Michael bin Majanil", "013-8899123", "Sabah"},
+                new[]{"141209-06-5533", "Alang a/l Bah Long", "Orang Asli", "Lain-lain", "Lelaki", "Tahun 6 Bijak", "Bah Long a/l Bah Uda", "011-12345678", "Pahang"}
+            };
+
+            for (int i = 0; i < pData.Length; i++)
+            {
+                var r = pData[i];
+                var p = new Patron
+                {
+                    id = r[0],
+                    no_pengenalan = r[0],
+                    id_murid = "M" + (1001 + i),
+                    name = r[1],
+                    kaum = r[2],
+                    agama = r[3],
+                    jantina = r[4],
+                    cls = r[5],
+                    nama_kelas = r[5],
+                    tahun_tingkatan = "Tahun 6",
+                    nama_penjaga1 = r[6],
+                    contact = r[7],
+                    tel_penjaga1 = r[7],
+                    negeri = r[8],
+                    warganegara = "Warganegara",
+                    status_pengajian = "Aktif",
+                    reg = Today(),
+                    last = Today()
+                };
+                db.Patrons.Add(p);
+            }
+
             return db;
         }
 

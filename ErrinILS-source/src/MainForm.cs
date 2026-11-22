@@ -43,7 +43,22 @@ namespace Errin
             StartPosition = FormStartPosition.CenterScreen; AllowDrop = true;
             WindowState = FormWindowState.Maximized;
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
-            db = store.Load(); bool fresh = db == null; if (fresh) db = Lib.Seed();
+            db = store.Load();
+            bool fresh = db == null;
+            if (fresh)
+            {
+                db = Lib.Seed();
+            }
+            else if (db.Items.Count == 0 && db.Patrons.Count == 0)
+            {
+                db = Lib.Seed();
+            }
+            else if (db.Loans.Count == 0 && db.Fines.Count == 0 &&
+                     db.Items.All(i => i.title == "Charlotte's Web" || i.title == "A Brief History of Time" || i.title == "Hatchet" || i.title == "The Hobbit" || i.title == "Atlas of the World") &&
+                     (db.Patrons.Count == 0 || (db.Patrons.Count == 1 && db.Patrons[0].name == "Aisha Rahman")))
+            {
+                db = Lib.Seed();
+            }
             lib = new Lib(db); lib.FixItems(); if (db.Set == null) db.Set = new Settings(); lib.Purge(); lib.CheckDec31ClassArchive();
             BuildFrame(); Save(); LoadCfg(); ApplyZ(); ApplyWeb(); Render();
             BeginInvoke(new Action(() => {
@@ -717,6 +732,11 @@ namespace Errin
         }
         void DoSyncCatalog()
         {
+            if (!CloudSyncManager.Instance.Config.IsGitHubConfigured)
+            {
+                MessageBox.Show(this, "Please set up your school's GitHub repository first in Cloud Sync settings before syncing catalog.", "GitHub Repository Not Configured", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
             var prev = Cursor.Current;
             Cursor.Current = Cursors.WaitCursor;
             try
@@ -2107,12 +2127,28 @@ namespace Errin
                     gdrivePathLbl.Text = "Direct Cloud Sync (No 3rd-party apps). Click 'Configure Google Cloud' to connect your Cloud Web App URL or token.";
                 }
 
-                githubStatusLbl.Text = "\u25CF GitHub (Catalog): " + CloudSyncManager.Instance.Config.githubRepo;
-                githubStatusLbl.ForeColor = Th.Green;
-                githubRepoLbl.Text = "Repository: https://github.com/" + CloudSyncManager.Instance.Config.githubRepo + "  (" + db.Items.Count + " catalogued books, " + (GitHubCatalogSync.HasGit() ? "Git CLI active" : "HTTP API active") + ")";
+                if (cfg.IsGitHubConfigured)
+                {
+                    githubStatusLbl.Text = "\u25CF GitHub (Catalog): " + cfg.githubRepo;
+                    githubStatusLbl.ForeColor = Th.Green;
+                    githubRepoLbl.Text = "Repository: https://github.com/" + cfg.githubRepo + "  (" + db.Items.Count + " catalogued books, " + (GitHubCatalogSync.HasGit() ? "Git CLI active" : "HTTP API active") + ")";
+                }
+                else
+                {
+                    githubStatusLbl.Text = "\u25CF GitHub (Catalog): Not Configured";
+                    githubStatusLbl.ForeColor = Th.Yel;
+                    githubRepoLbl.Text = "Repository: Not configured. Click 'Configure Cloud Sync' to connect your school's catalog repository.";
+                }
 
                 string last = CloudSyncManager.Instance.Config.lastSyncTime;
-                syncNoteLbl.Text = "Multi-PC Consistency: User records (students, loans, fines) sync directly to Google Drive (" + cfg.googleAccount + ") without 3rd party apps.\nBooks and catalog data sync via the " + cfg.githubRepo + " GitHub repository." + (!string.IsNullOrEmpty(last) ? "  [Last sync: " + last + "]" : "");
+                if (cfg.IsGitHubConfigured)
+                {
+                    syncNoteLbl.Text = "Multi-PC Consistency: User records (students, loans, fines) sync directly to Google Drive (" + cfg.googleAccount + ") without 3rd party apps.\nBooks and catalog data sync via the " + cfg.githubRepo + " GitHub repository." + (!string.IsNullOrEmpty(last) ? "  [Last sync: " + last + "]" : "");
+                }
+                else
+                {
+                    syncNoteLbl.Text = "Multi-PC Consistency: User records (students, loans, fines) sync directly to Google Drive (" + cfg.googleAccount + ") without 3rd party apps.\nBooks and catalog data sync via GitHub once configured in Cloud Sync settings." + (!string.IsNullOrEmpty(last) ? "  [Last sync: " + last + "]" : "");
+                }
             };
             updateSyncLabels();
 
@@ -2179,6 +2215,11 @@ namespace Errin
 
             syncBtns.Controls.Add(Ui.Btn("Sync GitHub (Catalog)", 1, (btnS, btnE) =>
             {
+                if (!CloudSyncManager.Instance.Config.IsGitHubConfigured)
+                {
+                    MessageBox.Show(this, "Please set up your school's GitHub repository first in Cloud Sync settings before syncing catalog.", "GitHub Repository Not Configured", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
                 var prev = Cursor.Current;
                 Cursor.Current = Cursors.WaitCursor;
                 try
@@ -2194,6 +2235,11 @@ namespace Errin
 
             syncBtns.Controls.Add(Ui.Btn("View on GitHub", 1, (btnS, btnE) =>
             {
+                if (!CloudSyncManager.Instance.Config.IsGitHubConfigured)
+                {
+                    MessageBox.Show(this, "Please set up your school's GitHub repository first in Cloud Sync settings.", "GitHub Repository Not Configured", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                    return;
+                }
                 try { Process.Start("https://github.com/" + CloudSyncManager.Instance.Config.githubRepo); } catch { }
             }));
 

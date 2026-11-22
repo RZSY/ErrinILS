@@ -34,8 +34,9 @@ namespace Errin
         public string gdriveFolder = "";
 
         // GitHub Catalog Sync
-        public string githubRepo = "pustaka-terbuka/sk-taman-ria";
+        public string githubRepo = "";
         public string githubToken = "";
+        public bool githubConfigured = false;
         public bool autoSync = true;
         public bool syncOnStartup = true;
         public bool syncOnSave = false; // "Instant On-Save" is disabled by default
@@ -53,6 +54,18 @@ namespace Errin
             }
         }
 
+        public bool IsGitHubConfigured
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(githubRepo)) return false;
+                string r = githubRepo.Trim();
+                if (string.IsNullOrEmpty(r)) return false;
+                if (!githubConfigured && string.Equals(r, "pustaka-terbuka/sk-taman-ria", StringComparison.OrdinalIgnoreCase)) return false;
+                return true;
+            }
+        }
+
         public Dictionary<string, object> ToJ()
         {
             var d = new Dictionary<string, object>();
@@ -65,8 +78,9 @@ namespace Errin
             d["googleFolderId"] = googleFolderId ?? "";
             d["googleFileId"] = googleFileId ?? "";
             d["gdriveFolder"] = gdriveFolder ?? "";
-            d["githubRepo"] = githubRepo ?? "pustaka-terbuka/sk-taman-ria";
+            d["githubRepo"] = githubRepo ?? "";
             d["githubToken"] = githubToken ?? "";
+            d["githubConfigured"] = githubConfigured;
             d["autoSync"] = autoSync;
             d["syncOnStartup"] = syncOnStartup;
             d["syncOnSave"] = syncOnSave;
@@ -91,8 +105,12 @@ namespace Errin
             c.googleFileId = Json.Str(d, "googleFileId");
             c.gdriveFolder = Json.Str(d, "gdriveFolder");
             c.githubRepo = Json.Str(d, "githubRepo");
-            if (string.IsNullOrEmpty(c.githubRepo)) c.githubRepo = "pustaka-terbuka/sk-taman-ria";
             c.githubToken = Json.Str(d, "githubToken");
+            c.githubConfigured = Json.Bool(d, "githubConfigured");
+            if (string.Equals(c.githubRepo, "pustaka-terbuka/sk-taman-ria", StringComparison.OrdinalIgnoreCase) && !c.githubConfigured)
+            {
+                c.githubRepo = "";
+            }
             if (d.ContainsKey("autoSync")) c.autoSync = d["autoSync"] is bool && (bool)d["autoSync"];
             if (d.ContainsKey("syncOnStartup")) c.syncOnStartup = d["syncOnStartup"] is bool && (bool)d["syncOnStartup"];
             else c.syncOnStartup = c.autoSync;
@@ -976,8 +994,8 @@ function doGet(e) {{
                 return res;
             }
 
-            // Every Google Drive sync is also followed by GitHub sync
-            if (followWithGitHub && cfg != null && !string.IsNullOrEmpty(cfg.githubRepo))
+            // Every Google Drive sync is also followed by GitHub sync if configured
+            if (followWithGitHub && cfg != null && cfg.IsGitHubConfigured)
             {
                 try
                 {
@@ -2394,8 +2412,16 @@ test('{1} inbox passes validation', async () => {{
                     // 1. Google Drive Cloud Sync (Users for school.library@gmail.com)
                     var userRes = GoogleDriveCloudSync.Sync(db, Config, false);
 
-                    // 2. GitHub Sync (Catalog for pustaka-terbuka/sk-taman-ria)
-                    var catRes = GitHubCatalogSync.Sync(db, Config.githubRepo, Config.githubToken, db.Set.school);
+                    // 2. GitHub Sync (Catalog) if configured
+                    SyncResult catRes = null;
+                    if (Config != null && Config.IsGitHubConfigured)
+                    {
+                        catRes = GitHubCatalogSync.Sync(db, Config.githubRepo, Config.githubToken, db.Set.school);
+                    }
+                    else
+                    {
+                        catRes = new SyncResult { Success = true, Message = "GitHub not configured" };
+                    }
 
                     // 3. Save combined result to local SQLite database
                     if (store != null && db != null)
