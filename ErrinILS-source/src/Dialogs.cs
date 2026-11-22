@@ -350,6 +350,286 @@ namespace Errin
             }
         }
 
+        void BatchLabelDialog(List<Item> initialSelected = null, bool initialSpine = false)
+        {
+            var selItems = initialSelected != null ? initialSelected.Where(x => x != null).ToList() : new List<Item>();
+            var shownItems = shown != null ? shown.Where(x => x != null).ToList() : new List<Item>();
+            var allItems = db != null && db.Items != null ? db.Items.Where(x => string.IsNullOrEmpty(x.weeded)).ToList() : new List<Item>();
+
+            if (allItems.Count == 0 && shownItems.Count == 0 && selItems.Count == 0)
+            {
+                Toast("No catalog items available to print");
+                return;
+            }
+
+            using (var d = Ui.Dlg("Batch Label Printing \u00B7 ErrinILS", 720, 500))
+            {
+                d.Controls.Add(new Label { UseMnemonic = false, Text = "batch label printing", Font = Th.FT, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(14)) });
+                d.Controls.Add(new Label { UseMnemonic = false, Text = "Print item barcode labels or spine labels in bulk for multiple catalog records.", Font = Th.FS, ForeColor = Th.Mut, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(38)) });
+
+                int leftW = Ui.S(330);
+                int rightX = Ui.S(360);
+                int rightW = Ui.S(330);
+
+                // Scope group
+                var scopeBox = new GroupBox
+                {
+                    Text = " 1. Records to Print ",
+                    Font = Th.FB,
+                    ForeColor = Th.Ink,
+                    BackColor = Th.Card,
+                    Location = new Point(Ui.S(20), Ui.S(64)),
+                    Size = new Size(leftW, Ui.S(105))
+                };
+                var rbSel = new RadioButton { Text = string.Format("Selected records ({0})", selItems.Count), Font = Th.F, ForeColor = Th.Ink, Location = new Point(Ui.S(16), Ui.S(22)), AutoSize = true, Enabled = selItems.Count > 0, Checked = selItems.Count > 0 };
+                var rbShown = new RadioButton { Text = string.Format("Current search / page ({0})", shownItems.Count), Font = Th.F, ForeColor = Th.Ink, Location = new Point(Ui.S(16), Ui.S(48)), AutoSize = true, Checked = selItems.Count == 0 && shownItems.Count > 0 };
+                var rbAll = new RadioButton { Text = string.Format("All active catalog records ({0})", allItems.Count), Font = Th.F, ForeColor = Th.Ink, Location = new Point(Ui.S(16), Ui.S(74)), AutoSize = true, Checked = selItems.Count == 0 && shownItems.Count == 0 };
+                scopeBox.Controls.Add(rbSel);
+                scopeBox.Controls.Add(rbShown);
+                scopeBox.Controls.Add(rbAll);
+                d.Controls.Add(scopeBox);
+
+                // Type group
+                var typeBox = new GroupBox
+                {
+                    Text = " 2. Label Format ",
+                    Font = Th.FB,
+                    ForeColor = Th.Ink,
+                    BackColor = Th.Card,
+                    Location = new Point(Ui.S(20), Ui.S(178)),
+                    Size = new Size(leftW, Ui.S(88))
+                };
+                var rbItem = new RadioButton { Text = "Item Barcode Label (3.5\" \u00D7 1.1\")", Font = Th.F, ForeColor = Th.Ink, Location = new Point(Ui.S(16), Ui.S(24)), AutoSize = true, Checked = !initialSpine };
+                var rbSpine = new RadioButton { Text = "Spine Label - Call No (1\" \u00D7 1.5\")", Font = Th.F, ForeColor = Th.Ink, Location = new Point(Ui.S(16), Ui.S(52)), AutoSize = true, Checked = initialSpine };
+                typeBox.Controls.Add(rbItem);
+                typeBox.Controls.Add(rbSpine);
+                d.Controls.Add(typeBox);
+
+                // Copies & Options group
+                var optBox = new GroupBox
+                {
+                    Text = " 3. Copies & Layout ",
+                    Font = Th.FB,
+                    ForeColor = Th.Ink,
+                    BackColor = Th.Card,
+                    Location = new Point(Ui.S(20), Ui.S(274)),
+                    Size = new Size(leftW, Ui.S(110))
+                };
+                var numCopies = Ui.Num(80, 1, 50, 1);
+                var copyField = Ui.Field("Copies per record:", numCopies, 150);
+                copyField.Location = new Point(Ui.S(16), Ui.S(22));
+                optBox.Controls.Add(copyField);
+
+                var metricLbl = new Label
+                {
+                    UseMnemonic = false,
+                    Text = "",
+                    Font = Th.FS,
+                    ForeColor = Th.Mut,
+                    Location = new Point(Ui.S(16), Ui.S(74)),
+                    Size = new Size(leftW - Ui.S(32), Ui.S(30))
+                };
+                optBox.Controls.Add(metricLbl);
+                d.Controls.Add(optBox);
+
+                // Live Preview Box (Right Column)
+                var prevBox = new GroupBox
+                {
+                    Text = " Live Preview ",
+                    Font = Th.FB,
+                    ForeColor = Th.Ink,
+                    BackColor = Th.Card,
+                    Location = new Point(rightX, Ui.S(64)),
+                    Size = new Size(rightW, Ui.S(320))
+                };
+
+                var pv = new Panel
+                {
+                    BackColor = Color.White,
+                    Location = new Point(Ui.S(15), Ui.S(24)),
+                    Size = new Size(rightW - Ui.S(30), Ui.S(195))
+                };
+                prevBox.Controls.Add(pv);
+
+                int prevIdx = 0;
+                var navLbl = new Label
+                {
+                    UseMnemonic = false,
+                    Text = "Record 0 of 0",
+                    Font = Th.FS,
+                    ForeColor = Th.Mut,
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    Location = new Point(Ui.S(15), Ui.S(226)),
+                    Size = new Size(rightW - Ui.S(30), Ui.S(18))
+                };
+                var titleLbl = new Label
+                {
+                    UseMnemonic = false,
+                    Text = "",
+                    Font = Th.FS,
+                    ForeColor = Th.Ink,
+                    TextAlign = ContentAlignment.MiddleCenter,
+                    AutoEllipsis = true,
+                    Location = new Point(Ui.S(15), Ui.S(246)),
+                    Size = new Size(rightW - Ui.S(30), Ui.S(32))
+                };
+                var btnPrev = Ui.Btn("\u25C0 Prev", 1);
+                btnPrev.Size = new Size(Ui.S(75), Ui.S(26));
+                btnPrev.Location = new Point(Ui.S(50), Ui.S(282));
+                var btnNext = Ui.Btn("Next \u25B6", 1);
+                btnNext.Size = new Size(Ui.S(75), Ui.S(26));
+                btnNext.Location = new Point(rightW - Ui.S(125), Ui.S(282));
+
+                prevBox.Controls.Add(navLbl);
+                prevBox.Controls.Add(titleLbl);
+                prevBox.Controls.Add(btnPrev);
+                prevBox.Controls.Add(btnNext);
+                d.Controls.Add(prevBox);
+
+                Func<List<Item>> getActiveItems = () => {
+                    if (rbSel.Checked) return selItems;
+                    if (rbShown.Checked) return shownItems;
+                    return allItems;
+                };
+
+                Action updateMetricsAndPreview = () => {
+                    var items = getActiveItems();
+                    bool isSpine = rbSpine.Checked;
+                    int copies = (int)numCopies.Value;
+
+                    int count = items.Count;
+                    int validCount = isSpine ? items.Count(x => SpineArt.Lines(x.call).Count > 0) : count;
+                    int skippedCount = count - validCount;
+                    int totalLabels = validCount * copies;
+
+                    if (isSpine)
+                    {
+                        metricLbl.Text = string.Format("{0} record(s) ({1} with call no, {2} skipped) \u2192 {3} label(s)", count, validCount, skippedCount, totalLabels);
+                    }
+                    else
+                    {
+                        metricLbl.Text = string.Format("{0} record(s) \u00D7 {1} cop{2} \u2192 {3} total label(s)", count, copies, copies > 1 ? "ies" : "y", totalLabels);
+                    }
+
+                    if (prevIdx >= items.Count) prevIdx = Math.Max(0, items.Count - 1);
+                    if (items.Count == 0)
+                    {
+                        navLbl.Text = "No records";
+                        titleLbl.Text = "";
+                        btnPrev.Enabled = false;
+                        btnNext.Enabled = false;
+                    }
+                    else
+                    {
+                        var it = items[prevIdx];
+                        navLbl.Text = string.Format("Item {0} of {1}", prevIdx + 1, items.Count);
+                        titleLbl.Text = (it.title ?? "(untitled)") + " \u00B7 Call: " + (string.IsNullOrEmpty(it.call) ? "(none)" : it.call);
+                        btnPrev.Enabled = prevIdx > 0;
+                        btnNext.Enabled = prevIdx < items.Count - 1;
+                    }
+                    pv.Invalidate();
+                };
+
+                pv.Paint += (s, e) => {
+                    var items = getActiveItems();
+                    if (items.Count == 0 || prevIdx >= items.Count)
+                    {
+                        using (var br = new SolidBrush(Color.FromArgb(160, 160, 160)))
+                        using (var sf = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center })
+                        {
+                            e.Graphics.DrawString("No item to preview", Th.F, br, pv.ClientRectangle, sf);
+                        }
+                        return;
+                    }
+                    var it = items[prevIdx];
+                    e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                    e.Graphics.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
+
+                    if (rbSpine.Checked)
+                    {
+                        float sc = Math.Min((pv.Width - 24f) / (float)SpineArt.W, (pv.Height - 24f) / (float)SpineArt.H);
+                        float ox = (pv.Width - SpineArt.W * sc) / 2f;
+                        float oy = (pv.Height - SpineArt.H * sc) / 2f;
+                        e.Graphics.TranslateTransform(ox, oy);
+                        e.Graphics.ScaleTransform(sc, sc);
+                        SpineArt.Draw(e.Graphics, 0, 0, it);
+                    }
+                    else
+                    {
+                        float sc = Math.Min((pv.Width - 24f) / (float)Labels.W, (pv.Height - 24f) / (float)Labels.H);
+                        float ox = (pv.Width - Labels.W * sc) / 2f;
+                        float oy = (pv.Height - Labels.H * sc) / 2f;
+                        e.Graphics.TranslateTransform(ox, oy);
+                        e.Graphics.ScaleTransform(sc, sc);
+                        Labels.Draw(e.Graphics, 0, 0, it);
+                    }
+                };
+
+                rbSel.CheckedChanged += (s, e) => { if (rbSel.Checked) { prevIdx = 0; updateMetricsAndPreview(); } };
+                rbShown.CheckedChanged += (s, e) => { if (rbShown.Checked) { prevIdx = 0; updateMetricsAndPreview(); } };
+                rbAll.CheckedChanged += (s, e) => { if (rbAll.Checked) { prevIdx = 0; updateMetricsAndPreview(); } };
+                rbItem.CheckedChanged += (s, e) => { if (rbItem.Checked) updateMetricsAndPreview(); };
+                rbSpine.CheckedChanged += (s, e) => { if (rbSpine.Checked) updateMetricsAndPreview(); };
+                numCopies.ValueChanged += (s, e) => updateMetricsAndPreview();
+
+                btnPrev.Click += (s, e) => { if (prevIdx > 0) { prevIdx--; updateMetricsAndPreview(); } };
+                btnNext.Click += (s, e) => {
+                    var items = getActiveItems();
+                    if (prevIdx < items.Count - 1) { prevIdx++; updateMetricsAndPreview(); }
+                };
+
+                // Action buttons at bottom
+                var bPrint = Ui.Btn("Print Labels Sheet...", 0);
+                bPrint.Location = new Point(Ui.S(20), Ui.S(405));
+                bPrint.Size = new Size(Ui.S(190), Ui.S(38));
+
+                var bClose = Ui.Btn("Close", 1, (s, e) => d.Close());
+                bClose.Location = new Point(Ui.S(220), Ui.S(405));
+                bClose.Size = new Size(Ui.S(100), Ui.S(38));
+
+                bPrint.Click += (s, e) => {
+                    var items = getActiveItems();
+                    if (items.Count == 0) { Toast("No records selected to print"); return; }
+                    int copies = (int)numCopies.Value;
+                    bool isSpine = rbSpine.Checked;
+
+                    if (isSpine)
+                    {
+                        int valid = items.Count(x => SpineArt.Lines(x.call).Count > 0);
+                        if (valid == 0) { Toast("None of the selected records have a call number"); return; }
+                        int skipped = items.Count - valid;
+                        string msg = string.Format("Print spine labels for {0} record(s)?{1}\n({2} copies each \u2192 {3} total labels)",
+                            valid, skipped > 0 ? "\n" + skipped + " record(s) without a call number will be skipped." : "", copies, valid * copies);
+                        if (!Ui.Confirm(d, msg)) return;
+
+                        if (SpineArt.Print(d, items, copies))
+                        {
+                            d.Close();
+                            Toast(string.Format("Sent {0} spine label(s) to printer", valid * copies));
+                        }
+                    }
+                    else
+                    {
+                        string msg = string.Format("Print barcode labels for {0} record(s)?\n({1} cop{2} each \u2192 {3} total labels)",
+                            items.Count, copies, copies > 1 ? "ies" : "y", items.Count * copies);
+                        if (!Ui.Confirm(d, msg)) return;
+
+                        if (Labels.Print(d, items, copies))
+                        {
+                            d.Close();
+                            Toast(string.Format("Sent {0} label(s) to printer", items.Count * copies));
+                        }
+                    }
+                };
+
+                d.Controls.Add(bPrint);
+                d.Controls.Add(bClose);
+
+                updateMetricsAndPreview();
+                d.ShowDialog(this);
+            }
+        }
+
         /* ---------- students ---------- */
         void PatForm(Patron edit = null)
         {
@@ -1517,8 +1797,8 @@ namespace Errin
 
                 // School Google Account & GitHub Repo
                 var acctTxt = Ui.Txt(620);
-                acctTxt.Text = cfg.googleAccount ?? "tamanria.sk@gmail.com";
-                var acctField = Ui.Field("School Google Account Email (e.g. tamanria.sk@gmail.com, skseribintang@gmail.com)", acctTxt, 650);
+                acctTxt.Text = cfg.googleAccount ?? "school.library@gmail.com";
+                var acctField = Ui.Field("School Google Account Email (e.g. school.library@gmail.com, skseribintang@gmail.com)", acctTxt, 650);
                 acctField.Location = new Point(Ui.S(20), curY);
                 d.Controls.Add(acctField);
                 curY += Ui.S(54);

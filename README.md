@@ -5,13 +5,13 @@
 </p>
 
 <p align="center">
-  <strong>Lightweight school library management system for Windows.</strong><br>
-  Fast barcode circulation, 5-source ISBN cataloguing, simplified student interface, and a high-performance SQLite database.
+  <strong>Lightweight school library management system for Windows &amp; Android.</strong><br>
+  Fast barcode circulation, 31-source union ISBN cataloguing, Android companion scanner APK, batch label printing, simplified student interface, and a high-performance SQLite database.
 </p>
 
 <p align="center">
-  <a href="https://github.com/RZSY/ErrinILS/releases"><img src="https://img.shields.io/badge/version-1.3.3-blue.svg?style=flat-square" height="20" alt="Version 1.3.3" /></a>
-  <a href="#system-requirements"><img src="https://img.shields.io/badge/platform-Windows%207%20|%208%20|%2010%20|%2011-0078D6.svg?style=flat-square&logo=windows" height="20" alt="Platform: Windows" /></a>
+  <a href="https://github.com/RZSY/ErrinILS/releases"><img src="https://img.shields.io/badge/version-1.4.2-blue.svg?style=flat-square" height="20" alt="Version 1.4.2" /></a>
+  <a href="#system-requirements"><img src="https://img.shields.io/badge/platform-Windows%207%20|%208%20|%2010%20|%2011%20|%20Android-0078D6.svg?style=flat-square&logo=windows" height="20" alt="Platform: Windows & Android" /></a>
   <a href="#system-requirements"><img src="https://img.shields.io/badge/runtime-.NET%20Framework%204.0%2B-512BD4.svg?style=flat-square&logo=dotnet" height="20" alt=".NET 4.0+" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg?style=flat-square" height="20" alt="MIT License" /></a>
 </p>
@@ -19,7 +19,7 @@
 <p align="center">
   <a href="https://rzsy.github.io/ErrinILS/">Website</a> •
   <a href="https://github.com/RZSY/ErrinILS/releases">Releases</a> •
-  <a href="docs/assets/ErrinILS-User-Guide.pdf">User Manual (PDF)</a> •
+  <a href="https://rzsy.github.io/ErrinILS/guide.html">User Manual &amp; Flowcharts</a> •
   <a href="AGENTS.md">Developer Guide</a> •
   <a href="#quick-start">Quick Start</a>
 </p>
@@ -28,9 +28,9 @@
 
 ## Overview
 
-ErrinILS is a zero-dependency school library management system (ILS) designed for standard Windows PCs. Rather than requiring dedicated Linux servers, complex database administration, or web server setups like Koha or SLiMS, ErrinILS runs as a standalone executable on any computer running Windows 7 or newer.
+ErrinILS is a zero-dependency school library management system (ILS) designed for standard Windows PCs and Android devices. Rather than requiring dedicated Linux servers, complex database administration, or web server setups like Koha or SLiMS, ErrinILS runs as a standalone executable on any computer running Windows 7 or newer, accompanied by a native Android scanning app.
 
-It covers everyday school library operations: barcode checkouts and returns, copy-cataloguing across international library databases, simplified self-service mode for students, and mobile stock audits over local Wi-Fi. All library data is stored locally in a single SQLite database without external database drivers.
+It covers everyday school library operations: barcode checkouts and returns, copy-cataloguing across 31 Malaysian and international library databases, batch label and spine printing with multi-selection, simplified self-service mode for students, and mobile stock audits over local Wi-Fi. All library data is stored locally in a single SQLite database without external database drivers.
 
 ```text
                 _       ___ _     ____  
@@ -45,17 +45,20 @@ It covers everyday school library operations: barcode checkouts and returns, cop
 ## Features
 
 - **Barcode Circulation**: Scan student IDs and book labels with instant visual feedback, automatic return dates, loan limit checks (default: 3 books for 7 days), and hold alerts.
-- **6-Source ISBN Cataloguing**: Enter or scan an ISBN to automatically pull title, author, publisher, publication year, and Dewey Decimal classification from Pustaka Terbuka Union (Malaysian school & university union catalog), Library of Congress (Z39.50), Open Library, Google Books, HathiTrust, and K10plus.
+- **31-Source ISBN Union Cataloguing**: Enter or scan an ISBN to automatically pull title, author, publisher, publication year, DDC, and subjects across 31 union archives: Pustaka Terbuka Union, KIK (National Union), PNM (Perpustakaan Negara Malaysia), all 14 State Public Libraries (Selangor, Penang, Perak, Kedah, Perlis, Johor, Kelantan, Terengganu, Pahang, Negeri Sembilan, Melaka, Sarawak, Sabah, KL, Putrajaya, Labuan), u-Pustaka, MALCat, Universiti Malaya (UM), UKM Tun Seri Lanang, UiTM PTAR, UPSI, Dewan Bahasa dan Pustaka (DBP), Library of Congress (Z39.50), Open Library, Google Books, HathiTrust, and K10plus German Union.
+- **Batch Label & Spine Printing**: Select multiple items using `Ctrl+A`, Shift-click, or row selection. Print physical 3.5"×1.1" barcode labels or 1"×1.5" Dewey spine labels with live antialiased preview, copies-per-record selector, and print dialog.
+- **Android Companion App (ErrinILS Scanner)**: High-performance native Android app (Kotlin, Jetpack Compose, CameraX, Google ML Kit) with Standalone Cloud Mode (Google Drive & GitHub sync without requiring a PC) and 5 core scanning modes: Return, Borrow, ISBN Cataloging, Shelf Audit, and **Virtual Barcode Gun** (`/api/wedge` wireless keystroke streaming to PC). Available as `ErrinILS-Scanner-v1.4.2.apk`.
+- **Remote Access Copy-Cataloging**: Look up books by ISBN directly in the browser-based remote access interface (`Web.cs`) with 31-source search and direct one-click commits to the catalog.
 - **Simplified View**: Interface designed for students and young readers. Features oversized buttons, clear visual status banners, and a dedicated exit button back to librarian controls.
 - **Mobile Access and QR Pairing**: Built-in HTTP server (`0.0.0.0:8080`) serving a mobile web app. Pair a phone or tablet by scanning an on-screen QR code for cable-free shelf audits and inventory checks.
+- **Automatic Self-Updater**: One-click updates with TLS 1.3 support, GitHub Releases integration, automatic detection of installer vs standalone portable binary, and bounded retry resilience.
 - **School Localization**: Built-in Malaysian IC and MyKid validation (`YYMMDD-PB-###G`) with birthdate calendar checks, overdue fines calculated in Ringgit Malaysia (RM 0.10/day default), and Nilam reading reports.
-- **SQLite Database and Backups**: All data persists in `%APPDATA%\Errin\errin-data.db` using high-performance ACID SQLite storage with WAL journaling, relational tables, and automatic backward-compatible migration from legacy JSON databases. Includes 1-click SQLite database and JSON backups.
+- **SQLite Database Optimization**: All data persists in `%APPDATA%\Errin\errin-data.db` using high-performance ACID SQLite storage with WAL journaling. Includes built-in 1-click database vacuuming, integrity check, and JSON backups.
 - **MARC21 and Z39.50 Protocols**: Built-in parsers and generators for binary ISO 2709 (`.mrc`), MARCXML (`.xml`), and MRK mnemonic (`.mrk`), with MARC-8 diacritic conversion and an ASN.1 BER Z39.50 v3 client and server.
 - **High-DPI Display Support**: Native PerMonitorV2 awareness for sharp ClearType text and proper scaling at 125%, 150%, and 200% zoom.
 - **Weeding and Collection Maintenance**: Track withdrawn copies with status reasons (condition/damage, obsolete, lost, duplicate) while retaining circulation statistics.
-- **Android Companion App (ErrinILS Scanner)**: High-performance native Android app (Kotlin, Jetpack Compose, CameraX, Google ML Kit) with Standalone Cloud Mode (Google Drive & GitHub sync without requiring a PC) and 5 core scanning modes: Return, Borrow, ISBN Cataloging, Shelf Audit, and Virtual Barcode Gun. Available as `ErrinILS-Scanner.apk`.
 - **Direct Cloud Sync & Multi-PC Architecture**:
-  - **User & Student Records (Google Drive Cloud)**: Private student records, active loans, fines, and borrowing history sync directly to Google Drive cloud (`tamanria.sk@gmail.com`) via zero-dependency HTTPS—no Google Drive desktop app or third-party background software required.
+  - **User & Student Records (Google Drive Cloud)**: Private student records, active loans, fines, and borrowing history sync directly to Google Drive cloud (`school.library@gmail.com`) via zero-dependency HTTPS—no Google Drive desktop app or third-party background software required.
   - **Book & Catalog Records (Pustaka Terbuka Data Provider)**: Bibliographic catalog data syncs directly to the GitHub repository [`pustaka-terbuka/sk-taman-ria`](https://github.com/pustaka-terbuka/sk-taman-ria), structured according to the official Pustaka Terbuka Data Provider standard (PPAPP model) with canonical aliases (`data/aliases.jsonl`), partitioned MARCXML (`data/bib/`), holdings (`data/holdings/`), intake batches (`harvest/inbox/`), and standard convenience formats (JSON, CSV, `.mrc`, `.mrk`, `.xml`), ready for central indexing by [`pustaka-terbuka/opac`](https://github.com/pustaka-terbuka/opac). Supports both standard Git CLI and **zero-dependency direct HTTPS REST API pushing** (allowing school netbooks without Git installed to publish updates using a GitHub Personal Access Token).
   - **Multi-Station Support**: Any classroom or library PC running ErrinILS connects to the same cloud data for seamless multi-PC circulation and cataloging.
 
@@ -97,17 +100,20 @@ It covers everyday school library operations: barcode checkouts and returns, cop
 
 ## Comparison
 
-| Feature / Metric | ErrinILS v1.3.3 | Koha ILS | SLiMS (Senayan) | Excel / Spreadsheets |
+| Feature / Metric | ErrinILS v1.4.2 | Koha ILS | SLiMS (Senayan) | Excel / Spreadsheets |
 | :--- | :--- | :--- | :--- | :--- |
 | **Installation** | Single EXE or NSIS installer | Linux server + Perl modules | Apache + PHP + MySQL stack | Spreadsheet file only |
 | **Dependencies** | 0 (.NET 4.0 runtime only) | Hundreds of CPAN packages | PHP, Apache/Nginx, MariaDB | Office suite |
 | **RAM Footprint** | Under 30 MB RAM | 4 GB – 8 GB dedicated | 2 GB – 4 GB RAM | 200 MB – 500 MB |
 | **Database** | Single SQLite database (`errin-data.db`) | MariaDB / MySQL + Zebra | MySQL / MariaDB | None (Flat tabular) |
-| **ISBN Cataloguing** | Built-in 5-source lookup | Z39.50 (server configuration needed) | P2P service / plugins | Manual typing |
+| **ISBN Cataloguing** | Built-in 31-source union lookup | Z39.50 (server configuration needed) | P2P service / plugins | Manual typing |
+| **Mobile Scanner Gun** | Android APK (CameraX ML Kit wedge) | Third-party mobile app | Third-party plugin | None |
+| **Batch Label Printing** | Multi-select barcode & spine labels | Label creator tool | Barcode generator plugin | Custom mail merge |
 | **Simplified View** | Built-in simplified student view | Separate self-checkout module | Third-party web plugin | None |
 | **Malaysian IC / MyKid** | Native validation and birthdate check | Custom regex required | Custom script required | Manual formulas |
+| **Cloud Synchronization**| Dual cloud: Google Drive & GitHub | Complex database replication | Manual SQL dumps | Cloud folder file share |
 | **Hardware** | Runs on older PCs (1 GB RAM) | Modern server hardware | Dedicated web server PC | Modern desktop PC |
-| **Backups** | 1-click ZIP archive or copy JSON file | mysqldump and Zebra re-indexing | MySQL database export | Save copy of file |
+| **Backups** | 1-click ZIP archive or copy DB file | mysqldump and Zebra re-indexing | MySQL database export | Save copy of file |
 
 ---
 
@@ -117,10 +123,11 @@ ErrinILS is structured into cleanly separated modules using only standard .NET F
 
 ```mermaid
 flowchart TD
-    subgraph UI["User Interface"]
+    subgraph UI["User Interface & Mobile"]
         Desk["Librarian Desk\n(MainForm.cs, Ui.cs, Dialogs.cs)"]
         Simple["Simplified View\n(Simple.cs)"]
         Mobile["Mobile Web Interface\n(Web.cs, Vanilla JS)"]
+        Android["Android Companion App\n(ErrinILS-Scanner.apk, ML Kit)"]
     end
 
     subgraph Core["Circulation and Business Logic (Lib.cs)"]
@@ -128,14 +135,16 @@ flowchart TD
         Fines["Overdue Fines Engine\n(RM 0.10/day, Block Threshold)"]
         Rules["Hold Queue and Patron Validation\n(Malaysian IC / MyKid YYMMDD-PB-###G)"]
         Weed["Weeding and Collection Maintenance\n(Damaged, Obsolete, Lost, Duplicate)"]
+        Labels["Batch Label & Spine Generator\n(3.5x1.1 in & 1x1.5 in)"]
     end
 
     subgraph Protocols["Protocols and Lookup Services"]
         Z39["Z39.50 v3 Client and Server\nASN.1 BER Parser (Z3950.cs)"]
         MARC["MARC21 Engine\nISO 2709, MARCXML, MRK (Marc.cs)"]
-        ISBN["5-Source ISBN Resolver\nLOC, OpenLib, Google, Hathi, K10plus (Lookup.cs)"]
+        ISBN["31-Source ISBN Union Resolver\n(Lookup.cs)"]
         QR["ISO/IEC 18004 QR Generator\nLevels 1-10, EC-M (Qr.cs)"]
-        HTTP["HTTP Server\nBinds 0.0.0.0 (Web.cs)"]
+        HTTP["HTTP Server & Wireless Wedge\nBinds 0.0.0.0 /api/wedge (Web.cs)"]
+        CLOUD["Dual Cloud Sync Engine\n(CloudSync.cs)"]
     end
 
     subgraph Storage["Storage and Security"]
@@ -146,10 +155,18 @@ flowchart TD
         AUTH["PBKDF2 / SHA-256 Auth\n(Auth.cs, errin-config.json)"]
     end
 
+    subgraph Remote["Cloud Repositories"]
+        GDRIVE["Google Drive Cloud\n(school.library@gmail.com)"]
+        GITHUB["GitHub Catalog Repo\n(pustaka-terbuka/sk-taman-ria)"]
+    end
+
     UI --> Core
     UI --> Protocols
+    Android -.->|/api/wedge| HTTP
     Core --> Storage
     Protocols --> Storage
+    CLOUD -.-> GDRIVE
+    CLOUD -.-> GITHUB
     SQLITE --> DB
     JSON --> DB
     ZIP --> DB
@@ -162,13 +179,14 @@ flowchart TD
 | Component | Minimum Requirement | Recommended |
 | :--- | :--- | :--- |
 | **Operating System** | Windows 7 SP1 (32-bit or 64-bit) | Windows 10 or Windows 11 (64-bit) |
+| **Companion App** | Android 7.0 (Nougat) with Camera | Android 10+ with CameraX & ML Kit |
 | **Runtime** | Microsoft .NET Framework 4.0 | Microsoft .NET Framework 4.8 *(built into Windows 8+)* |
 | **Processor** | 1.0 GHz x86/x64 | 1.8 GHz or faster |
 | **Memory** | 1 GB RAM *(ErrinILS uses ~25-30 MB)* | 2 GB RAM or higher |
 | **Storage** | 10 MB free space | 50 MB free space *(for catalog data and backups)* |
 | **Display** | 1024 × 600 pixels | 1366 × 768 or higher (High-DPI supported) |
-| **Peripherals** | Mouse and keyboard | USB keyboard-wedge barcode scanner, receipt/label printer |
-| **Network** | Offline *(No internet needed for circulation)* | Wi-Fi / LAN for mobile QR audits and online ISBN lookups |
+| **Peripherals** | Mouse and keyboard | USB keyboard-wedge barcode scanner or Android Companion App |
+| **Network** | Offline *(No internet needed for circulation)* | Wi-Fi / LAN for mobile phone scanner and online ISBN lookups |
 
 > [!NOTE]
 > Windows 8, 8.1, 10, and 11 include .NET Framework out of the box. Windows 7 requires [.NET Framework 4.8](https://dotnet.microsoft.com/download/dotnet-framework/net48) installed once.
@@ -178,7 +196,7 @@ flowchart TD
 ## Quick Start
 
 ### Option 1: Windows Installer
-1. Download `ErrinILS-Setup-1.3.3.exe` from [Releases](https://github.com/RZSY/ErrinILS/releases).
+1. Download `ErrinILS-Setup-1.4.2.exe` from [Releases](https://github.com/RZSY/ErrinILS/releases).
 2. Double-click the installer and follow the wizard steps.
    *(If Windows SmartScreen appears, click "More info", then "Run anyway".)*
 3. Open ErrinILS from the Start menu or desktop icon.
@@ -187,6 +205,12 @@ flowchart TD
 1. Download `ErrinILS-Windows.zip` or the standalone `ErrinILS.exe`.
 2. Extract or copy the file to any folder (or a USB flash drive).
 3. Run `ErrinILS.exe`.
+
+### Option 3: Android Companion App (ErrinILS Scanner)
+1. Download `ErrinILS-Scanner-v1.4.2.apk` onto your Android phone or tablet.
+2. Tap the APK to install (enable "Install unknown apps" if prompted).
+3. In ErrinILS desktop, go to **Settings → Remote Access** and click **Pair New Device**.
+4. Tap **Scan QR to Pair** in the mobile app, then use **Virtual Barcode Gun** to beam scanned barcodes directly into your PC's active cursor!
 
 ---
 
@@ -282,7 +306,7 @@ chmod +x build.sh
 ### Windows Installer (NSIS)
 
 ```cmd
-makensis -V2 -DVERSION=1.3.3 ErrinILS-source\installer.nsi
+makensis -V2 -DVERSION=1.4.2 ErrinILS-source\installer.nsi
 ```
 
 ---
@@ -297,15 +321,18 @@ d:/errin/
 ├── LICENSE                       # MIT License
 ├── docs/                         # Documentation site and user guide
 │   ├── index.html                # Overview page
-│   ├── guide.html                # 19-chapter user manual
+│   ├── guide.html                # 19-chapter user manual & flowcharts
 │   ├── about.html                # System architecture notes
 │   ├── download.html             # Downloads and checksums
 │   └── assets/                   # Screenshots and PDF manual
-├── dist/                         # Compiled packages
-│   ├── ErrinILS-Setup-1.3.3.exe  # Windows installer
+├── dist/                         # Compiled release packages
+│   ├── ErrinILS-Setup-1.4.2.exe  # Windows installer
 │   ├── ErrinILS-Windows.zip      # Portable ZIP archive
+│   ├── ErrinILS-Scanner-v1.4.2.apk # Android companion APK
 │   └── ErrinILS.exe              # Standalone executable
-└── ErrinILS-source/              # Source code
+├── ErrinILS-Android/             # Native Android companion app
+│   └── app/src/main/             # Kotlin Jetpack Compose & ML Kit
+└── ErrinILS-source/              # C# source code
     ├── icon.ico                  # Application icon
     ├── installer.nsi             # NSIS script
     ├── build.sh                  # Mono build script

@@ -17,6 +17,7 @@ namespace Errin
         public string ReleaseNotes = "";
         public string ReleaseUrl = "";
         public string DownloadUrl = "";
+        public string FileName = "";
         public string Error = "";
     }
 
@@ -25,6 +26,16 @@ namespace Errin
         public const string RepoOwner = "RZSY";
         public const string RepoName = "ErrinILS";
         public const string ApiUrl = "https://api.github.com/repos/RZSY/ErrinILS/releases/latest";
+
+        public static bool IsInstalled()
+        {
+            try
+            {
+                string p = Process.GetCurrentProcess().MainModule.FileName.ToLowerInvariant();
+                return p.Contains("program files") || p.Contains("program files (x86)");
+            }
+            catch { return false; }
+        }
 
         public static string GetCurrentVersion()
         {
@@ -39,13 +50,13 @@ namespace Errin
 
             try
             {
-                // Ensure modern TLS (TLS 1.2, 1.1, 1.0)
-                ServicePointManager.SecurityProtocol = (SecurityProtocolType)(192 | 768 | 3072);
+                // Ensure modern TLS (TLS 1.3, TLS 1.2, 1.1, 1.0)
+                ServicePointManager.SecurityProtocol = (SecurityProtocolType)(192 | 768 | 3072 | 12288);
 
                 var req = (HttpWebRequest)WebRequest.Create(ApiUrl);
                 req.UserAgent = "ErrinILS-Updater/" + currentVersion;
-                req.Timeout = 10000;
-                req.ReadWriteTimeout = 10000;
+                req.Timeout = 15000;
+                req.ReadWriteTimeout = 15000;
 
                 string jsonStr;
                 using (var resp = (HttpWebResponse)req.GetResponse())
@@ -67,21 +78,63 @@ namespace Errin
                 info.ReleaseNotes = Json.Str(root, "body");
                 info.ReleaseUrl = Json.Str(root, "html_url");
 
-                // Find download URL for ErrinILS.exe or installer
+                // Categorize release assets (prefer installer for installed app, standalone exe for portable)
+                string setupUrl = null, setupName = null;
+                string exeUrl = null, exeName = null;
                 var assets = Json.Arr(root, "assets");
                 foreach (var aObj in assets)
                 {
                     var a = aObj as Dictionary<string, object>;
                     if (a == null) continue;
-                    string name = Json.Str(a, "name").ToLowerInvariant();
-                    if (name.EndsWith(".exe") || name.EndsWith(".zip"))
+                    string name = Json.Str(a, "name");
+                    string lower = name.ToLowerInvariant();
+                    string url = Json.Str(a, "browser_download_url");
+
+                    if (lower.EndsWith(".exe"))
                     {
-                        info.DownloadUrl = Json.Str(a, "browser_download_url");
-                        if (name.Contains("setup") || name.Contains("errinils")) break;
+                        if (lower.Contains("setup"))
+                        {
+                            setupUrl = url;
+                            setupName = name;
+                        }
+                        else if (lower.Contains("errinils") || lower == "errinils.exe")
+                        {
+                            exeUrl = url;
+                            exeName = name;
+                        }
                     }
                 }
 
+                bool installed = IsInstalled();
+                if (installed && !string.IsNullOrEmpty(setupUrl))
+                {
+                    info.DownloadUrl = setupUrl;
+                    info.FileName = setupName;
+                }
+                else if (!string.IsNullOrEmpty(exeUrl))
+                {
+                    info.DownloadUrl = exeUrl;
+                    info.FileName = exeName;
+                }
+                else if (!string.IsNullOrEmpty(setupUrl))
+                {
+                    info.DownloadUrl = setupUrl;
+                    info.FileName = setupName;
+                }
+
                 info.HasUpdate = IsNewer(cleanTag, currentVersion);
+            }
+            catch (WebException wex)
+            {
+                var resp = wex.Response as HttpWebResponse;
+                if (resp != null && (int)resp.StatusCode == 403)
+                {
+                    info.Error = "GitHub API rate limit reached. Please visit releases page directly.";
+                }
+                else
+                {
+                    info.Error = wex.Message;
+                }
             }
             catch (Exception ex)
             {
@@ -121,17 +174,18 @@ namespace Errin
         /// <summary>Downloads update file to destination with progress updates.</summary>
         public static void DownloadFile(string url, string destPath, Action<int> onProgress)
         {
-            ServicePointManager.SecurityProtocol = (SecurityProtocolType)(192 | 768 | 3072);
+            ServicePointManager.SecurityProtocol = (SecurityProtocolType)(192 | 768 | 3072 | 12288);
             var req = (HttpWebRequest)WebRequest.Create(url);
             req.UserAgent = "ErrinILS-Updater";
-            req.Timeout = 30000;
+            req.Timeout = 60000;
+            req.AllowAutoRedirect = true;
 
             using (var resp = req.GetResponse())
             using (var inStream = resp.GetResponseStream())
             using (var outStream = File.Create(destPath))
             {
                 long total = resp.ContentLength;
-                byte[] buf = new byte[8192];
+                byte[] buf = new byte[16384];
                 long downloaded = 0;
                 int read;
                 while ((read = inStream.Read(buf, 0, buf.Length)) > 0)
@@ -152,29 +206,38 @@ namespace Errin
         {
             string currentExe = Process.GetCurrentProcess().MainModule.FileName;
             string ext = Path.GetExtension(newExePath).ToLowerInvariant();
+            string fileName = Path.GetFileName(newExePath).ToLowerInvariant();
 
-            if (newExePath.ToLowerInvariant().Contains("setup") || ext == ".msi")
+            if (fileName.Contains("setup") || ext == ".msi")
             {
-                // Run the setup installer directly and exit
-                Process.Start(newExePath);
+                // Run the setup installer directly with ShellExecute so UAC elevation is prompted if needed
+                Process.Start(new ProcessStartInfo { FileName = newExePath, UseShellExecute = true });
                 Environment.Exit(0);
                 return;
             }
 
-            // Standalone executable replacement script
+            // Standalone executable replacement script with bounded retry counter
             string batPath = Path.Combine(Path.GetTempPath(), "errin-update-" + Guid.NewGuid().ToString("N") + ".cmd");
             string bat = string.Format(
                 "@echo off\r\n" +
+                "set /a count=0\r\n" +
                 "timeout /t 1 /nobreak > nul\r\n" +
                 ":retry\r\n" +
-                "copy /y \"{0}\" \"{1}\" > nul\r\n" +
+                "set /a count+=1\r\n" +
+                "copy /y \"{0}\" \"{1}\" > nul 2>&1\r\n" +
                 "if errorlevel 1 (\r\n" +
+                "  if %count% geq 10 goto fail\r\n" +
                 "  timeout /t 1 /nobreak > nul\r\n" +
                 "  goto retry\r\n" +
                 ")\r\n" +
                 "start \"\" \"{1}\"\r\n" +
-                "del \"{0}\"\r\n" +
-                "del \"%~f0\"\r\n",
+                "del \"{0}\" > nul 2>&1\r\n" +
+                "del \"%~f0\" > nul 2>&1\r\n" +
+                "exit /b 0\r\n" +
+                ":fail\r\n" +
+                "start explorer.exe /select,\"{0}\"\r\n" +
+                "del \"%~f0\" > nul 2>&1\r\n" +
+                "exit /b 1\r\n",
                 newExePath, currentExe);
 
             File.WriteAllText(batPath, bat, Encoding.ASCII);

@@ -221,6 +221,20 @@ namespace Errin
         {
             if (g.SelectedRows.Count == 0) return null; return g.SelectedRows[0].Tag as T;
         }
+        public static List<T> AllSel<T>(DataGridView g) where T : class
+        {
+            var list = new List<T>();
+            if (g == null || g.SelectedRows.Count == 0) return list;
+            var rows = new List<DataGridViewRow>();
+            foreach (DataGridViewRow r in g.SelectedRows) rows.Add(r);
+            rows.Sort((a, b) => a.Index.CompareTo(b.Index));
+            foreach (var r in rows)
+            {
+                var t = r.Tag as T;
+                if (t != null) list.Add(t);
+            }
+            return list;
+        }
 
         /* ---------- dialogs ---------- */
         public static Form Dlg(string title, int w, int h)

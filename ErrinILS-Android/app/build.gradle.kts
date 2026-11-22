@@ -11,8 +11,8 @@ android {
     applicationId = "org.errin.scanner"
     minSdk = 24
     targetSdk = 36
-    versionCode = 141
-    versionName = "1.4.1"
+    versionCode = 142
+    versionName = "1.4.2"
   }
 
   buildTypes {

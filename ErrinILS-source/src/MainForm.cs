@@ -427,6 +427,7 @@ namespace Errin
             var btnRow = Ui.Flow(true);
             btnRow.Margin = Ui.S(new Padding(0, 6, 0, 0));
             btnRow.Controls.Add(Ui.Btn("+ Add record", 0, (s, e) => ItemForm(null)));
+            btnRow.Controls.Add(Ui.Btn("Batch label printing", 1, (s, e) => BatchLabelDialog(Ui.AllSel<Item>(catGrid))));
             btnRow.Controls.Add(Ui.Btn("Batch ISBN lookup", 1, (s, e) => BatchLookupDialog()));
             btnRow.Controls.Add(Ui.Btn("Import MARC", 1, (s, e) => PickImport()));
             btnRow.Controls.Add(Ui.Btn("Sync with GitHub", 1, (s, e) => DoSyncCatalog()));
@@ -450,30 +451,58 @@ namespace Errin
             };
             filterRow.SizeChanged += (s, e) => updateToolH();
             btnRow.SizeChanged += (s, e) => updateToolH();
-            catGrid = Ui.Grid(); catNote = Ui.Lbl("", true);
+            catGrid = Ui.Grid();
+            catGrid.MultiSelect = true;
+            catNote = Ui.Lbl("", true);
             catGrid.CellDoubleClick += (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i != null) ItemForm(i); };
             catGrid.KeyDown += (s, e) => {
                 if (e.KeyCode == Keys.Enter) { var i = Ui.Sel<Item>(catGrid); if (i != null) { e.SuppressKeyPress = true; ItemForm(i); } }
-                else if (e.KeyCode == Keys.Delete) { var i = Ui.Sel<Item>(catGrid); if (i != null) { e.SuppressKeyPress = true; DelItem(i); } }
+                else if (e.KeyCode == Keys.Delete) {
+                    var list = Ui.AllSel<Item>(catGrid);
+                    if (list.Count > 1) { e.SuppressKeyPress = true; DelItems(list); }
+                    else if (list.Count == 1) { e.SuppressKeyPress = true; DelItem(list[0]); }
+                }
+                else if (e.Control && e.KeyCode == Keys.A) {
+                    e.SuppressKeyPress = true;
+                    catGrid.SelectAll();
+                }
             };
 
             var cm = new ContextMenuStrip();
-            cm.Items.Add("Edit Record...", null, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i != null) ItemForm(i); });
-            cm.Items.Add("Circulation History...", null, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i != null) ItemHistoryDialog(i); });
-            cm.Items.Add("Weed / Withdraw...", null, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i != null) WeedDialog(i); });
-            cm.Items.Add("View MARC 21...", null, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i != null) MarcView(i); });
-            cm.Items.Add(new ToolStripSeparator());
-            cm.Items.Add("Print Item Label", null, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i != null) LabelDialog(i); });
-            cm.Items.Add("Print Spine Label", null, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i != null) SpineDialog(i); });
-            cm.Items.Add(new ToolStripSeparator());
-            cm.Items.Add("Delete Record", null, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i != null) DelItem(i); });
+            cm.Opening += (s, e) => {
+                var sel = Ui.AllSel<Item>(catGrid);
+                cm.Items.Clear();
+                if (sel.Count > 1)
+                {
+                    cm.Items.Add(string.Format("Batch Label Printing ({0} items)...", sel.Count), null, (cs, ce) => BatchLabelDialog(sel));
+                    cm.Items.Add(string.Format("Print Item Labels ({0} items)...", sel.Count), null, (cs, ce) => BatchLabelDialog(sel, false));
+                    cm.Items.Add(string.Format("Print Spine Labels ({0} items)...", sel.Count), null, (cs, ce) => BatchLabelDialog(sel, true));
+                    cm.Items.Add(new ToolStripSeparator());
+                    cm.Items.Add(string.Format("Delete {0} Records...", sel.Count), null, (cs, ce) => DelItems(sel));
+                }
+                else
+                {
+                    cm.Items.Add("Edit Record...", null, (cs, ce) => { var i = Ui.Sel<Item>(catGrid); if (i != null) ItemForm(i); });
+                    cm.Items.Add("Circulation History...", null, (cs, ce) => { var i = Ui.Sel<Item>(catGrid); if (i != null) ItemHistoryDialog(i); });
+                    cm.Items.Add("Weed / Withdraw...", null, (cs, ce) => { var i = Ui.Sel<Item>(catGrid); if (i != null) WeedDialog(i); });
+                    cm.Items.Add("View MARC 21...", null, (cs, ce) => { var i = Ui.Sel<Item>(catGrid); if (i != null) MarcView(i); });
+                    cm.Items.Add(new ToolStripSeparator());
+                    cm.Items.Add("Batch Label Printing...", null, (cs, ce) => BatchLabelDialog(sel));
+                    cm.Items.Add("Print Item Label", null, (cs, ce) => { var i = Ui.Sel<Item>(catGrid); if (i != null) LabelDialog(i); });
+                    cm.Items.Add("Print Spine Label", null, (cs, ce) => { var i = Ui.Sel<Item>(catGrid); if (i != null) SpineDialog(i); });
+                    cm.Items.Add(new ToolStripSeparator());
+                    cm.Items.Add("Delete Record", null, (cs, ce) => { var i = Ui.Sel<Item>(catGrid); if (i != null) DelItem(i); });
+                }
+            };
             catGrid.ContextMenuStrip = cm;
             catGrid.MouseDown += (s, e) => {
                 if (e.Button == MouseButtons.Right) {
                     var hit = catGrid.HitTest(e.X, e.Y);
                     if (hit.RowIndex >= 0 && hit.RowIndex < catGrid.Rows.Count) {
-                        catGrid.ClearSelection();
-                        catGrid.Rows[hit.RowIndex].Selected = true;
+                        if (!catGrid.Rows[hit.RowIndex].Selected) {
+                            catGrid.ClearSelection();
+                            catGrid.Rows[hit.RowIndex].Selected = true;
+                        }
                     }
                 }
             };
@@ -503,9 +532,24 @@ namespace Errin
                 Ui.Btn("Edit", 1, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i == null) Toast("Select a record first"); else ItemForm(i); }),
                 Ui.Btn("Weed", 1, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i == null) Toast("Select a record first"); else WeedDialog(i); }),
                 Ui.Btn("MARC", 1, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i == null) Toast("Select a record first"); else MarcView(i); }),
-                Ui.Btn("Label", 1, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i == null) Toast("Select a record first"); else LabelDialog(i); }),
-                Ui.Btn("Spine label", 1, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i == null) Toast("Select a record first"); else SpineDialog(i); }),
-                Ui.Btn("Delete", 2, (s, e) => { var i = Ui.Sel<Item>(catGrid); if (i == null) Toast("Select a record first"); else DelItem(i); })
+                Ui.Btn("Label", 1, (s, e) => {
+                    var sel = Ui.AllSel<Item>(catGrid);
+                    if (sel.Count > 1) BatchLabelDialog(sel, false);
+                    else if (sel.Count == 1) LabelDialog(sel[0]);
+                    else Toast("Select one or more records first");
+                }),
+                Ui.Btn("Spine label", 1, (s, e) => {
+                    var sel = Ui.AllSel<Item>(catGrid);
+                    if (sel.Count > 1) BatchLabelDialog(sel, true);
+                    else if (sel.Count == 1) SpineDialog(sel[0]);
+                    else Toast("Select one or more records first");
+                }),
+                Ui.Btn("Delete", 2, (s, e) => {
+                    var sel = Ui.AllSel<Item>(catGrid);
+                    if (sel.Count > 1) DelItems(sel);
+                    else if (sel.Count == 1) DelItem(sel[0]);
+                    else Toast("Select a record first");
+                })
             };
             catPager = new PagerBar();
             catPager.PageChanged += (s, e) => FilterCat();
@@ -638,8 +682,27 @@ namespace Errin
             if (!AskPw()) return;
             if (Ui.Confirm(this, "Delete this record?")) { db.Items.Remove(i); Commit(null); }
         }
+        void DelItems(List<Item> items)
+        {
+            if (items == null || items.Count == 0) return;
+            var onLoan = items.Where(i => lib.OpenLoan(i.id) != null).ToList();
+            if (onLoan.Count > 0)
+            {
+                Toast(string.Format("{0} item(s) are currently on loan and cannot be deleted", onLoan.Count));
+                return;
+            }
+            if (!AskPw()) return;
+            if (Ui.Confirm(this, string.Format("Delete {0} selected record(s) permanently?", items.Count)))
+            {
+                foreach (var i in items) db.Items.Remove(i);
+                Commit(null);
+                Toast(string.Format("Deleted {0} record(s)", items.Count));
+            }
+        }
         void PrintSpines()
         {
+            var sel = Ui.AllSel<Item>(catGrid);
+            if (sel.Count > 1) { BatchLabelDialog(sel, true); return; }
             int n = shown.Count(i => SpineArt.Lines(i.call).Count > 0);
             if (n == 0) { Toast("No items with a call number to print"); return; }
             int skip = shown.Count - n;
@@ -647,6 +710,8 @@ namespace Errin
         }
         void PrintShown()
         {
+            var sel = Ui.AllSel<Item>(catGrid);
+            if (sel.Count > 1) { BatchLabelDialog(sel, false); return; }
             if (shown.Count == 0) { Toast("No items to print"); return; }
             if (Ui.Confirm(this, "Print labels for " + shown.Count + " item(s)?\nUse the search box first to choose which items.")) { if (Labels.Print(this, shown, 1)) Toast("Sent to printer"); }
         }
@@ -693,8 +758,24 @@ namespace Errin
             bf.Controls.Add(Ui.Btn("+ Register student", 0, (s, e) => PatForm()));
             bf.Controls.Add(Ui.Btn("Batch import (Excel / CSV)", 1, (s, e) => BatchPatronDialog()));
             bar.Controls.Add(bf);
-            patGrid = Ui.Grid(); patNote = Ui.Lbl("", true);
+            patGrid = Ui.Grid();
+            patGrid.MultiSelect = true;
+            patNote = Ui.Lbl("", true);
             patGrid.CellDoubleClick += (s, e) => { var p = Ui.Sel<Patron>(patGrid); if (p != null) PatView(p); };
+            patGrid.KeyDown += (s, e) => {
+                if (e.Control && e.KeyCode == Keys.A) { e.SuppressKeyPress = true; patGrid.SelectAll(); }
+            };
+            patGrid.MouseDown += (s, e) => {
+                if (e.Button == MouseButtons.Right) {
+                    var hit = patGrid.HitTest(e.X, e.Y);
+                    if (hit.RowIndex >= 0 && hit.RowIndex < patGrid.Rows.Count) {
+                        if (!patGrid.Rows[hit.RowIndex].Selected) {
+                            patGrid.ClearSelection();
+                            patGrid.Rows[hit.RowIndex].Selected = true;
+                        }
+                    }
+                }
+            };
             patGrid.CellFormatting += (s, e) => {
                 if (e.RowIndex < 0 || e.Value == null) return;
                 if (e.ColumnIndex == 4 && e.Value.ToString() != "0") { e.CellStyle.ForeColor = Th.Yel; e.CellStyle.Font = Th.FB; }
@@ -716,7 +797,18 @@ namespace Errin
             var body = WithButtonsAndPager(patGrid, patPager,
                 Ui.Btn("Account", 1, (s, e) => { var p = Ui.Sel<Patron>(patGrid); if (p == null) Toast("Select a student first"); else PatView(p); }),
                 Ui.Btn("Edit", 1, (s, e) => { var p = Ui.Sel<Patron>(patGrid); if (p == null) Toast("Select a student first"); else PatForm(p); }),
-                Ui.Btn("Print library card", 0, (s, e) => { var p = Ui.Sel<Patron>(patGrid); if (p == null) Toast("Select a student first"); else CardDialog(p); }),
+                Ui.Btn("Print library card", 0, (s, e) => {
+                    var sel = Ui.AllSel<Patron>(patGrid);
+                    if (sel.Count > 1) {
+                        if (Ui.Confirm(this, "Print library cards for " + sel.Count + " selected student(s)?")) {
+                            if (PrintCardList(sel)) Toast("Sent to printer");
+                        }
+                    } else if (sel.Count == 1) {
+                        CardDialog(sel[0]);
+                    } else {
+                        Toast("Select a student first");
+                    }
+                }),
                 Ui.Btn("Print cards for list", 1, (s, e) => PrintCards()),
                 Ui.Btn("Delete", 2, (s, e) => { var p = Ui.Sel<Patron>(patGrid); if (p == null) Toast("Select a student first"); else DelPat(p); }));
             return Ui.Stack(new Control[] { Ui.Heading("Students", "Register students with their IC number, print library cards and manage accounts. Inactive records are deactivated after " + Lib.RET_YEARS + " years."), Ui.Card(null, bar), patNote, Ui.Card("Students", body, 1) }, 3);
@@ -762,9 +854,14 @@ namespace Errin
         List<Patron> shownPat = new List<Patron>();
         void PrintCards()
         {
-            if (shownPat.Count == 0) { Toast("No students to print"); return; }
-            if (!Ui.Confirm(this, "Print library cards for " + shownPat.Count + " student(s) in the list?\nUse the search box first to choose a class or a single student.")) return;
-            if (PrintCardList(shownPat)) Toast("Sent to printer");
+            var sel = Ui.AllSel<Patron>(patGrid);
+            var target = (sel.Count > 1) ? sel : shownPat;
+            if (target.Count == 0) { Toast("No students to print"); return; }
+            string prompt = sel.Count > 1
+                ? "Print library cards for " + sel.Count + " selected student(s)?"
+                : "Print library cards for " + shownPat.Count + " student(s) in the list?\nUse the search box first to choose a class or select multiple students.";
+            if (!Ui.Confirm(this, prompt)) return;
+            if (PrintCardList(target)) Toast("Sent to printer");
         }
         bool PrintCardList(List<Patron> list) { string sch = db.Set.school; return Labels.PrintSheet(this, list, CardArt.W, CardArt.H, 40, (g, x, y, p) => CardArt.Draw(g, x, y, p, sch), "ErrinILS library cards"); }
         void DelPat(Patron p)
@@ -2612,7 +2709,9 @@ namespace Errin
                     bWeb.Enabled = false;
                     bClose.Enabled = false;
                     prog.Visible = true;
-                    string dest = Path.Combine(Path.GetTempPath(), "ErrinILS-v" + info.LatestVersion + ".exe");
+                    string fileName = !string.IsNullOrEmpty(info.FileName) ? info.FileName : Path.GetFileName(new Uri(info.DownloadUrl).LocalPath);
+                    if (string.IsNullOrEmpty(fileName)) fileName = "ErrinILS-v" + info.LatestVersion + ".exe";
+                    string dest = Path.Combine(Path.GetTempPath(), fileName);
                     ThreadPool.QueueUserWorkItem(stateObj => {
                         try {
                             Updater.DownloadFile(info.DownloadUrl, dest, pct => {

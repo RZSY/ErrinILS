@@ -1,8 +1,8 @@
 # ErrinILS School Library System
 ## User Manual and Operating Guidelines
-**Installation, daily circulation, cataloguing, students, fines, weeding, remote access, reports, backup and administration**  
-**Software Version 1.3.3 (Windows Edition)**  
-*For Windows 7, 8, 8.1, 10 and 11 (32-bit and 64-bit)*  
+**Installation, daily circulation, cataloguing, students, fines, weeding, remote access, reports, backup, Android scanner, and administration**  
+**Software Version 1.4.2 (Windows Edition &amp; Android Companion)**  
+*For Windows 7, 8, 8.1, 10 and 11 (32-bit and 64-bit) &amp; Android 7.0+*  
 *Official Repository: https://github.com/RZSY/ErrinILS*  
 *Online Portal: https://rzsy.github.io/ErrinILS/*
 
@@ -17,17 +17,18 @@
    - 1.4 Which chapters you need
    - 1.5 Conventions used in this manual
 2. [System Requirements & Hardware Guidelines](#2-system-requirements--hardware-guidelines)
-   - 2.1 System Requirements Matrix
+   - 2.1 System Requirements Matrix (Windows & Android)
    - 2.2 Display Resolution & High-DPI Sharpness
    - 2.3 Barcode Scanners & Wedge Input
    - 2.4 Label Printers & Paper Sheets
 3. [Installing, Updating and Starting ErrinILS](#3-installing-updating-and-starting-errinils)
    - 3.1 Installing with the Setup program
    - 3.2 Running without installing (portable copy & USB drives)
-   - 3.3 Upgrading to a newer version
-   - 3.4 Uninstalling
-   - 3.5 Where your data is stored (`%APPDATA%\Errin`)
-   - 3.6 Single-instance execution mutex
+   - 3.3 Installing the Android Companion App (APK)
+   - 3.4 Upgrading to a newer version (Automatic Self-Updater)
+   - 3.5 Uninstalling
+   - 3.6 Where your data is stored (`%APPDATA%\Errin`)
+   - 3.7 Single-instance execution mutex
 4. [Getting Started & Initial Configuration](#4-getting-started--initial-configuration)
    - 4.1 The first time you run it (Sample data)
    - 4.2 A tour of the window
@@ -53,6 +54,7 @@
    - 7.6 The Current loans list
    - 7.7 The Holds queue
    - 7.8 Complete circulation error messages reference
+   - 7.9 Flowchart: Daily Circulation & Loan Processing Workflow
 8. [The Simplified View](#8-the-simplified-view)
    - 8.1 Purpose & design for young students
    - 8.2 Opening and leaving Simplified View
@@ -62,17 +64,19 @@
    - 8.6 Student-friendly messages reference
 9. [The Catalog & Copy-Cataloguing](#9-the-catalog--copy-cataloguing)
    - 9.1 The Catalog page layout
-   - 9.2 Searching the catalogue
+   - 9.2 Searching the catalogue & Subject Heading filtering
    - 9.3 Adding a record by hand
-   - 9.4 5-Source ISBN Copy-Cataloguing (LOC, OpenLib, Google, Hathi, K10plus)
+   - 9.4 31-Source ISBN Union Copy-Cataloguing
    - 9.5 Field reference (MARC 21 mapping)
    - 9.6 Editing a catalogue record
    - 9.7 Viewing MARC records
    - 9.8 Deleting a record
    - 9.9 Importing MARC records (.mrc, .xml, .mrk, .txt)
    - 9.10 Searching other libraries (Z39.50)
-   - 9.11 Printing barcode labels
-   - 9.12 Printing spine labels
+   - 9.11 Flowchart: 31-Source Copy-Cataloging Pipeline
+   - 9.12 Batch Label & Spine Printing with Multi-Selection
+   - 9.13 Flowchart: Batch Label Printing & Multi-Selection Workflow
+   - 9.14 Item Circulation History
 10. [Students & Patron Management](#10-students--patron-management)
     - 10.1 The Students page
     - 10.2 Registering a student
@@ -95,13 +99,20 @@
     - 12.4 Filtering active vs weeded copies
     - 12.5 Restoring weeded items to active circulation
     - 12.6 Permanent deletion vs weeding
-13. [Remote Access, QR Code Pairing & Mobile Web App](#13-remote-access-qr-code-pairing--mobile-web-app)
+13. [Remote Access, Android Scanner, Web OPAC & Cloud Sync](#13-remote-access-android-scanner-web-opac--cloud-sync)
     - 13.1 Architecture & network connectivity
     - 13.2 Enabling the remote web server
     - 13.3 Instant QR Code & 6-digit PIN pairing
     - 13.4 Using phone camera as a wireless barcode scanner
     - 13.5 Managing paired devices & token security
-    - 13.6 Network interfaces: Multi-Wi-Fi, hotspots, and Tailscale
+    - 13.6 Online Public Access Catalog (OPAC)
+    - 13.7 Optional Patron Self-Service Login
+    - 13.8 1-Click Static OPAC Export for GitHub Pages
+    - 13.9 Android Companion App (ErrinILS Scanner) & Wireless Wedge Gun
+    - 13.10 Flowchart: Android Companion App & Wireless Wedge Architecture
+    - 13.11 Remote Access Copy-Cataloging (Mobile ISBN Lookup)
+    - 13.12 Dual Cloud Synchronization Architecture (Google Drive & GitHub)
+    - 13.13 Flowchart: Dual Cloud Synchronization Architecture
 14. [Reports, Reading Champions & Analytics](#14-reports-reading-champions--analytics)
     - 14.1 Executive metrics & library participation
     - 14.2 Reading Champions leaderboard (Nilam awards)
@@ -113,16 +124,18 @@
     - 15.1 Why back up & disaster scenarios
     - 15.2 Making a backup (JSON & built-in ZIP archive)
     - 15.3 Restoring from a backup
-    - 15.4 Moving to a new computer
-    - 15.5 Recommended backup habits (3-2-1 strategy)
+    - 15.4 Database Optimization & Vacuuming
+    - 15.5 Moving to a new computer
+    - 15.6 Recommended backup habits (3-2-1 strategy)
 16. [Settings and Administration](#16-settings-and-administration)
     - 16.1 Opening Settings
     - 16.2 Configuring library policies
     - 16.3 Changing the administrator password
-    - 16.4 Data retention settings
-    - 16.5 Exporting the catalogue to another system
-    - 16.6 The Z39.50 server (Optional network sharing)
-    - 16.7 The local database path
+    - 16.4 Automatic Software Updates (Self-Updater)
+    - 16.5 Data retention settings
+    - 16.6 Exporting the catalogue to another system
+    - 16.7 The Z39.50 server (Optional network sharing)
+    - 16.8 The local database path
 17. [Recommended Operational Routines](#17-recommended-operational-routines)
     - 17.1 Every day the library is open
     - 17.2 Every week
@@ -445,6 +458,53 @@ Columns: **Title**, **Reserving Student**, **Date Placed**, and **Status** (`Wai
 | `Renewal limit (2) reached` | Book was already renewed twice. | Return the book to the library. |
 | `Cannot renew: item has a hold` | Another reader is waiting for this title. | Return the book for the next reader. |
 
+### 7.9 Flowchart: Daily Circulation & Loan Processing Workflow
+
+The following flowchart illustrates the operational decision logic and refusal validation sequence executed during checkouts, returns, and renewals:
+
+```mermaid
+flowchart TD
+  Start(["Reader Arrives at Circulation Desk"]) --> ScanAction{"What action is needed?"}
+  
+  ScanAction -->|Check Out Book| ScanIC["Scan Student Card / Enter IC Number"]
+  ScanIC --> CheckPatron{"Is Student Registered & Active?"}
+  CheckPatron -->|No| BlockReg["Refuse: Student not found. Register in Students tab."]
+  CheckPatron -->|Yes| CheckOverdue{"Any Overdue Books on Account?"}
+  CheckOverdue -->|Yes| BlockOverdue["Refuse: Student has overdue items."]
+  CheckOverdue -->|No| CheckFines{"Unpaid Fines >= RM 5.00 Threshold?"}
+  CheckFines -->|Yes| BlockFines["Refuse: Blocked due to unpaid fines."]
+  CheckFines -->|No| CheckLimit{"Already Borrowed Max Books (3)?"}
+  CheckLimit -->|Yes| BlockLimit["Refuse: Loan limit reached."]
+  CheckLimit -->|No| ScanBook["Scan Physical Book Barcode"]
+  
+  ScanBook --> CheckBook{"Is Book Available on Shelf?"}
+  CheckBook -->|Already Out| BlockBookOut["Refuse: Item already checked out."]
+  CheckBook -->|On Hold for Other| BlockHold["Refuse: Reserved for another reader."]
+  CheckBook -->|Available| CommitLoan["Record Active Loan (Due in 7 Days)"]
+  CommitLoan --> ConfirmSuccess(["Display Toast Confirmation & Hand Book to Student"])
+  
+  ScanAction -->|Return Book| ScanReturn["Scan Book Barcode in Return Box"]
+  ScanReturn --> CheckLoan{"Is Book Currently on Loan?"}
+  CheckLoan -->|No| ReturnErr["Notice: Item is not on loan. Reshelve book."]
+  CheckLoan -->|Yes| CheckDays{"Returned After Due Date?"}
+  CheckDays -->|On Time| CloseLoan["Close Loan: Record Return Timestamp"]
+  CheckDays -->|Overdue| AssessFine["Calculate Overdue Days x RM 0.10 & Create Fine"] --> CloseLoan
+  CloseLoan --> CheckResQueue{"Is Another Student in Hold Queue?"}
+  CheckResQueue -->|Yes| AlertHold["Flash Alert: Hold ready for Reserving Student. Place on Reserve Shelf."]
+  CheckResQueue -->|No| ReadyShelf["Reshelve Book in General Stacks"]
+  AlertHold --> CompleteReturn(["Transaction Complete"])
+  ReadyShelf --> CompleteReturn
+  
+  ScanAction -->|Renew Book| ScanRenew["Scan Book or Select in Current Loans -> Click Renew"]
+  ScanRenew --> CheckRenewOverdue{"Is Book Overdue?"}
+  CheckRenewOverdue -->|Yes| BlockRenewOverdue["Refuse: Overdue items cannot be renewed."]
+  CheckRenewOverdue -->|No| CheckRenewCount{"Already Renewed 2 Times?"}
+  CheckRenewCount -->|Yes| BlockRenewLimit["Refuse: Renewal limit reached."]
+  CheckRenewCount -->|No| CheckRenewHold{"Does Book Have Waiting Hold?"}
+  CheckRenewHold -->|Yes| BlockRenewHold["Refuse: Cannot renew - item is reserved."]
+  CheckRenewHold -->|No| ExtendLoan["Extend Due Date +7 Days from Today"] --> ConfirmSuccess
+```
+
 ---
 
 ## 8. The Simplified View
@@ -518,18 +578,17 @@ ErrinILS provides dual search inputs and subject sorting for efficient collectio
 2. Fill in **Title** (required), **Author**, **ISBN**, **Publisher**, **Year**, and **Call Number**.
 3. Click **Save**. The record is immediately active.
 
-### 9.4 5-Source ISBN Copy-Cataloguing
-Save 95% of cataloguing time with automated multi-source copy-cataloguing:
-1. Click **+ Add record**.
+### 9.4 31-Source ISBN Union Copy-Cataloguing
+Save 95% of cataloguing time with automated multi-source copy-cataloguing across 31 free Malaysian and international library union archives:
+1. Click **+ Add record** (or use the **[📖 Copy-Cataloging]** button in the Remote Access web interface).
 2. Scan the book's 10-digit or 13-digit ISBN barcode into the **Copy cataloguing** box.
 3. Click **Look up** (or press <kbd>Enter</kbd>).
-4. ErrinILS queries 5 international bibliographic archives simultaneously in priority sequence:
-   - **1. Library of Congress (LOC)**: Native ASN.1 BER over Z39.50 v3 (`lx2.loc.gov:210`).
-   - **2. Open Library**: Global community database via JSON REST API.
-   - **3. Google Books API**: Massive commercial database with summaries and publication dates.
-   - **4. HathiTrust Digital Library**: Academic union catalogue via MARCXML retrieval.
-   - **5. K10plus German Union Catalogue**: SRU MARCXML gateway for international acquisitions.
-5. The title, subtitle, author, publisher, publication date, pages, subjects, and Dewey Decimal classification are auto-populated.
+4. ErrinILS queries 31 bibliographic archives in prioritized sequence:
+   - **Tier 1: Malaysian Union & National Shards**: Pustaka Terbuka Union (`sk-taman-ria`, `ppapp`), Katalog Induk Kebangsaan (KIK National Union), Perpustakaan Negara Malaysia (PNM Clarivate Vega Discover API), and u-Pustaka.
+   - **Tier 2: 14 State Public Libraries**: Selangor (PPAS), Penang (PPAP), Perak, Kedah, Perlis, Johor, Kelantan, Terengganu, Pahang, Negeri Sembilan, Melaka, Sarawak, Sabah, Kuala Lumpur (PKL), Putrajaya, and Labuan.
+   - **Tier 3: Academic Union & Heritage Archives**: MALCat Union (PERPUN/JKPUA), Universiti Malaya (UM Pendeta Discovery), UKM Tun Seri Lanang, UiTM PTAR Network, UPSI, and Dewan Bahasa dan Pustaka (DBP).
+   - **Tier 4: International Archives**: Library of Congress (LOC ASN.1 BER Z39.50 v3), Open Library REST API, Google Books API, HathiTrust Digital Library (MARCXML), and K10plus German Union Catalogue (SRU MARCXML).
+5. The title, subtitle, author, publisher, publication date, pages, subjects, and Dewey Decimal classification are automatically populated with source attribution.
 6. Verify the shelf **Call number** and click **Save**.
 
 ### 9.5 Field reference (MARC 21 mapping)
@@ -557,7 +616,7 @@ Select any row and click **Edit** (or double-click the row). Modify any field an
 Select any book and click **MARC**. ErrinILS displays the raw MARC 21 record line-by-line with tags, indicators, and subfield delimiters (e.g. `245 10 $a Charlie and the chocolate factory / $c by Roald Dahl`).
 
 ### 9.8 Deleting a record
-Select an item and click **Delete**. A book currently on loan cannot be deleted (*"Item is on loan"*). Deleting requires the administrator password. Past loans of deleted books remain in student histories marked as `(deleted)`.
+Select an item and click **Delete** (or press <kbd>Delete</kbd> with multiple items selected). A book currently on loan cannot be deleted (*"Item is on loan"*). Deleting requires the administrator password. Past loans of deleted books remain in student histories marked as `(deleted)`.
 
 ### 9.9 Importing MARC records
 To import books from another school library or book supplier:
@@ -573,14 +632,116 @@ To import books from another school library or book supplier:
 3. Search by **ISBN**, **Title**, **Author**, or **Keyword**.
 4. Select any result and click **Add selected to catalogue**. A new accession record is created immediately.
 
-### 9.11 Printing barcode labels
-- **Individual Book**: Select the book and click **Label**. Set copies (1–50) and click **Print**.
-- **Batch Printing**: Filter the list by search keyword, click **Print labels** at the top, and confirm.
-- Labels are formatted at **70 × 30 mm** featuring call number, book title, and crisp Code 128 barcode.
+### 9.11 Flowchart: 31-Source Copy-Cataloging Pipeline
 
-### 9.12 Printing spine labels
-- Formatted at **25 × 38 mm (1 × 1.5 in)** displaying the Dewey Decimal call number split across lines in large, bold font.
-- Click **Spine label** for one book, or **Print spine labels** for batch printing.
+```mermaid
+flowchart TD
+  InputScan(["Scan / Enter ISBN Barcode"]) --> CleanISBN["Normalize ISBN: Strip Hyphens & Validate 10/13 Checksum"]
+  CleanISBN --> CacheCheck{"Present in Local SQLite Catalog?"}
+  CacheCheck -->|Yes| LocalFound["Return Existing Bibliographic Record (Add Copy / Barcode)"]
+  
+  CacheCheck -->|No| Tier1["Query Tier 1: Malaysian Union & National Shards"]
+  Tier1 --> PustakaTerbuka["1. Pustaka Terbuka Union Shards (SKTR, PPAPP)"]
+  Tier1 --> KIK["2. Katalog Induk Kebangsaan (KIK National Union)"]
+  Tier1 --> PNM["3. Perpustakaan Negara Malaysia (Clarivate Vega API)"]
+  Tier1 --> UPustaka["4. u-Pustaka National Information Hub"]
+  
+  PustakaTerbuka & KIK & PNM & UPustaka --> CheckTier1{"Record Found in Tier 1?"}
+  CheckTier1 -->|Yes| ParseMARC["Extract MARC21 Tags (245 Title, 100 Author, 260 Pub, 082 DDC, 650 Subject)"]
+  
+  CheckTier1 -->|No| Tier2["Query Tier 2: 14 Malaysian State Public Libraries"]
+  Tier2 --> StateLibs["PPAS Selangor, PPAP Penang, Perak, Kedah, Perlis, Johor, Kelantan, Terengganu, Pahang, Negeri Sembilan, Melaka, Sarawak, Sabah, KL, Putrajaya, Labuan"]
+  StateLibs --> CheckTier2{"Record Found in State Libraries?"}
+  CheckTier2 -->|Yes| ParseMARC
+  
+  CheckTier2 -->|No| Tier3["Query Tier 3: Academic Union & Heritage Institutes"]
+  Tier3 --> MALCat["MALCat Union, UM Pendeta, UKM Tun Seri Lanang, UiTM PTAR, UPSI, DBP Archives"]
+  Tier3 --> CheckTier3{"Record Found in Tier 3?"}
+  CheckTier3 -->|Yes| ParseMARC
+  
+  CheckTier3 -->|No| Tier4["Query Tier 4: International Union & Metadata Repositories"]
+  Tier4 --> LOC["Library of Congress (Z39.50 lx2.loc.gov:210)"]
+  Tier4 --> OpenLib["Open Library REST API"]
+  Tier4 --> GoogleBooks["Google Books API"]
+  Tier4 --> Hathi["HathiTrust Digital Library (MARCXML)"]
+  Tier4 --> K10plus["K10plus German Union (SRU MARCXML)"]
+  
+  LOC & OpenLib & GoogleBooks & Hathi & K10plus --> CheckTier4{"Record Found in Tier 4?"}
+  CheckTier4 -->|Yes| ParseMARC
+  CheckTier4 -->|No| PromptManual["All 31 Sources Exhausted: Prompt Manual Entry Form"]
+  
+  ParseMARC --> PopulateForm["Auto-Populate Catalog Dialog Fields & Set Attribution Badge"]
+  PopulateForm --> LibrarianVerify["Librarian Verifies Call Number & Shelf Barcode"]
+  LibrarianVerify --> SaveCatalog(["Commit to SQLite Database (Active in Catalog)"])
+```
+
+### 9.12 Batch Label & Spine Printing with Multi-Selection
+
+ErrinILS includes a high-throughput **Batch Label & Spine Printing** engine:
+1. **Multi-Selection**:
+   - In the Catalog table, select multiple rows using standard Windows shortcuts:
+     - <kbd>Ctrl</kbd> + <kbd>A</kbd>: Select all items currently displayed in the grid.
+     - <kbd>Shift</kbd> + Click: Select a contiguous block of books.
+     - <kbd>Ctrl</kbd> + Click: Select or unselect individual items.
+     - Right-click context menu preserves all highlighted rows and exposes batch printing commands.
+2. **Opening the Batch Dialog**:
+   - Click the top toolbar button **Batch label printing** (or select multiple rows and click bottom **Label** or **Spine label**).
+   - The `BatchLabelDialog` launches with the selected items pre-loaded.
+3. **Configuration Options**:
+   - **Scope Selector**:
+     - *Selected items only (N)*: Prints only the records currently highlighted in the table.
+     - *Current search / page (N)*: Prints all items matching the active filter or grid page.
+     - *All active catalog (N)*: Prints labels for every non-weeded book in the library.
+   - **Label Format**:
+     - *Item Barcode Label (3.5" × 1.1")*: Includes School/Library Name, Call Number, Book Title, and crisp Code 128 barcode.
+     - *Spine Call Number Label (1" × 1.5")*: High-contrast Dewey classification split into large, stacked lines for shelf spine readability.
+   - **Copies per Record**: Adjust from 1 to 50 copies for printing multiple labels per cataloged copy.
+   - **Skip Items without Call Number**: Automatically excludes unclassified books from spine label batches to prevent blank labels.
+4. **Live Antialiased Preview**:
+   - The dialog renders an antialiased preview of the actual printable label.
+   - Use **Prev Item** and **Next Item** buttons to cycle through the queue and verify formatting.
+5. **Print Execution**: Click **Print** to open the standard Windows Print Dialog and send output to any desktop sheet printer or dedicated thermal label printer.
+
+### 9.13 Flowchart: Batch Label Printing & Multi-Selection Workflow
+
+```mermaid
+flowchart TD
+  CatalogView(["Catalog Grid (Active Collection)"]) --> SelectMethod{"How to Select Items?"}
+  
+  SelectMethod -->|Ctrl+A| SelectAll["Select All Items in View"]
+  SelectMethod -->|Shift-Click / Multi-Row| SelectSubset["Select Discontiguous / Range of Items"]
+  SelectMethod -->|Search Filter| FilterGrid["Filter by Subject / Author / Call Number"]
+  
+  SelectAll & SelectSubset & FilterGrid --> TriggerPrint{"Trigger Print Action"}
+  TriggerPrint -->|Batch Label Button| OpenBatchDlg["Launch BatchLabelDialog(SelectedItems)"]
+  TriggerPrint -->|Bottom 'Label' Button| CheckMulti1{"Multiple Rows Selected?"}
+  CheckMulti1 -->|Yes| OpenBatchDlg
+  CheckMulti1 -->|Single| OpenSingleBarcode["Single Item Barcode Dialog"]
+  TriggerPrint -->|Bottom 'Spine' Button| CheckMulti2{"Multiple Rows Selected?"}
+  CheckMulti2 -->|Yes| OpenBatchSpine["Launch BatchLabelDialog(initialSpine=true)"]
+  CheckMulti2 -->|Single| OpenSingleSpine["Single Item Spine Dialog"]
+  
+  OpenBatchDlg & OpenBatchSpine --> ConfigureBatch["Configure Batch Print Options"]
+  ConfigureBatch --> ScopeSelect["Select Scope: Selected Rows | Current Page/Search | All Active Catalog"]
+  ConfigureBatch --> FormatSelect["Select Format: Item Barcode (3.5x1.1 in) | Spine Call Number (1x1.5 in)"]
+  ConfigureBatch --> CopiesSelect["Set Copies per Record (1 - 50)"]
+  ConfigureBatch --> SkipMissing["Toggle 'Skip Items without Call Number'"]
+  
+  ConfigureBatch --> LivePreview["Interactive Antialiased Preview Panel"]
+  LivePreview --> CyclePrevNext["Cycle Prev / Next Item to Inspect Layout & Wrapping"]
+  CyclePrevNext --> ExecutePrint["Click 'Print' Button"]
+  
+  ExecutePrint --> WindowsPrintMgr["Open Native Windows PrintDialog"]
+  WindowsPrintMgr --> SendToPrinter(["Output to Desktop Sheet Printer or Dedicated Label Printer"])
+```
+
+### 9.14 Item Circulation History
+Select any catalog item and click **Item History** (or right-click → **Circulation History**). The `ItemHistoryDialog` displays every historical transaction for that book:
+- Student Name and Malaysian IC / MyKid.
+- Class / Cohort at time of borrowing.
+- Loan checkout date, due date, and actual return timestamp.
+- Days overdue and any fines assessed or collected.
+- Exportable to CSV for collection audit trails.
 
 ---
 
@@ -739,6 +900,131 @@ Schools can publish their OPAC 24/7 on the internet for free without needing a d
 3. Create a free GitHub repository (e.g. `school-library-opac`), upload the exported files, and enable GitHub Pages under repository settings.
 4. The OPAC runs 100% client-side with full in-browser search and subject filtering with zero server hosting costs.
 
+### 13.9 Android Companion App (ErrinILS Scanner) & Wireless Wedge Gun
+The **ErrinILS Scanner** Android app (`ErrinILS-Scanner-v1.4.2.apk`) transforms any standard Android smartphone or tablet into an enterprise wireless barcode terminal without buying dedicated hardware:
+1. **Installation & Setup**:
+   - Download `ErrinILS-Scanner-v1.4.2.apk` onto the phone.
+   - Tap to install (enable "Install unknown apps" if prompted).
+   - In ErrinILS desktop, open **Settings → Remote Access & Device Pairing** and click **Pair New Device**.
+   - Launch ErrinILS Scanner on Android, tap **Scan QR to Pair**, and scan the QR code displayed on the computer monitor.
+   - The device is cryptographically authenticated and permanently authorized.
+2. **Core Scanning Modes**:
+   - **Virtual Barcode Gun (`/api/wedge`)**: Direct wireless keystroke emulator. Point the phone camera at any book barcode or student library card; the scanned string is beamed over Wi-Fi directly into whatever text box has focus on your PC, automatically appending an `Enter` keystroke. Check out 50 books in minutes while walking around the desk!
+   - **Shelf Stocktaking / Audit**: Scan books shelf-by-shelf. Instantly verifies whether copies are accounted for, missing, or in the wrong Dewey classification order.
+   - **Mobile Copy-Cataloging**: Scan book ISBN barcodes in storage rooms. The phone queries 31 union catalog archives and saves records directly into the catalog.
+   - **Standalone Mobile Circulation**: Issue and return books directly on the phone screen without touching the PC.
+3. **Continuous CameraX ML Kit Engine**: Uses hardware-accelerated machine learning for sub-second recognition of 1D barcodes (EAN-13, UPC, Code 128, Code 39) and 2D QR codes even on damaged or curled book covers.
+
+### 13.10 Flowchart: Android Companion App & Wireless Wedge Architecture
+
+```mermaid
+flowchart TD
+  subgraph AndroidDevice["Android Companion Device (ErrinILS-Scanner.apk)"]
+    Camera["CameraX Video Stream (Back Camera + Torch)"]
+    MLKit["Google ML Kit Barcode Analyzer (1D/2D EAN/Code128/QR)"]
+    AppUI["Jetpack Compose UI & Mode Selector"]
+    Modes{"Selected Mode"}
+    
+    Modes -->|Virtual Barcode Gun| GunMode["Wedge Gun Mode: Beam Scans to Active PC Field"]
+    Modes -->|Shelf Audit| AuditMode["Audit Mode: Verify Inventory Shelf-by-Shelf"]
+    Modes -->|ISBN Cataloging| CatMode["Copy-Catalog Mode: Mobile 31-Source Lookup"]
+    Modes -->|Direct Borrow / Return| CircMode["Mobile Circulation Mode"]
+  end
+  
+  subgraph LocalNetwork["Local Wi-Fi / Hotspot Network (HTTP / TCP)"]
+    WedgeReq["POST /api/wedge {barcode: '...'}"]
+    PairReq["POST /api/pair {pin: '849201'}"]
+    ApiReq["GET/POST /api/items, /api/loans (Bearer Token)"]
+  end
+  
+  subgraph WindowsHost["ErrinILS Windows Host (ErrinILS.exe)"]
+    HttpSrv["Pure C# Web.cs (TcpListener on 0.0.0.0:8080)"]
+    TokenAuth["Auth & Device Pairing Token Registry"]
+    SendKeys["SendKeys / Windows Message Input Simulator"]
+    ActiveWin["Active Window Focus (Circulation Desk, Catalog, etc.)"]
+    SqliteDB[("%APPDATA%\\Errin\\errin-data.db")]
+  end
+  
+  Camera --> MLKit --> AppUI --> Modes
+  GunMode --> WedgeReq
+  PairReq --> TokenAuth
+  WedgeReq --> HttpSrv --> TokenAuth --> SendKeys --> ActiveWin
+  CircMode & CatMode & AuditMode --> ApiReq --> HttpSrv --> TokenAuth --> SqliteDB
+```
+
+### 13.11 Remote Access Copy-Cataloging
+Librarians cataloging books away from the main circulation desk can use the browser-based Remote Access SPA:
+1. Open the remote web app on a phone, tablet, or laptop and navigate to the **Catalog** tab.
+2. Tap the dedicated **[📖 Copy-Cataloging]** button in the top toolbar.
+3. Type or scan an ISBN barcode.
+4. Select from the 31 available union catalog sources or leave on "All Priority Sources".
+5. Click **Search**. ErrinILS fetches the full bibliographic card (Title, Subtitle, Author, Publisher, Year, DDC, Subjects).
+6. Tap **+ Save to Catalog** for instant addition or **✏️ Edit in Full Form** to customize call numbers and barcode tags.
+
+### 13.12 Dual Cloud Synchronization Architecture
+ErrinILS features an enterprise-grade dual-cloud architecture separating private student data from open catalog records with zero third-party software:
+1. **Private Student & Circulation Records (Google Drive Cloud)**:
+   - Student records contain sensitive personal identifiable information (MyKid/IC numbers, birthdates, addresses, parent contacts, active loans, and fines).
+   - ErrinILS communicates directly with the Google Drive v3 REST API over TLS HTTPS using direct HTTP calls—no Google Drive desktop application or background sync utility is needed.
+   - Configured by default for official school library accounts (`school.library@gmail.com`).
+2. **Public Bibliographic Catalog Data (GitHub Pustaka Terbuka)**:
+   - Book catalog records are public domain educational data.
+   - Directly synchronizes with the school's GitHub repository (e.g. `pustaka-terbuka/sk-taman-ria`), strictly structured to the **Pustaka Terbuka Data Provider standard (PPAPP model)**.
+   - Includes canonical Base32 record aliases (`data/aliases.jsonl`), partitioned MARCXML shards (`data/bib/`), holdings registers (`data/holdings/`), and multi-format exports (MARC 21 `.mrc`, MARCXML `.xml`, MarcEdit `.mrk`, and JSON).
+   - **Zero-Dependency Git Support**: Operates via standard `git.exe` CLI if installed, or pushes commits, trees, and blobs directly over HTTPS using the GitHub REST API (`PushViaApi`) requiring only a Personal Access Token.
+3. **Multi-PC Workstation Parity**:
+   - Any classroom, lab, or circulation desk PC running ErrinILS connects to the same cloud accounts.
+   - Checkouts on Station A sync immediately, preventing double loans on Station B.
+   - If the internet goes offline, ErrinILS continues normal offline circulation against its local SQLite database (`errin-data.db`), queueing cloud sync until connectivity returns.
+
+### 13.13 Flowchart: Dual Cloud Synchronization Architecture
+
+```mermaid
+flowchart TD
+  subgraph StationA["Classroom Workstation A (ErrinILS Desktop)"]
+    A_UI["Librarian / Teacher Interface"]
+    A_DB[("Local SQLite Database\nerrin-data.db")]
+    A_Sync["CloudSync Engine (CloudSync.cs)"]
+  end
+
+  subgraph CloudStorage["Dual Cloud Repositories"]
+    subgraph PrivateCloud["Google Drive Cloud (Private & Encrypted)"]
+      GDrive["Google Drive v3 REST API\nschool.library@gmail.com"]
+      GDriveFiles["users.json (Patrons, Loans, Holds, Fines, History)"]
+    end
+    
+    subgraph PublicCloud["GitHub Open Data (Pustaka Terbuka Union)"]
+      GHRepo["GitHub Git Database API / Git CLI\npustaka-terbuka/sk-taman-ria"]
+      GHFiles["data/bib/, aliases.jsonl, holdings/SKTR.csv, catalog.mrc/xml/json"]
+    end
+  end
+
+  subgraph StationB["Library Desk Workstation B (ErrinILS Desktop)"]
+    B_Sync["CloudSync Engine (CloudSync.cs)"]
+    B_DB[("Local SQLite Database\nerrin-data.db")]
+    B_UI["Circulation & Catalog Interface"]
+  end
+
+  subgraph MobileScanner["Android Mobile Scanner (ErrinILS Scanner)"]
+    Mob_Sync["Standalone Cloud Sync (Drive + GitHub)"]
+  end
+
+  A_UI --> A_DB
+  A_DB --> A_Sync
+  A_Sync -->|Direct HTTPS REST Push / Pull| GDrive
+  A_Sync -->|Git Push / GitHub Git Database API| GHRepo
+  
+  GDrive --> GDriveFiles
+  GHRepo --> GHFiles
+  
+  GDriveFiles -->|Direct HTTPS Pull / Sync| B_Sync
+  GHFiles -->|Git Pull / REST Fetch| B_Sync
+  B_Sync --> B_DB --> B_UI
+  
+  GDriveFiles <-->|Direct Cloud Sync| Mob_Sync
+  GHFiles <-->|Direct Catalog Fetch| Mob_Sync
+```
+
 ---
 
 ## 14. Reports, Reading Champions & Analytics
@@ -798,13 +1084,22 @@ Your library records are kept on the library computer. If the hard drive suffers
 5. Review the confirmation warning: *"Replace ALL current data with this backup?"*. Click **Yes**.
 6. The database is restored and verified immediately.
 
-### 15.4 Moving to a new computer
+### 15.4 Database Optimization & Vacuuming
+Over months of high-volume borrowing and book additions/deletions, SQLite databases accumulate unused space and index fragmentation:
+1. In the **Backup** or **Settings** tab, click **Optimize Database (Vacuum)**.
+2. ErrinILS runs a three-phase maintenance sequence:
+   - `PRAGMA integrity_check;`: Verifies all B-tree structures, relational keys, and internal table pages.
+   - `PRAGMA optimize;`: Analyzes query execution plans and re-indexes hot tables.
+   - `VACUUM;`: Reclaims all deleted record space and defragments the `.db` file into a compact, contiguous file on disk.
+3. The dialog confirms reclaimed space and integrity validation.
+
+### 15.5 Moving to a new computer
 1. On the old computer, export a backup to a USB thumb drive.
 2. Install ErrinILS on the new computer.
 3. Open the **Backup** tab on the new computer and click **Restore from backup**.
 4. All catalogued books, students, loans, and settings transfer seamlessly.
 
-### 15.5 Recommended backup habits (3-2-1 strategy)
+### 15.6 Recommended backup habits (3-2-1 strategy)
 - **Daily**: Allow the automatic backup (`errin-data.db.bak`) to protect against sudden power cuts.
 - **Weekly**: Export a backup `.zip` to an external USB flash drive every Friday afternoon.
 - **Termly**: Upload a copy of the backup archive to official school cloud storage (Google Drive or OneDrive).
@@ -829,10 +1124,23 @@ Click the **Settings** tab. When prompted, enter the administrator password. The
 2. Enter the **New password** (minimum 4 characters) and re-type in **Confirm password**.
 3. Click **Change password**. Store the new password in the school principal's office safe.
 
-### 16.4 Data retention settings
+### 16.4 Automatic Software Updates (Self-Updater)
+ErrinILS includes an automated, resilient self-updating engine:
+1. **Checking for Updates**:
+   - In the top menu bar or **Settings**, click **Check for Updates**.
+   - ErrinILS establishes a secure TLS 1.3 connection to the official GitHub Releases API.
+   - If a new version is available, the release version, publication date, and changelog are displayed.
+2. **One-Click Update Installation**:
+   - Click **Update Now**.
+   - ErrinILS automatically detects whether the current copy is an installed version (under `Program Files`) or a portable executable.
+   - For installed copies, it downloads the NSIS installer (`ErrinILS-Setup-...exe`) and requests proper Windows UAC elevation.
+   - For portable desktop or USB copies, it downloads the standalone binary (`ErrinILS.exe`), verifies integrity, spawns an automated replacement batch script with up to 10 bounded retries, and restarts the application seamlessly.
+   - All library data in `%APPDATA%\Errin\errin-data.db` is 100% preserved.
+
+### 16.5 Data retention settings
 Displays the automated 5-year inactive patron purge policy and provides the **Purge Inactive Data** button for annual audit cleanup.
 
-### 16.5 Exporting the catalogue to another system
+### 16.6 Exporting the catalogue to another system
 If your school ever transitions to another system (e.g. Koha, Follett Destiny, or Alma), you can export your entire collection without vendor lock-in:
 - **Download Full Export (.zip)**: Exports your entire catalogue in 5 standard formats:
   1. `catalog.mrc`: Binary ISO 2709 MARC 21 standard.
@@ -841,14 +1149,14 @@ If your school ever transitions to another system (e.g. Koha, Follett Destiny, o
   4. `catalog.json`: Structured MARC-in-JSON.
   5. `catalog.csv`: Spreadsheet table.
 
-### 16.6 The Z39.50 server (Optional network sharing)
+### 16.7 The Z39.50 server (Optional network sharing)
 Allows other libraries on your school district network to search your catalogue:
 - **Server**: On / Off toggle.
 - **Port**: Network port (default: `210`).
 - **Database Name**: Identifier for remote clients (default: `errin`).
 - **Reachable From**: *This computer only* (localhost) or *Other computers* (LAN).
 
-### 16.7 The local database path
+### 16.8 The local database path
 Displays the exact file path where your active database is stored (`%APPDATA%\Errin\errin-data.db`).
 
 ---

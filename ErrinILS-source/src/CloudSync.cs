@@ -1,6 +1,6 @@
 // Zero-dependency Cloud Sync Manager for ErrinILS.
 // Manages:
-// 1. Direct Cloud User Records Sync (Patrons, Loans, Holds, Fines, Settings) for tamanria.sk@gmail.com
+// 1. Direct Cloud User Records Sync (Patrons, Loans, Holds, Fines, Settings) for school.library@gmail.com
 //    - Directly connects to Google Drive cloud over HTTPS without installing any Google Drive apps or 3rd-party software.
 //    - Supports Google Apps Script Web App direct cloud endpoint and Google Drive REST API v3 (OAuth / Bearer token).
 // 2. Books and Catalog Data Sync via GitHub repository (pustaka-terbuka/sk-taman-ria).
@@ -21,7 +21,7 @@ namespace Errin
     public class SyncConfig
     {
         // Google Cloud Direct Sync
-        public string googleAccount = "tamanria.sk@gmail.com";
+        public string googleAccount = "school.library@gmail.com";
         public string googleCloudEndpoint = "";
         public string googleClientId = "";
         public string googleClientSecret = "";
@@ -56,7 +56,7 @@ namespace Errin
         public Dictionary<string, object> ToJ()
         {
             var d = new Dictionary<string, object>();
-            d["googleAccount"] = googleAccount ?? "tamanria.sk@gmail.com";
+            d["googleAccount"] = googleAccount ?? "school.library@gmail.com";
             d["googleCloudEndpoint"] = googleCloudEndpoint ?? "";
             d["googleClientId"] = googleClientId ?? "";
             d["googleClientSecret"] = googleClientSecret ?? "";
@@ -81,7 +81,7 @@ namespace Errin
             var c = new SyncConfig();
             if (d == null) return c;
             c.googleAccount = Json.Str(d, "googleAccount");
-            if (string.IsNullOrEmpty(c.googleAccount)) c.googleAccount = "tamanria.sk@gmail.com";
+            if (string.IsNullOrEmpty(c.googleAccount)) c.googleAccount = "school.library@gmail.com";
             c.googleCloudEndpoint = Json.Str(d, "googleCloudEndpoint");
             c.googleClientId = Json.Str(d, "googleClientId");
             c.googleClientSecret = Json.Str(d, "googleClientSecret");
@@ -124,13 +124,13 @@ namespace Errin
     }
 
     /// <summary>
-    /// Direct Cloud Google Drive Synchronization for tamanria.sk@gmail.com.
+    /// Direct Cloud Google Drive Synchronization for school.library@gmail.com.
     /// Operates directly over HTTPS without requiring any installed Google Drive applications or 3rd-party software.
     /// </summary>
     public static class GoogleDriveCloudSync
     {
-        public const string DefaultTargetAccount = "tamanria.sk@gmail.com";
-        public const string DefaultCloudFolderName = "ErrinILS - SK Taman Ria";
+        public const string DefaultTargetAccount = "school.library@gmail.com";
+        public const string DefaultCloudFolderName = "ErrinILS - School Library";
         public const string UsersJsonName = "users_data.json";
 
         /// <summary>
@@ -213,7 +213,7 @@ function doGet(e) {{
 
         public static string AppsScriptTemplate
         {
-            get { return GenerateAppsScript("SK Taman Ria", "tamanria.sk@gmail.com"); }
+            get { return GenerateAppsScript("School Library", "school.library@gmail.com"); }
         }
 
         /// <summary>
@@ -222,7 +222,7 @@ function doGet(e) {{
         public static string BuildUsersJson(Db db, string targetAccount = null)
         {
             var root = new Dictionary<string, object>();
-            string sName = string.IsNullOrEmpty(db.Set.school) ? "SK Taman Ria" : db.Set.school;
+            string sName = string.IsNullOrEmpty(db.Set.school) ? "School Library" : db.Set.school;
             string acct = !string.IsNullOrEmpty(targetAccount) ? targetAccount :
                 (CloudSyncManager.Instance != null && CloudSyncManager.Instance.Config != null && !string.IsNullOrEmpty(CloudSyncManager.Instance.Config.googleAccount) ? CloudSyncManager.Instance.Config.googleAccount : DefaultTargetAccount);
             var meta = new Dictionary<string, object>
@@ -1666,7 +1666,7 @@ test('{1} inbox passes validation', async () => {{
 
             string sourceCode = repoName.ToLowerInvariant();
             string orgCode = DeriveOrgCode(sName, repoName);
-            string contactEmail = "tamanria.sk@gmail.com";
+            string contactEmail = "school.library@gmail.com";
             if (CloudSyncManager.Instance != null && CloudSyncManager.Instance.Config != null && !string.IsNullOrEmpty(CloudSyncManager.Instance.Config.googleAccount))
             {
                 contactEmail = CloudSyncManager.Instance.Config.googleAccount;
@@ -2379,7 +2379,7 @@ test('{1} inbox passes validation', async () => {{
 
         /// <summary>
         /// Performs complete multi-PC synchronization:
-        /// 1. Google Drive Cloud: user records for tamanria.sk@gmail.com (No desktop app needed).
+        /// 1. Google Drive Cloud: user records for school.library@gmail.com (No desktop app needed).
         /// 2. GitHub: books and catalog data (pustaka-terbuka/sk-taman-ria).
         /// 3. Saves combined state into local SQLite database.
         /// </summary>
@@ -2391,7 +2391,7 @@ test('{1} inbox passes validation', async () => {{
                 var res = new SyncResult();
                 try
                 {
-                    // 1. Google Drive Cloud Sync (Users for tamanria.sk@gmail.com)
+                    // 1. Google Drive Cloud Sync (Users for school.library@gmail.com)
                     var userRes = GoogleDriveCloudSync.Sync(db, Config, false);
 
                     // 2. GitHub Sync (Catalog for pustaka-terbuka/sk-taman-ria)

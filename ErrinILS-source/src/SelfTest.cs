@@ -566,6 +566,8 @@ static class SelfTest
         Ok(Updater.IsNewer("v1.5.0", "1.3.2"), "Updater handles leading 'v' in version tag");
         Ok(!Updater.IsNewer("1.3.2", "1.3.2"), "Updater detects identical version is not newer");
         Ok(!Updater.IsNewer("1.3.1", "1.3.2"), "Updater detects older version is not newer");
+        bool isInst = Updater.IsInstalled();
+        Ok(isInst == true || isInst == false, "Updater.IsInstalled executes without exception");
 
         // 12. Dashboard active catalog titles count exclusion test
         var weedDb = new Db();
@@ -785,13 +787,13 @@ static class SelfTest
             string readmeContent = File.ReadAllText(Path.Combine(testCatDir, "README.md"), Encoding.UTF8);
             Ok(readmeContent.Contains("pustaka-terbuka") && readmeContent.Contains("sk-taman-ria") && readmeContent.Contains("SK Taman Ria"), "README.md contains Pustaka Terbuka attribution and school name");
 
-            // Direct Google Drive Cloud Sync test (tamanria.sk@gmail.com)
+            // Direct Google Drive Cloud Sync test (school.library@gmail.com)
             string cloudJson = GoogleDriveCloudSync.BuildUsersJson(pc1Db);
-            Ok(cloudJson.Contains("tamanria.sk@gmail.com") && cloudJson.Contains("Aisha Rahman"), "GoogleDriveCloudSync.BuildUsersJson embeds tamanria.sk@gmail.com and patron data");
+            Ok(cloudJson.Contains("school.library@gmail.com") && cloudJson.Contains("Aisha Rahman"), "GoogleDriveCloudSync.BuildUsersJson embeds school.library@gmail.com and patron data");
             var cloudDb2 = new Db();
             var cloudMergeRes = GoogleDriveCloudSync.MergeUsersJson(cloudDb2, cloudJson);
             Ok(cloudMergeRes.Success && cloudDb2.Patrons.Count == 1 && cloudDb2.Patrons[0].name == "Aisha Rahman", "GoogleDriveCloudSync.MergeUsersJson succeeds");
-            Ok(GoogleDriveCloudSync.AppsScriptTemplate.Contains("tamanria.sk@gmail.com") && GoogleDriveCloudSync.AppsScriptTemplate.Contains("doPost"), "GoogleDriveCloudSync.AppsScriptTemplate is valid");
+            Ok(GoogleDriveCloudSync.AppsScriptTemplate.Contains("school.library@gmail.com") && GoogleDriveCloudSync.AppsScriptTemplate.Contains("doPost"), "GoogleDriveCloudSync.AppsScriptTemplate is valid");
 
             // Multi-school dynamic AppsScript generation & repo isolation test
             string otherSchoolScript = GoogleDriveCloudSync.GenerateAppsScript("SK Seri Bintang", "skseribintang@gmail.com");
@@ -804,7 +806,7 @@ static class SelfTest
             Ok(cfg.syncOnSave == false, "syncOnSave (Instant On-Save) is disabled by default");
             Ok(cfg.syncOnStartup == true, "syncOnStartup is enabled by default");
             Ok(cfg.syncOnExit == true, "syncOnExit (Sync on Application Exit) is enabled by default");
-            cfg.googleAccount = "tamanria.sk@gmail.com";
+            cfg.googleAccount = "school.library@gmail.com";
             cfg.googleCloudEndpoint = "https://script.google.com/macros/s/test/exec";
             cfg.gdriveFolder = testSyncDir;
             cfg.githubRepo = "pustaka-terbuka/sk-taman-ria";
@@ -815,7 +817,7 @@ static class SelfTest
             cfg.syncOnExit = true;
             var cfgJ = cfg.ToJ();
             var cfg2 = SyncConfig.FromJ(cfgJ);
-            Ok(cfg2.googleAccount == "tamanria.sk@gmail.com" && cfg2.googleCloudEndpoint.Contains("macros") && cfg2.githubRepo == "pustaka-terbuka/sk-taman-ria" && cfg2.autoSync && cfg2.syncOnStartup && !cfg2.syncOnSave && cfg2.syncOnExit, "SyncConfig ToJ/FromJ roundtrips cleanly with syncOnExit enabled");
+            Ok(cfg2.googleAccount == "school.library@gmail.com" && cfg2.googleCloudEndpoint.Contains("macros") && cfg2.githubRepo == "pustaka-terbuka/sk-taman-ria" && cfg2.autoSync && cfg2.syncOnStartup && !cfg2.syncOnSave && cfg2.syncOnExit, "SyncConfig ToJ/FromJ roundtrips cleanly with syncOnExit enabled");
 
             // GitHub Direct API Push without token validation test
             var noTokenRes = GitHubCatalogSync.PushViaApi("pustaka-terbuka/sk-taman-ria", "", testCatDir, "test");

@@ -25,7 +25,7 @@
       <a href="index.html" class="brand-link">
         <img src="assets/icon.png" alt="ErrinILS Logo" class="brand-icon">
         <span>ErrinILS</span>
-        <span class="brand-badge">v1.3.3</span>
+        <span class="brand-badge">v1.4.2</span>
       </a>
 
       <button class="mobile-menu-btn" aria-label="Toggle navigation" aria-expanded="false">☰</button>
@@ -39,7 +39,7 @@
 
       <div class="nav-actions">
         <button class="theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme"></button>
-        <a href="download.html" class="btn btn-primary btn-sm">Download v1.3.3</a>
+        <a href="download.html" class="btn btn-primary btn-sm">Download v1.4.2</a>
       </div>
     </div>
   </header>
@@ -110,18 +110,17 @@
         <!-- Feature 1 -->
         <div class="card">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-            <h3 class="card-title" style="margin-bottom: 0;">5-Source ISBN Copy-Cataloguing</h3>
-            <span class="badge badge-gold">AUTOMATED</span>
+            <h3 class="card-title" style="margin-bottom: 0;">31-Source ISBN Copy-Cataloguing</h3>
+            <span class="badge badge-gold">31 SOURCES</span>
           </div>
           <p class="card-text">
-            Adding new books takes seconds instead of minutes. Scan an ISBN-10 or ISBN-13 barcode, and ErrinILS queries 5 international bibliographic sources in priority sequence:
+            Adding new books takes seconds instead of minutes. Scan an ISBN barcode, and ErrinILS queries 31 free Malaysian and international library sources in priority sequence:
           </p>
           <ul class="step-list" style="margin-left: 16px;">
-            <li><strong>1. Library of Congress:</strong> Native ASN.1 BER over Z39.50 v3 (<code>lx2.loc.gov:210</code>).</li>
-            <li><strong>2. Open Library:</strong> Modern REST API with full bibliographic JSON parsing.</li>
-            <li><strong>3. Google Books API:</strong> Global ISBN database with publisher descriptions and dates.</li>
-            <li><strong>4. HathiTrust:</strong> Academic union catalogue via MARCXML retrieval.</li>
-            <li><strong>5. K10plus German Union:</strong> SRU MARCXML service for international acquisitions.</li>
+            <li><strong>Malaysian Union &amp; National:</strong> Pustaka Terbuka Union, KIK (National Union), Perpustakaan Negara Malaysia (PNM Clarivate Discover), and u-Pustaka.</li>
+            <li><strong>State Public Libraries (14 States):</strong> Selangor (PPAS), Penang (PPAP), Perak, Kedah, Perlis, Johor, Kelantan, Terengganu, Pahang, Negeri Sembilan, Melaka, Sarawak, Sabah, Kuala Lumpur, Putrajaya, and Labuan.</li>
+            <li><strong>Academic &amp; Heritage:</strong> MALCat Union, Universiti Malaya (UM), UKM Tun Seri Lanang, UiTM PTAR, UPSI, and Dewan Bahasa dan Pustaka (DBP).</li>
+            <li><strong>International Archives:</strong> Library of Congress (Z39.50), Open Library, Google Books, HathiTrust, and K10plus German Union.</li>
           </ul>
         </div>
 
@@ -147,17 +146,17 @@
         <!-- Feature 3 -->
         <div class="card">
           <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-            <h3 class="card-title" style="margin-bottom: 0;">QR Code Remote Access &amp; Multi-Wi-Fi</h3>
-            <span class="badge badge-green">NEW v1.3.3</span>
+            <h3 class="card-title" style="margin-bottom: 0;">Android Scanner App &amp; Wireless Wedge</h3>
+            <span class="badge badge-green">NEW v1.4.2</span>
           </div>
           <p class="card-text">
-            Teachers, student librarians, and stock audit assistants can access the library system wirelessly from smartphones and tablets without installing any app:
+            Turn any Android phone or tablet into an enterprise barcode gun using the dedicated <code>ErrinILS Scanner</code> APK:
           </p>
           <ul class="step-list" style="margin-left: 16px;">
-            <li><strong>Zero-Dependency QR Engine:</strong> Pure C# ISO/IEC 18004 QR generator (EC-Level M) rendering sharp SVG and PNG codes.</li>
-            <li><strong>Password-Free 6-Digit PIN:</strong> Secure pairing model with 5-minute expiry and 3-attempt lockout.</li>
-            <li><strong>Cryptographic Device Token:</strong> Generates a persistent 32-byte <code>X-Errin-Token</code> stored in browser localStorage.</li>
-            <li><strong>Multi-Network Binding:</strong> Pure C# HTTP server (`TcpListener`) binds to <code>0.0.0.0</code>, working across 2.4/5GHz SSIDs, hotspots, and Tailscale meshes.</li>
+            <li><strong>Wireless Barcode Wedge:</strong> Streams scanned barcodes over Wi-Fi directly into the active cursor of your PC circulation desk via <code>/api/wedge</code>.</li>
+            <li><strong>Continuous CameraX ML Kit:</strong> Sub-second barcode recognition under difficult library lighting conditions.</li>
+            <li><strong>Mobile Copy-Cataloging:</strong> Scan ISBNs directly in the remote access web interface with instant union catalog search and direct catalog commits.</li>
+            <li><strong>Multi-Network Binding:</strong> Pure C# HTTP server (`TcpListener`) binds to <code>0.0.0.0</code>, working across 2.4/5GHz SSIDs, hotspots, and Tailscale mesh.</li>
           </ul>
         </div>
 
@@ -174,6 +173,42 @@
             <li><strong>Child-Friendly UI:</strong> Oversized high-contrast touch targets, clear status banners, and friendly wording (<code>Lib.Friendly</code>).</li>
             <li><strong>Visual Status Feedback:</strong> High-contrast status banner color changes (green for success, red for errors, yellow for warnings).</li>
             <li><strong>Simple Exit:</strong> Dedicated button to return immediately to the librarian dashboard when the session ends.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="grid-2" style="margin-bottom: 32px;" id="labels-cloud">
+        <!-- Feature 5: Batch Labels -->
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+            <h3 class="card-title" style="margin-bottom: 0;">Batch Label &amp; Spine Printing</h3>
+            <span class="badge badge-gold">NEW v1.4.2</span>
+          </div>
+          <p class="card-text">
+            Print physical shelf and copy labels in bulk with zero third-party software:
+          </p>
+          <ul class="step-list" style="margin-left: 16px;">
+            <li><strong>Multi-Select Support:</strong> Select multiple items with Ctrl+A, Shift-click, or row selection on the catalog table.</li>
+            <li><strong>Barcode Labels (3.5" × 1.1"):</strong> Code 128 barcode, library name header, call number, and book title.</li>
+            <li><strong>Dewey Spine Labels (1" × 1.5"):</strong> High-contrast call numbers split across multiple lines for shelf spine visibility.</li>
+            <li><strong>Live Preview:</strong> Interactive antialiased preview with Prev/Next cycling and copies-per-record selector (1–50).</li>
+          </ul>
+        </div>
+
+        <!-- Feature 6: Dual Cloud -->
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+            <h3 class="card-title" style="margin-bottom: 0;">Dual Cloud Sync (Drive &amp; GitHub)</h3>
+            <span class="badge badge-blue">MULTI-PC SYNC</span>
+          </div>
+          <p class="card-text">
+            Zero-dependency multi-PC synchronization separating private patron records from public catalog data:
+          </p>
+          <ul class="step-list" style="margin-left: 16px;">
+            <li><strong>Google Drive for Students:</strong> Private student records, active loans, and fines sync directly over HTTPS without installing desktop apps.</li>
+            <li><strong>GitHub for Catalog:</strong> Bibliographic records sync to GitHub following the Pustaka Terbuka Data Provider standard (PPAPP model).</li>
+            <li><strong>Zero-Dependency Git:</strong> Works via local Git CLI or pushes commits directly over HTTPS using the GitHub REST API.</li>
+            <li><strong>Multi-PC Parity:</strong> Connect multiple classroom workstations to the same school cloud repositories seamlessly.</li>
           </ul>
         </div>
       </div>
@@ -439,7 +474,7 @@
             </tr>
             <tr>
               <td><strong>Current Release</strong></td>
-              <td><span class="badge badge-gold">v1.3.3</span> (Production Stable)</td>
+              <td><span class="badge badge-gold">v1.4.2</span> (Production Stable)</td>
             </tr>
             <tr>
               <td><strong>Programming Language</strong></td>
@@ -454,8 +489,12 @@
               <td>Windows 11, Windows 10, Windows 8.1, Windows 8, Windows 7 SP1 (32-bit &amp; 64-bit)</td>
             </tr>
             <tr>
+              <td><strong>Companion Mobile App</strong></td>
+              <td>Android 7.0+ (Nougat to 14+) • ErrinILS Scanner APK (Kotlin, Compose, CameraX, ML Kit)</td>
+            </tr>
+            <tr>
               <td><strong>Binary Footprint</strong></td>
-              <td>~200 KB (Single executable <code>ErrinILS.exe</code>)</td>
+              <td>~1.1 MB (Single standalone executable <code>ErrinILS.exe</code>)</td>
             </tr>
             <tr>
               <td><strong>Cataloguing Protocols</strong></td>
@@ -463,11 +502,19 @@
             </tr>
             <tr>
               <td><strong>External Data Providers</strong></td>
-              <td>Library of Congress, Open Library, Google Books, HathiTrust, K10plus Union Catalogue</td>
+              <td>31 Union Sources (Pustaka Terbuka Union, KIK, PNM, 14 State Public Libraries, MALCat, UM, UKM, UiTM, UPSI, DBP, LOC, Open Library, Google Books, HathiTrust, K10plus)</td>
             </tr>
             <tr>
               <td><strong>Remote Server Protocol</strong></td>
-              <td>Pure C# HTTP/1.1 Web Server (`TcpListener`), WebSocket-ready, Token Authentication</td>
+              <td>Pure C# HTTP/1.1 Web Server (`TcpListener`), Wireless Wedge (`/api/wedge`), Token Authentication</td>
+            </tr>
+            <tr>
+              <td><strong>Cloud Synchronization</strong></td>
+              <td>Zero-dependency direct HTTPS: Google Drive (students/loans) &amp; GitHub PPAPP (catalog)</td>
+            </tr>
+            <tr>
+              <td><strong>Database Engine</strong></td>
+              <td>Zero-dependency native SQLite (`winsqlite3.dll` / `sqlite3.dll`) with WAL mode &amp; built-in VACUUM</td>
             </tr>
             <tr>
               <td><strong>License</strong></td>
@@ -478,7 +525,7 @@
       </div>
 
       <div style="text-align: center; margin-top: 40px;">
-        <a href="download.html" class="btn btn-primary btn-lg">Download ErrinILS v1.3.3</a>
+        <a href="download.html" class="btn btn-primary btn-lg">Download ErrinILS v1.4.2</a>
         <a href="guide.html" class="btn btn-secondary btn-lg" style="margin-left: 12px;">Read the User Guide</a>
       </div>
     </section>
@@ -519,7 +566,7 @@
             <li><a href="download.html#requirements">System Requirements</a></li>
             <li><a href="guide.html#circ">Circulation Desk Guide</a></li>
             <li><a href="guide.html#simple">Simplified View Setup</a></li>
-            <li><a href="assets/ErrinILS-User-Guide.pdf" download="ErrinILS-User-Guide-v1.3.3.pdf">Official Manual (PDF)</a></li>
+            <li><a href="guide.html#ch13-7">Android Scanner Setup</a></li>
             <li><a href="assets/ErrinILS-User-Guide.md" download>Download Manual (.md)</a></li>
           </ul>
         </div>
@@ -527,9 +574,10 @@
         <div>
           <div class="footer-col-title">Releases</div>
           <ul class="footer-links">
-            <li><a href="https://github.com/RZSY/ErrinILS/releases/tag/v1.3.3" target="_blank" rel="noopener">ErrinILS v1.3.3 on GitHub</a></li>
-            <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.3.3/ErrinILS-Setup-1.3.3.exe">Setup Installer (.exe)</a></li>
-            <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.3.3/ErrinILS-Windows.zip">Portable Package (.zip)</a></li>
+            <li><a href="https://github.com/RZSY/ErrinILS/releases/tag/v1.4.2" target="_blank" rel="noopener">ErrinILS v1.4.2 on GitHub</a></li>
+            <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.4.2/ErrinILS-Setup-1.4.2.exe">Setup Installer (.exe)</a></li>
+            <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.4.2/ErrinILS-Windows.zip">Portable Package (.zip)</a></li>
+            <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.4.2/ErrinILS-Scanner-v1.4.2.apk">Android Scanner APK (.apk)</a></li>
             <li><a href="https://github.com/RZSY/ErrinILS" target="_blank" rel="noopener">GitHub Repository</a></li>
           </ul>
         </div>

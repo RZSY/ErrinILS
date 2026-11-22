@@ -3800,6 +3800,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
             </select>
           </div>
           <div style=""display: flex; gap: 8px;"">
+            <button class=""btn btn-sec"" style=""color: #58a6ff; border-color: #58a6ff; font-weight: 700;"" onclick=""openCopyCatalogModal()"">&#x1F4D6; Copy-Cataloging</button>
             <button class=""btn btn-sec"" style=""color: #f6c61b; border-color: #f6c61b; font-weight: 700;"" onclick=""openBatchIsbnModal()"">&#x26A1; Batch ISBN</button>
             <button class=""btn btn-primary"" onclick=""openItemModal()"">+ Add Book</button>
           </div>
@@ -4006,6 +4007,72 @@ tr:hover td { background: rgba(255,255,255,0.02); }
   </div>
 </div>
 
+<!-- COPY-CATALOGING MODAL -->
+<div id=""copyCatalogModal"" class=""modal-overlay"" style=""display: none;"">
+  <div class=""modal-content"" style=""max-width: 650px;"">
+    <div class=""modal-title"" style=""display: flex; justify-content: space-between; align-items: center;"">
+      <span>&#x1F4D6; Copy-Cataloging Lookup (Carian Salin Katalog)</span>
+      <button type=""button"" class=""btn btn-sec btn-sm"" onclick=""closeCopyCatalogModal()"" style=""font-size: 16px; padding: 2px 8px;"">&times;</button>
+    </div>
+    <p style=""color: #9a9a94; font-size: 13px; margin: -6px 0 14px 0;"">
+      Query 31 national, state public, academic union, and international catalogs instantly to fetch full MARC bibliographic records by ISBN.
+    </p>
+    <div style=""display: flex; gap: 8px; margin-bottom: 12px;"">
+      <input type=""text"" id=""ccIsbnInput"" class=""input-text"" style=""flex: 1; font-size: 15px; font-family: monospace;"" placeholder=""Enter or scan ISBN (e.g. 9789670000000)..."" onkeydown=""if(event.key==='Enter'){event.preventDefault();searchCopyCatalog();}"" />
+      <button id=""btnCcSearch"" type=""button"" class=""btn btn-primary"" onclick=""searchCopyCatalog()"">&#x1F50D; Fetch Metadata</button>
+    </div>
+    <div style=""display: flex; gap: 8px; align-items: center; margin-bottom: 14px;"">
+      <label style=""font-size: 12px; color: #9a9a94; white-space: nowrap;"">Catalog Source:</label>
+      <select id=""ccSourceSelect"" class=""select-box"" style=""flex: 1; font-size: 13px;"">
+        <option value=""-1"">All 31 Sources (Union &bull; State &bull; Academic &bull; International)</option>
+      </select>
+    </div>
+
+    <!-- Status / Loading Indicator -->
+    <div id=""ccStatusWrap"" style=""display: none; padding: 12px; background: #232427; border: 1px solid #33343a; border-radius: 6px; margin-bottom: 12px; text-align: center;"">
+      <div id=""ccStatusText"" style=""color: #f6c61b; font-weight: 600; font-size: 13px;"">Searching 31 cataloging sources...</div>
+    </div>
+
+    <!-- Result Card -->
+    <div id=""ccResultCard"" style=""display: none; background: #232427; border: 1px solid #44454a; border-left: 4px solid #58a6ff; border-radius: 6px; padding: 14px; margin-bottom: 14px;"">
+      <div style=""display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;"">
+        <div id=""ccSourceBadge"" class=""badge badge-gold"" style=""font-size: 12px;"">Source</div>
+        <div id=""ccDdcBadge"" class=""badge badge-dim"" style=""font-family: monospace; font-size: 12px;"">DDC</div>
+      </div>
+      <h3 id=""ccTitle"" style=""margin: 0 0 4px 0; color: #ffffff; font-size: 17px; line-height: 1.3;"">Book Title</h3>
+      <div id=""ccSub"" style=""color: #9a9a94; font-size: 13px; margin-bottom: 8px;"">Subtitle</div>
+      <div style=""display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px; margin-bottom: 10px;"">
+        <div><span style=""color: #9a9a94;"">Author:</span> <strong id=""ccAuthor"" style=""color: #f1efe8;""></strong></div>
+        <div><span style=""color: #9a9a94;"">Publisher:</span> <strong id=""ccPub"" style=""color: #f1efe8;""></strong></div>
+        <div><span style=""color: #9a9a94;"">Year:</span> <strong id=""ccYear"" style=""color: #f1efe8;""></strong></div>
+        <div><span style=""color: #9a9a94;"">Call No:</span> <strong id=""ccCall"" style=""color: #f6c61b;""></strong></div>
+      </div>
+      <div id=""ccSubjWrap"" style=""margin-bottom: 12px;"">
+        <span style=""color: #9a9a94; font-size: 12px;"">Subject Headings:</span>
+        <div id=""ccSubjects"" style=""display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;""></div>
+      </div>
+
+      <!-- Shelf Barcode Input Row -->
+      <div style=""background: #1e1f23; padding: 10px; border-radius: 4px; border: 1px solid #33343a; display: flex; gap: 8px; align-items: center;"">
+        <label style=""font-size: 12px; color: #f1efe8; font-weight: 600; white-space: nowrap;"">Shelf Barcode:</label>
+        <input type=""text"" id=""ccBarcode"" class=""input-text"" style=""flex: 1; font-family: monospace; font-size: 14px;"" placeholder=""Scan or auto-generate"" />
+        <button type=""button"" class=""btn btn-sec btn-sm"" onclick=""generateCcBarcode()"">New Barcode</button>
+      </div>
+    </div>
+
+    <!-- Modal Actions -->
+    <div class=""modal-actions"" style=""display: flex; justify-content: space-between; align-items: center;"">
+      <div>
+        <button type=""button"" class=""btn btn-sec"" onclick=""closeCopyCatalogModal()"">Close</button>
+      </div>
+      <div style=""display: flex; gap: 8px;"">
+        <button id=""btnCcEdit"" type=""button"" class=""btn btn-sec"" style=""display: none;"" onclick=""editCcInFullModal()"">&#x270F;&#xFE0F; Edit in Full Form</button>
+        <button id=""btnCcSave"" type=""button"" class=""btn btn-primary"" style=""display: none;"" onclick=""saveCcDirectly()"">+ Save to Catalog</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ITEM EDIT MODAL -->
 <div id=""itemModal"" class=""modal-overlay"" style=""display: none;"">
   <div class=""modal-content"">
@@ -4017,7 +4084,16 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       <div class=""field-group""><label class=""field-label"">Author</label><input type=""text"" id=""itAuthor"" class=""input-text"" /></div>
       <div style=""display: grid; grid-template-columns: 1fr 1fr; gap: 8px;"">
         <div class=""field-group""><label class=""field-label"">Barcode</label><input type=""text"" id=""itBarcode"" class=""input-text"" placeholder=""Auto-generated"" /></div>
-        <div class=""field-group""><label class=""field-label"">ISBN</label><input type=""text"" id=""itIsbn"" class=""input-text"" /></div>
+        <div class=""field-group"">
+          <label class=""field-label"" style=""display: flex; justify-content: space-between;"">
+            <span>ISBN</span>
+            <span id=""itLookupBadge"" style=""color: #58a6ff; font-weight: normal; font-size: 11px; display: none;""></span>
+          </label>
+          <div style=""display: flex; gap: 4px;"">
+            <input type=""text"" id=""itIsbn"" class=""input-text"" style=""flex: 1; font-family: monospace;"" placeholder=""Type/scan ISBN..."" onkeydown=""if(event.key==='Enter'){event.preventDefault();lookupIsbnInItemModal();}"" />
+            <button type=""button"" class=""btn btn-sec btn-sm"" id=""btnItLookup"" onclick=""lookupIsbnInItemModal()"" title=""Lookup from 31 union & academic catalogs"">&#x1F50D; Lookup</button>
+          </div>
+        </div>
       </div>
       <div style=""display: grid; grid-template-columns: 1fr 1fr; gap: 8px;"">
         <div class=""field-group""><label class=""field-label"">Call Number</label><input type=""text"" id=""itCall"" class=""input-text"" /></div>
@@ -4376,6 +4452,8 @@ async function loadCatalog() {
 }
 
 function openItemModal(item = null) {
+  const badge = document.getElementById('itLookupBadge');
+  if (badge) { badge.style.display = 'none'; badge.textContent = ''; }
   document.getElementById('itemModalTitle').textContent = item ? 'Edit Book' : 'Add Book';
   document.getElementById('itemId').value = item ? item.id : '';
   document.getElementById('itTitle').value = item ? item.title : '';
@@ -4440,6 +4518,224 @@ async function unweedItem(id) {
   const res = await api('/api/unweed', { method: 'POST', body: { id: id } });
   if (res.ok) { showToast('Book restored to circulation'); loadCatalog(); }
   else showToast(res.error, true);
+}
+
+// Single-Book Copy-Cataloguing in Remote Access
+let ccLoadedSources = false;
+let ccCurrentItem = null;
+
+async function loadCopyCatalogSources() {
+  if (ccLoadedSources) return;
+  try {
+    const res = await api('/api/lookup/sources');
+    if (res && res.ok && Array.isArray(res.sources)) {
+      const sel = document.getElementById('ccSourceSelect');
+      sel.innerHTML = '<option value=""-1"">All 31 Sources (Union &bull; State &bull; Academic &bull; International)</option>';
+      res.sources.forEach((s, idx) => {
+        if (idx === 0) return;
+        const opt = document.createElement('option');
+        opt.value = idx - 1;
+        opt.textContent = s;
+        sel.appendChild(opt);
+      });
+      ccLoadedSources = true;
+    }
+  } catch (e) {}
+}
+
+function openCopyCatalogModal() {
+  loadCopyCatalogSources();
+  document.getElementById('ccStatusWrap').style.display = 'none';
+  document.getElementById('ccResultCard').style.display = 'none';
+  document.getElementById('btnCcEdit').style.display = 'none';
+  document.getElementById('btnCcSave').style.display = 'none';
+  document.getElementById('copyCatalogModal').style.display = 'flex';
+  setTimeout(() => {
+    const inp = document.getElementById('ccIsbnInput');
+    if (inp) { inp.focus(); inp.select(); }
+  }, 100);
+}
+
+function closeCopyCatalogModal() {
+  document.getElementById('copyCatalogModal').style.display = 'none';
+}
+
+function generateCcBarcode() {
+  const code = 'B' + Math.floor(100000 + Math.random() * 900000);
+  document.getElementById('ccBarcode').value = code;
+}
+
+async function searchCopyCatalog() {
+  const raw = document.getElementById('ccIsbnInput').value.trim();
+  if (!raw) {
+    showToast('Please enter an ISBN', true);
+    return;
+  }
+  const srcIdx = parseInt(document.getElementById('ccSourceSelect').value, 10);
+  const statusWrap = document.getElementById('ccStatusWrap');
+  const statusText = document.getElementById('ccStatusText');
+  const resCard = document.getElementById('ccResultCard');
+  const btnSearch = document.getElementById('btnCcSearch');
+
+  statusWrap.style.display = 'block';
+  statusText.style.color = '#f6c61b';
+  statusText.textContent = 'Searching 31 cataloging sources for ISBN ' + raw + '...';
+  resCard.style.display = 'none';
+  document.getElementById('btnCcEdit').style.display = 'none';
+  document.getElementById('btnCcSave').style.display = 'none';
+  btnSearch.disabled = true;
+
+  try {
+    const res = await api('/api/lookup/isbn', {
+      method: 'POST',
+      body: { isbn: raw, source: srcIdx, skipExisting: false }
+    });
+
+    if (res && res.ok && res.found && res.item) {
+      ccCurrentItem = res.item;
+      statusWrap.style.display = 'none';
+      resCard.style.display = 'block';
+      document.getElementById('btnCcEdit').style.display = 'inline-block';
+      document.getElementById('btnCcSave').style.display = 'inline-block';
+
+      document.getElementById('ccSourceBadge').textContent = res.source || (res.status === 'local' ? 'Local Catalog' : 'Union Catalog');
+      document.getElementById('ccDdcBadge').textContent = res.item.call ? ('DDC: ' + res.item.call) : 'DDC';
+      document.getElementById('ccTitle').textContent = res.item.title || '(untitled)';
+      document.getElementById('ccSub').textContent = res.item.sub || '';
+      document.getElementById('ccSub').style.display = res.item.sub ? 'block' : 'none';
+      document.getElementById('ccAuthor').textContent = res.item.author || '(unknown)';
+      document.getElementById('ccPub').textContent = res.item.publisher || '(unspecified)';
+      document.getElementById('ccYear').textContent = res.item.year || '(n/a)';
+      document.getElementById('ccCall').textContent = res.item.call || '(unassigned)';
+
+      // Shelf barcode
+      const bcInp = document.getElementById('ccBarcode');
+      bcInp.value = res.item.barcode || ('B' + Math.floor(100000 + Math.random() * 900000));
+
+      // Subjects
+      const subjBox = document.getElementById('ccSubjects');
+      subjBox.innerHTML = '';
+      if (res.item.subject) {
+        const tokens = res.item.subject.split(/[\r\n,;]+/).map(s => s.trim()).filter(Boolean);
+        tokens.forEach(tok => {
+          const span = document.createElement('span');
+          span.className = 'badge badge-dim';
+          span.style.fontSize = '11px';
+          span.textContent = tok;
+          subjBox.appendChild(span);
+        });
+        document.getElementById('ccSubjWrap').style.display = 'block';
+      } else {
+        document.getElementById('ccSubjWrap').style.display = 'none';
+      }
+
+      showToast('Found record: ' + (res.item.title || raw));
+    } else {
+      statusWrap.style.display = 'block';
+      statusText.style.color = '#e8392f';
+      statusText.textContent = res ? (res.message || 'No record found for ISBN ' + raw) : 'Lookup failed';
+      showToast('No record found for this ISBN', true);
+    }
+  } catch (err) {
+    statusWrap.style.display = 'block';
+    statusText.style.color = '#e8392f';
+    statusText.textContent = 'Error: ' + err.message;
+  } finally {
+    btnSearch.disabled = false;
+  }
+}
+
+async function saveCcDirectly() {
+  if (!ccCurrentItem) return;
+  const bc = document.getElementById('ccBarcode').value.trim() || ('B' + Math.floor(100000 + Math.random() * 900000));
+  const payload = {
+    id: ccCurrentItem.id || '',
+    title: ccCurrentItem.title || '',
+    sub: ccCurrentItem.sub || '',
+    author: ccCurrentItem.author || '',
+    barcode: bc,
+    isbn: ccCurrentItem.isbn || document.getElementById('ccIsbnInput').value.trim(),
+    call: ccCurrentItem.call || '',
+    year: ccCurrentItem.year || '',
+    publisher: ccCurrentItem.publisher || '',
+    subject: ccCurrentItem.subject || ''
+  };
+
+  const res = await api('/api/item', { method: 'POST', body: payload });
+  if (res && res.ok) {
+    showToast('Book added to catalog: ' + payload.title);
+    loadCatalog();
+    document.getElementById('ccIsbnInput').value = '';
+    document.getElementById('ccResultCard').style.display = 'none';
+    document.getElementById('btnCcEdit').style.display = 'none';
+    document.getElementById('btnCcSave').style.display = 'none';
+    document.getElementById('ccIsbnInput').focus();
+  } else {
+    showToast(res ? (res.error || 'Failed to save book') : 'Save failed', true);
+  }
+}
+
+function editCcInFullModal() {
+  if (!ccCurrentItem) return;
+  const bc = document.getElementById('ccBarcode').value.trim();
+  const copy = Object.assign({}, ccCurrentItem);
+  if (bc) copy.barcode = bc;
+  closeCopyCatalogModal();
+  openItemModal(copy);
+}
+
+async function lookupIsbnInItemModal() {
+  const isbn = document.getElementById('itIsbn').value.trim();
+  if (!isbn) {
+    showToast('Please type an ISBN first', true);
+    return;
+  }
+  const badge = document.getElementById('itLookupBadge');
+  const btn = document.getElementById('btnItLookup');
+  if (badge) {
+    badge.style.display = 'inline';
+    badge.textContent = 'Searching...';
+    badge.style.color = '#58a6ff';
+  }
+  if (btn) btn.disabled = true;
+
+  try {
+    const res = await api('/api/lookup/isbn', {
+      method: 'POST',
+      body: { isbn: isbn, source: -1, skipExisting: false }
+    });
+
+    if (res && res.ok && res.found && res.item) {
+      if (!document.getElementById('itTitle').value || res.item.title) document.getElementById('itTitle').value = res.item.title || '';
+      if (!document.getElementById('itSub').value || res.item.sub) document.getElementById('itSub').value = res.item.sub || '';
+      if (!document.getElementById('itAuthor').value || res.item.author) document.getElementById('itAuthor').value = res.item.author || '';
+      if (!document.getElementById('itPub').value || res.item.publisher) document.getElementById('itPub').value = res.item.publisher || '';
+      if (!document.getElementById('itYear').value || res.item.year) document.getElementById('itYear').value = res.item.year || '';
+      if (!document.getElementById('itCall').value || res.item.call) document.getElementById('itCall').value = res.item.call || '';
+      if (!document.getElementById('itSubj').value || res.item.subject) document.getElementById('itSubj').value = res.item.subject || '';
+      if (!document.getElementById('itBarcode').value) document.getElementById('itBarcode').value = res.item.barcode || ('B' + Math.floor(100000 + Math.random() * 900000));
+
+      if (badge) {
+        badge.textContent = res.source ? ('Via ' + res.source) : 'Found!';
+        badge.style.color = '#2fb36b';
+      }
+      showToast('Found: ' + (res.item.title || isbn));
+    } else {
+      if (badge) {
+        badge.textContent = 'Not found';
+        badge.style.color = '#e8392f';
+      }
+      showToast('No record found for ISBN ' + isbn, true);
+    }
+  } catch (err) {
+    if (badge) {
+      badge.textContent = 'Error';
+      badge.style.color = '#e8392f';
+    }
+    showToast('Lookup error: ' + err.message, true);
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 // Batch ISBN Copy-Cataloguing
