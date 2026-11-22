@@ -58,7 +58,7 @@ Network (Optional):   100% offline for core circulation; Wi-Fi/LAN enabled for
 Choose either the Windows installer or the portable standalone binary:
 
 Option A: Standard Windows Installer (Recommended)
-  1. Download ErrinILS-Setup-1.3.3.exe and double-click to launch.
+  1. Download ErrinILS-Setup-1.4.2.exe and double-click to launch.
   2. If Windows User Account Control prompts you, click "Yes".
   3. If a blue "Windows protected your PC" (SmartScreen) warning appears,
      click "More info", then click "Run anyway". (This is normal: ErrinILS

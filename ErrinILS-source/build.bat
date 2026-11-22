@@ -48,12 +48,21 @@ if /i "%MODE%"=="debug" (
 
 if /i "%MODE%"=="release" (
     if not exist "%ROOT%\dist" mkdir "%ROOT%\dist"
+    if not exist "%ROOT%\ErrinILS-source\dist" mkdir "%ROOT%\ErrinILS-source\dist"
     "%CSC%" /nologo /target:winexe /optimize+ /debug- ^
         /win32icon:"%ROOT%\ErrinILS-source\icon.ico" ^
         /win32manifest:"%ROOT%\ErrinILS-source\app.manifest" ^
         /r:System.Drawing.dll,System.Windows.Forms.dll ^
         /out:"%ROOT%\dist\ErrinILS.exe" ^
         !SOURCES!
+    if !errorlevel! neq 0 exit /b !errorlevel!
+    copy /y "%ROOT%\dist\ErrinILS.exe" "%ROOT%\ErrinILS-source\dist\ErrinILS.exe" >nul
+    copy /y "%ROOT%\dist\ErrinILS.exe" "%ROOT%\ErrinILS-Windows\ErrinILS\ErrinILS.exe" >nul
+    exit /b 0
+)
+
+if /i "%MODE%"=="installer" (
+    call :build_installer
     exit /b !errorlevel!
 )
 
@@ -85,3 +94,32 @@ if /i "%MODE%"=="selftest" (
 
 echo Unknown mode: %MODE%
 exit /b 1
+
+:build_installer
+call "%~f0" release
+if !errorlevel! neq 0 exit /b !errorlevel!
+set MAKENSIS=makensis.exe
+where makensis.exe >nul 2>&1
+if !errorlevel! neq 0 (
+    if exist "%LOCALAPPDATA%\nsis\nsis-3.10\makensis.exe" set MAKENSIS=%LOCALAPPDATA%\nsis\nsis-3.10\makensis.exe
+    if not exist "!MAKENSIS!" if exist "%ProgramFiles%\NSIS\makensis.exe" set MAKENSIS=%ProgramFiles%\NSIS\makensis.exe
+)
+if not exist "!MAKENSIS!" (
+    where makensis >nul 2>&1
+    if !errorlevel! neq 0 (
+        echo Error: makensis.exe not found.
+        exit /b 1
+    )
+    set MAKENSIS=makensis
+)
+pushd "%ROOT%\ErrinILS-source"
+echo Building installer with !MAKENSIS!...
+"!MAKENSIS!" -V2 -DVERSION=1.4.2 installer.nsi
+set NSIS_ERR=!errorlevel!
+popd
+if !NSIS_ERR! neq 0 exit /b !NSIS_ERR!
+if exist "%ROOT%\ErrinILS-source\dist\ErrinILS-Setup-1.4.2.exe" (
+    copy /y "%ROOT%\ErrinILS-source\dist\ErrinILS-Setup-1.4.2.exe" "%ROOT%\dist\ErrinILS-Setup-1.4.2.exe" >nul
+    copy /y "%ROOT%\ErrinILS-source\dist\ErrinILS-Setup-1.4.2.exe" "%ROOT%\ErrinILS-Windows\ErrinILS-Setup-1.4.2.exe" >nul
+)
+exit /b 0

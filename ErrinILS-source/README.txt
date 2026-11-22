@@ -6,7 +6,7 @@
  \___|_|  |_|  |_|_| |_|___|_____|____/ 
 
  ErrinILS - Lightweight School Integrated Library System
- Version:  1.3.3
+ Version:  1.4.2
  License:  MIT Open Source
  Website:  https://rzsy.github.io/ErrinILS/
  GitHub:   https://github.com/RZSY/ErrinILS
@@ -27,6 +27,12 @@ Key Specifications:
     (%APPDATA%\Errin\errin-data.db) with built-in backups and automatic migration.
   * High-DPI support: Native PerMonitorV2 awareness for clear text and
     proper layout scaling at 125%, 150%, and 200%.
+  * Android Companion App (ErrinILS Scanner): Wireless barcode scanner gun
+    and mobile ISBN copy-cataloging using your Android phone's camera.
+  * Dual Cloud Sync: Direct Google Drive cloud synchronization for private student
+    records (school.library@gmail.com) and GitHub repository sync for public catalog.
+  * Batch Label Printing & Multi-Select: Print adhesive item barcode labels and
+    spine labels in bulk with multi-row selection and interactive preview.
 
 
 [2] SYSTEM REQUIREMENTS & HARDWARE SPECIFICATIONS
@@ -52,7 +58,7 @@ Network (Optional):   100% offline for core circulation; Wi-Fi/LAN enabled for
 Choose either the Windows installer or the portable standalone binary:
 
 Option A: Standard Windows Installer (Recommended)
-  1. Download ErrinILS-Setup-1.3.3.exe and double-click to launch.
+  1. Download ErrinILS-Setup-1.4.2.exe and double-click to launch.
   2. If Windows User Account Control prompts you, click "Yes".
   3. If a blue "Windows protected your PC" (SmartScreen) warning appears,
      click "More info", then click "Run anyway". (This is normal: ErrinILS
@@ -126,27 +132,50 @@ Backing Up Your Library:
   enforcement (default: 3 books), loan periods (default: 7 days), overdue
   flags, and hold priority queue alerts.
 
-* 5-Source ISBN Cataloguing:
-  Scan or type any 10-digit or 13-digit ISBN. ErrinILS queries 5 international
-  bibliographic sources in priority order:
-    1. Library of Congress (Z39.50 lx2.loc.gov:210)
-    2. Open Library (HTTP JSON API)
-    3. Google Books (HTTP JSON API)
-    4. HathiTrust Digital Library (HTTP MARCXML)
-    5. K10plus German Union Catalogue (SRU MARCXML)
-  Automatically populates Title, Author, Publisher, Year, and Dewey Decimal
-  Classification (DDC).
+* 31-Source ISBN Copy-Cataloguing:
+  Scan or type any 10-digit or 13-digit ISBN. ErrinILS queries 31 free national,
+  state public, academic union, and international sources in priority order:
+    1. Pustaka Terbuka Union & Shards
+    2. Katalog Induk Kebangsaan (KIK - National Union Catalog)
+    3. Perpustakaan Negara Malaysia (PNM - Clarivate Vega Discover)
+    4. Perbadanan Perpustakaan Awam Selangor (PPAS)
+    5-19. All Malaysian State Public Libraries (PPAP, PPANPK, PPANK, PPANPS,
+          PPANJ, PPAK, PPAT, PPAPH, PPANS, PERPUSTAM, Pustaka Sarawak, PNS,
+          PKL, PPJ, PPL, u-Pustaka)
+    20-26. Malaysian Universities & Archives (MALCat, UM, UKM, UiTM, UPSI, DBP)
+    27-31. International Catalogs (Library of Congress Z39.50, Open Library,
+           Google Books, HathiTrust, K10plus)
+  Automatically populates Title, Author, Publisher, Year, DDC Call Number,
+  and Library of Congress Subject Headings.
+
+* Android Companion App (ErrinILS Scanner):
+  Turn any Android smartphone into a wireless barcode gun (/api/wedge) that streams
+  scanned barcodes directly into your PC's active input box, or use the camera to
+  scan book ISBNs, query union catalogs, and add records directly to your library.
+
+* Batch Label Printing & Multi-Select:
+  Select multiple books in the Catalog grid (Ctrl+Click, Shift+Click, Ctrl+A) and
+  print adhesive item barcode labels (3.5" x 1.1") or spine call number labels
+  (1" x 1.5") with live antialiased preview and customizable copies per record.
+
+* Remote Access & Mobile Copy-Cataloging:
+  Built-in zero-dependency HTTP server hosting an interactive mobile SPA at
+  http://<PC-IP>:8080/ with 1-second QR pairing. Walk the book stacks and perform
+  shelf auditing, circulation, student inquiries, or mobile copy-cataloging.
+
+* OPAC & Student Login:
+  Public catalog served at /opac with multi-token keyword and dedicated Subject
+  Heading searching. Optional patron login allows students to check loans, due
+  dates, reading history, and place holds/reservations on borrowed books.
+
+* Database Vacuum & Optimization:
+  Built-in SQLite maintenance utility executing PRAGMA integrity_check, PRAGMA
+  optimize, and VACUUM to defragment storage and verify file integrity.
 
 * Simplified View:
   Streamlined interface designed for students and young readers. Features
   oversized buttons, clear visual status banners, and a dedicated exit
   button back to librarian controls.
-
-* Wireless Mobile Audits & QR Pairing:
-  Built-in pure C# HTTP server (0.0.0.0:8080) hosting a responsive mobile web
-  app. Scan an on-screen QR code with any phone or tablet camera to instantly
-  pair using 256-bit cryptographic tokens. Perform shelf stocktaking and
-  catalog audits directly in the book stacks.
 
 * Malaysian School Localization:
   Full validation for Malaysian IC and MyKid numbers (YYMMDD-PB-###G) with
