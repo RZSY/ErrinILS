@@ -1283,15 +1283,29 @@ code, pre {
 }
 
 /* -------------------------------------------------------------------
-   Print Stylesheet (For User Guide)
+   Print Stylesheet (For User Guide & PDF Export)
    ------------------------------------------------------------------- */
 @media print {
+  @page {
+    size: A4 portrait;
+    margin: 14mm 12mm 14mm 12mm;
+  }
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
   body {
     background: #ffffff !important;
     color: #000000 !important;
+    font-size: 10pt;
+    line-height: 1.45;
   }
   .site-header, .site-footer, .guide-sidebar, .guide-actions-bar, .hero-actions, .showcase-tabs, .mobile-menu-btn, .theme-toggle-btn {
     display: none !important;
+  }
+  .page-container {
+    padding: 0 !important;
+    max-width: 100% !important;
   }
   .guide-layout {
     display: block !important;
@@ -1299,17 +1313,43 @@ code, pre {
   .guide-content {
     max-width: 100% !important;
   }
-  .card, .step-card, .callout, .code-box {
+  .chapter-number, .chapter-title, h1, h2, h3, h4 {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+    color: #0f172a !important;
+  }
+  .guide-chapter {
+    page-break-inside: auto;
+    margin-bottom: 28px !important;
+    padding-bottom: 20px !important;
+  }
+  .card, .step-card, .callout, .code-box, .data-table, .table-container, .flowchart-container {
     background: #ffffff !important;
     color: #000000 !important;
-    border: 1px solid #cccccc !important;
+    border: 1px solid #cbd5e1 !important;
     box-shadow: none !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  .flowchart-container {
+    border-left: 4px solid var(--accent-gold) !important;
+    margin: 16px 0 !important;
+    padding: 14px !important;
+  }
+  .flowchart-svg {
+    max-width: 100% !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
   }
   h1, h2, h3, h4, p, span, li, td, th {
-    color: #000000 !important;
+    color: #0f172a !important;
+  }
+  p, li {
+    color: #334155 !important;
   }
   a {
-    color: #000000 !important;
+    color: #1d4ed8 !important;
     text-decoration: underline;
   }
 }
