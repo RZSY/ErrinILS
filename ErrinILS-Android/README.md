@@ -1,71 +1,51 @@
 # ErrinILS Scanner (Android Companion App)
 
-**ErrinILS Scanner** is the high-performance Android companion application for **ErrinILS** (School Integrated Library System). Built natively using **Kotlin**, **Jetpack Compose**, **CameraX**, and **Google ML Kit Barcode Scanning**, it is engineered for teachers, school media librarians (*Guru Perpustakaan dan Media*), and student librarians (*Pengawas PSS*).
+**ErrinILS Scanner** is a dedicated, high-performance Android companion application for **ErrinILS** (School Integrated Library System). Built natively using **Kotlin**, **Jetpack Compose**, **CameraX**, and **Google ML Kit Barcode Scanning**, it is focused entirely on two core librarian capabilities:
+
+1. **⚡ Pengimbas Kod Bar (Wireless Barcode Gun / Wedge)**: Converts your Android device into a high-speed wireless barcode scanner that streams barcodes directly into ErrinILS desktop or any input field on your PC via Wi-Fi (with auto-Enter), or copies scanned codes to clipboard.
+2. **📚 Daftar Rekod Katalog Baharu (Add New Catalog Record with ISBN Scanner)**: Scan book ISBN barcodes on back covers using the camera (or type manual ISBN), auto-populate bibliographic details via copy-cataloging lookup (ErrinILS union catalogs, Google Books, OpenLibrary), edit fields, and save directly to the school catalog.
 
 ---
 
-## 🚀 Standalone Cloud Architecture (No PC Required!)
+## 🎯 Features
 
-The app operates in **100% Standalone Mode** by default, connecting directly to your school's cloud infrastructure:
+### 1. ⚡ Pengimbas Kod Bar (Virtual Barcode Gun / Wedge)
+* **Instant ML Kit Scanning**: Sub-second scanning of book barcodes, accession stickers, patron IDs, and spine labels (EAN-13, EAN-8, Code 128, Code 39, QR code, UPC-A, UPC-E).
+* **Direct PC Streaming (`/api/wedge`)**: When paired to ErrinILS on desktop, every scanned barcode is immediately typed into the active input box on your PC + presses Enter.
+* **1-Second QR Pairing**: Scan the "Pair a device" QR code displayed on the desktop ErrinILS screen to pair wirelessly over local Wi-Fi.
+* **Scan History & Clipboard**: Displays recent scans with one-tap individual copy, "Salin Semua" (Copy All), and clear history.
+* **Manual Entry Fallback**: Quickly type damaged or faded barcodes.
+* **Torch & Feedback**: Camera flashlight toggle, audible beep, and haptic vibration feedback.
 
-* **Google Drive Student Records (`tamanria.sk@gmail.com`)**:
-  * Syncs active student rosters, current borrowings, and unpaid fines directly via Google Apps Script Web App:
-    `https://script.google.com/macros/s/AKfycbzXCg-AsaOjAAUokIwe0_YfCdoKXiyEEMsIqJqxW2mq_Chw03VREzoQAm-7hxGHE5X6/exec`
-* **GitHub Open Catalog (`pustaka-terbuka/sk-taman-ria`)**:
-  * Reads the school's bibliographic catalog from GitHub (`catalog.json`).
-  * Enables direct one-tap cataloging of newly scanned books with instant commits via your GitHub PAT token (`gho_...`).
-* **Offline First Resilience**:
-  * All catalog books and student records are cached on the device. Even if Wi-Fi drops at the far corner of the library, loans, returns, and barcode lookups continue to work seamlessly.
-
-*(Optional Local Mode: If desktop ErrinILS is running on the local Wi-Fi, the app can also connect directly via 1-second QR pairing to stream barcodes to the PC screen.)*
-
----
-
-## 📱 5 Core Scanning Modes
-
-1. **🔄 Pulang Buku (Check-In / Return)**
-   * Rapid continuous scanning of book barcodes or spine labels.
-   * Instant visual & audio feedback: Book Title, Borrower, Due Date.
-   * **Overdue Alert:** Automatically flags late returns and displays calculated fines in Malaysian Ringgit (`RM 0.10/day`).
-
-2. **📤 Pinjam Buku (Check-Out / Borrowing)**
-   * **Step 1:** Scan student barcode (Student ID or Malaysian MyKid/IC `YYMMDD-PB-###G`). Displays student photo avatar, class, and active borrowings.
-   * **Step 2:** Continuously scan books to issue loans.
-   * Enforces 3-book loan limit and blocks loans if overdue fines exist.
-
-3. **🔍 Daftar Buku Baharu (ISBN Quick-Cataloging)**
-   * Scan physical printed ISBN-13 / ISBN-10 barcodes on book covers.
-   * Queries **Google Books** and **OpenLibrary** APIs directly.
-   * Displays title, author, publisher, year, and subject.
-   * **1-Tap Save:** Automatically assigns next accession barcode and commits the book to your GitHub catalog (`pustaka-terbuka/sk-taman-ria`).
-
-4. **📦 Semak Koleksi & Inventori (Shelf Audit / Inspect)**
-   * Scan any barcode in the stacks.
-   * Displays whether the item is **Available on Shelf** (*Tersedia di Rak*) or **On Loan** (*Sedang Dipinjam oleh [Nama Murid] sehingga [Tarikh]*).
-
-5. **⚡ Pengimbas Kod Bar (Virtual Barcode Gun / Wedge)**
-   * Converts the Android smartphone into a handheld wireless barcode gun.
-   * Scans stacks of books and allows one-tap **Copy All** to clipboard or live streaming.
+### 2. 📚 Daftar Buku Baharu (Add Catalog Record with ISBN Lookup)
+* **ISBN Camera Scanner**: Dedicated camera viewfinder to scan the printed ISBN-13 / ISBN-10 barcode on the back of any book.
+* **Multi-Source ISBN Lookup**: Automatically fetches:
+  - **Judul Buku** (Title)
+  - **Pengarang** (Author)
+  - **Penerbit** (Publisher)
+  - **Tahun Terbitan** (Publication Year)
+  - **No. Panggilan** (DDC / Call Number)
+  - **Subjek / Kategori** (Subject)
+  - Queries ErrinILS PC (31 union catalog sources) or direct online fallbacks (Google Books API & OpenLibrary).
+* **Physical Barcode Accessioning**: Scan the accession barcode sticker affixed to the book using the camera to assign its shelf barcode.
+* **1-Tap Save**: Saves the record directly into your school library catalog via `/api/item` (or optional direct GitHub catalog sync).
+* **Rapid Next Book Accession**: Tap "➕ Daftar Buku Seterusnya" to clear the form and instantly open the ISBN camera scanner for high-speed batch accessioning.
 
 ---
 
-## 🛠️ Installation & Build
+## 🛠️ Building & Running
 
-### 1. Pre-built APK
-The ready-to-install standalone APK is located at:
-```text
-dist/ErrinILS-Scanner.apk
-```
-
-To install directly to a connected Android phone via ADB:
-```cmd
-adb install -r dist/ErrinILS-Scanner.apk
-```
-Or simply copy `ErrinILS-Scanner.apk` to your phone via USB or WhatsApp/Google Drive and tap to install.
-
-### 2. Building from Source
+### Building from Source
 ```cmd
 cd ErrinILS-Android
 .\gradlew.bat assembleDebug
 ```
-The APK will be generated at: `app/build/outputs/apk/debug/app-debug.apk`.
+The output APK will be generated at:
+```text
+ErrinILS-Android/app/build/outputs/apk/debug/app-debug.apk
+```
+
+To install directly to a connected device via ADB:
+```cmd
+adb install -r app/build/outputs/apk/debug/app-debug.apk
+```

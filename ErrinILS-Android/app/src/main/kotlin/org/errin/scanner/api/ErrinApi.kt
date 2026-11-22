@@ -6,6 +6,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONArray
 import org.json.JSONObject
 import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
@@ -17,9 +18,9 @@ class ErrinApi(
     private val jsonMedia = "application/json; charset=utf-8".toMediaType()
 
     private val client = OkHttpClient.Builder()
-        .connectTimeout(8, TimeUnit.SECONDS)
-        .readTimeout(15, TimeUnit.SECONDS)
-        .writeTimeout(15, TimeUnit.SECONDS)
+        .connectTimeout(7, TimeUnit.SECONDS)
+        .readTimeout(12, TimeUnit.SECONDS)
+        .writeTimeout(12, TimeUnit.SECONDS)
         .build()
 
     fun updateCredentials(url: String, newToken: String) {
@@ -32,6 +33,7 @@ class ErrinApi(
 
     private fun cleanUrl(raw: String): String {
         var u = raw.trim()
+        if (u.isEmpty()) return ""
         if (!u.startsWith("http://") && !u.startsWith("https://")) {
             u = "http://$u"
         }
@@ -81,7 +83,7 @@ class ErrinApi(
                     token = tok
                     Result.success(PairResult(ok = true, token = tok, name = name))
                 } else {
-                    val err = resObj.optString("error", "Pairing failed (HTTP ${response.code})")
+                    val err = resObj.optString("error", "Padanan gagal (HTTP ${response.code})")
                     Result.success(PairResult(ok = false, error = err))
                 }
             }
@@ -92,6 +94,9 @@ class ErrinApi(
 
     suspend fun verifyConnection(): Result<MeResult> = withContext(Dispatchers.IO) {
         try {
+            if (baseUrl.isEmpty()) {
+                return@withContext Result.success(MeResult(ok = false, error = "URL pelayan belum ditetapkan"))
+            }
             val req = buildRequest("/api/me")
             client.newCall(req).execute().use { response ->
                 val bodyStr = response.body?.string().orEmpty()
@@ -105,7 +110,7 @@ class ErrinApi(
                         )
                     )
                 } else {
-                    val err = json.optString("error", "Unauthorized or server error (${response.code})")
+                    val err = json.optString("error", "Sambungan ditolak atau pelayan tidak sah (${response.code})")
                     Result.success(MeResult(ok = false, error = err))
                 }
             }
@@ -114,134 +119,20 @@ class ErrinApi(
         }
     }
 
-    suspend fun returnBook(barcode: String): Result<CirculationResult> = withContext(Dispatchers.IO) {
+    suspend fun sendWedge(barcode: String, enter: Boolean = true): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
-            val json = JSONObject().apply { put("barcode", barcode.trim()) }
-            val req = buildRequest("/api/return", method = "POST", jsonBody = json)
-            client.newCall(req).execute().use { response ->
-                val bodyStr = response.body?.string().orEmpty()
-                val resObj = try { JSONObject(bodyStr) } catch (_: Exception) { JSONObject() }
-                val ok = response.isSuccessful && resObj.optBoolean("ok", false)
-                val msg = resObj.optString("message", "")
-                val err = if (resObj.has("error")) resObj.optString("error") else null
-                val friendly = if (resObj.has("friendly")) resObj.optString("friendly") else null
-
-                // Check for overdue fines mentioned in message
-                var isOverdue = false
-                var fine = 0.0
-                if (msg.contains("overdue", ignoreCase = true) || msg.contains("denda", ignoreCase = true)) {
-                    isOverdue = true
-                }
-
-                Result.success(
-                    CirculationResult(
-                        ok = ok,
-                        message = msg,
-                        error = err,
-                        friendly = friendly,
-                        isOverdue = isOverdue,
-                        fineAmount = fine
-                    )
-                )
+            if (baseUrl.isEmpty()) {
+                return@withContext Result.failure(IllegalStateException("Tiada sambungan ke PC"))
             }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    suspend fun checkoutBook(patronId: String, barcode: String): Result<CirculationResult> = withContext(Dispatchers.IO) {
-        try {
             val json = JSONObject().apply {
-                put("patron", patronId.trim())
                 put("barcode", barcode.trim())
+                put("enter", enter)
             }
-            val req = buildRequest("/api/checkout", method = "POST", jsonBody = json)
+            val req = buildRequest("/api/wedge", method = "POST", jsonBody = json)
             client.newCall(req).execute().use { response ->
                 val bodyStr = response.body?.string().orEmpty()
                 val resObj = try { JSONObject(bodyStr) } catch (_: Exception) { JSONObject() }
-                val ok = response.isSuccessful && resObj.optBoolean("ok", false)
-                val msg = resObj.optString("message", "")
-                val err = if (resObj.has("error")) resObj.optString("error") else null
-                val friendly = if (resObj.has("friendly")) resObj.optString("friendly") else null
-
-                Result.success(
-                    CirculationResult(
-                        ok = ok,
-                        message = msg,
-                        error = err,
-                        friendly = friendly
-                    )
-                )
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    suspend fun renewBook(barcode: String): Result<CirculationResult> = withContext(Dispatchers.IO) {
-        try {
-            val json = JSONObject().apply { put("barcode", barcode.trim()) }
-            val req = buildRequest("/api/renew", method = "POST", jsonBody = json)
-            client.newCall(req).execute().use { response ->
-                val bodyStr = response.body?.string().orEmpty()
-                val resObj = try { JSONObject(bodyStr) } catch (_: Exception) { JSONObject() }
-                val ok = response.isSuccessful && resObj.optBoolean("ok", false)
-                val msg = resObj.optString("message", "")
-                val err = if (resObj.has("error")) resObj.optString("error") else null
-                val friendly = if (resObj.has("friendly")) resObj.optString("friendly") else null
-
-                Result.success(
-                    CirculationResult(
-                        ok = ok,
-                        message = msg,
-                        error = err,
-                        friendly = friendly
-                    )
-                )
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    suspend fun getItem(barcodeOrId: String): Result<BookItem?> = withContext(Dispatchers.IO) {
-        try {
-            val enc = URLEncoder.encode(barcodeOrId.trim(), "UTF-8")
-            val req = buildRequest("/api/item?barcode=$enc")
-            client.newCall(req).execute().use { response ->
-                if (!response.isSuccessful) {
-                    return@withContext Result.success(null)
-                }
-                val bodyStr = response.body?.string().orEmpty()
-                val resObj = JSONObject(bodyStr)
-                if (resObj.optBoolean("ok", false) && resObj.has("item")) {
-                    val itemObj = resObj.getJSONObject("item")
-                    Result.success(BookItem.fromJson(itemObj))
-                } else {
-                    Result.success(null)
-                }
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    suspend fun getPatron(patronId: String): Result<PatronSummary?> = withContext(Dispatchers.IO) {
-        try {
-            val enc = URLEncoder.encode(patronId.trim(), "UTF-8")
-            val req = buildRequest("/api/patron?id=$enc")
-            client.newCall(req).execute().use { response ->
-                if (!response.isSuccessful) {
-                    return@withContext Result.success(null)
-                }
-                val bodyStr = response.body?.string().orEmpty()
-                val resObj = JSONObject(bodyStr)
-                if (resObj.optBoolean("ok", false) && resObj.has("patron")) {
-                    val patronObj = resObj.getJSONObject("patron")
-                    Result.success(PatronSummary.fromJson(patronObj))
-                } else {
-                    Result.success(null)
-                }
+                Result.success(response.isSuccessful && resObj.optBoolean("ok", false))
             }
         } catch (e: Exception) {
             Result.failure(e)
@@ -250,6 +141,9 @@ class ErrinApi(
 
     suspend fun lookupIsbn(isbn: String): Result<IsbnLookupResult> = withContext(Dispatchers.IO) {
         try {
+            if (baseUrl.isEmpty()) {
+                return@withContext Result.failure(IllegalStateException("Tiada sambungan ke PC"))
+            }
             val enc = URLEncoder.encode(isbn.trim(), "UTF-8")
             val req = buildRequest("/api/lookup/isbn?isbn=$enc")
             client.newCall(req).execute().use { response ->
@@ -262,40 +156,92 @@ class ErrinApi(
         }
     }
 
-    suspend fun saveBook(book: BookItem): Result<Boolean> = withContext(Dispatchers.IO) {
+    suspend fun saveItem(book: BookItem): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
-            val json = JSONObject().apply {
-                put("barcode", book.barcode)
-                put("title", book.title)
-                put("author", book.author)
-                put("isbn", book.isbn)
-                put("pub", book.publisher)
-                put("year", book.year)
-                put("call", book.call)
-                put("subject", book.subject)
+            if (baseUrl.isEmpty()) {
+                return@withContext Result.failure(IllegalStateException("Tiada sambungan ke PC"))
             }
+            val json = book.toJson()
             val req = buildRequest("/api/item", method = "POST", jsonBody = json)
             client.newCall(req).execute().use { response ->
                 val bodyStr = response.body?.string().orEmpty()
                 val resObj = try { JSONObject(bodyStr) } catch (_: Exception) { JSONObject() }
-                Result.success(response.isSuccessful && resObj.optBoolean("ok", false))
+                if (response.isSuccessful && resObj.optBoolean("ok", false)) {
+                    Result.success(true)
+                } else {
+                    val err = resObj.optString("error", "Gagal menyimpan item ke katalog (HTTP ${response.code})")
+                    Result.failure(Exception(err))
+                }
             }
         } catch (e: Exception) {
             Result.failure(e)
         }
     }
 
-    suspend fun sendWedge(barcode: String, enter: Boolean = true): Result<Boolean> = withContext(Dispatchers.IO) {
+    suspend fun saveItemToGitHub(repo: String, pat: String, book: BookItem): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
-            val json = JSONObject().apply {
-                put("barcode", barcode.trim())
-                put("enter", enter)
+            if (repo.isBlank() || pat.isBlank()) {
+                return@withContext Result.failure(IllegalStateException("Tetapan GitHub tidak lengkap"))
             }
-            val req = buildRequest("/api/wedge", method = "POST", jsonBody = json)
-            client.newCall(req).execute().use { response ->
-                val bodyStr = response.body?.string().orEmpty()
-                val resObj = try { JSONObject(bodyStr) } catch (_: Exception) { JSONObject() }
-                Result.success(response.isSuccessful && resObj.optBoolean("ok", false))
+
+            val cleanRepo = repo.trim().removePrefix("https://github.com/").trim('/')
+            val getUrl = "https://api.github.com/repos/$cleanRepo/contents/catalog.json"
+
+            // 1. Fetch current catalog.json to get sha and existing list
+            val getReq = Request.Builder()
+                .url(getUrl)
+                .header("Authorization", "Bearer $pat")
+                .header("Accept", "application/vnd.github.v3+json")
+                .header("User-Agent", "ErrinILS-Scanner")
+                .build()
+
+            var sha: String? = null
+            val existingCatalog = JSONArray()
+
+            client.newCall(getReq).execute().use { response ->
+                if (response.isSuccessful) {
+                    val bodyStr = response.body?.string().orEmpty()
+                    val fileObj = JSONObject(bodyStr)
+                    sha = fileObj.optString("sha", null)
+                    val encodedContent = fileObj.optString("content", "").replace("\n", "")
+                    if (encodedContent.isNotEmpty()) {
+                        val decodedBytes = android.util.Base64.decode(encodedContent, android.util.Base64.DEFAULT)
+                        val catalogArray = JSONArray(String(decodedBytes, Charsets.UTF_8))
+                        for (i in 0 until catalogArray.length()) {
+                            existingCatalog.put(catalogArray.getJSONObject(i))
+                        }
+                    }
+                }
+            }
+
+            // 2. Append new book
+            existingCatalog.put(book.toJson())
+
+            // 3. Put updated catalog.json
+            val newJsonBytes = existingCatalog.toString(2).toByteArray(Charsets.UTF_8)
+            val base64Content = android.util.Base64.encodeToString(newJsonBytes, android.util.Base64.NO_WRAP)
+
+            val putPayload = JSONObject().apply {
+                put("message", "feat(catalog): add '${book.title}' (${book.barcode}) via Android Scanner")
+                put("content", base64Content)
+                if (sha != null) put("sha", sha)
+            }
+
+            val putReq = Request.Builder()
+                .url(getUrl)
+                .header("Authorization", "Bearer $pat")
+                .header("Accept", "application/vnd.github.v3+json")
+                .header("User-Agent", "ErrinILS-Scanner")
+                .put(putPayload.toString().toRequestBody(jsonMedia))
+                .build()
+
+            client.newCall(putReq).execute().use { response ->
+                if (response.isSuccessful) {
+                    Result.success(true)
+                } else {
+                    val body = response.body?.string().orEmpty()
+                    Result.failure(Exception("GitHub API Error (${response.code}): $body"))
+                }
             }
         } catch (e: Exception) {
             Result.failure(e)

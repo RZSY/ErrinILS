@@ -283,7 +283,7 @@ Requires `mono-mcs`, `mono-devel`, and `nsis`.
 
 ### 4.3 Building NSIS Installer
 ```cmd
-makensis -V2 -DVERSION=1.3.3 ErrinILS-source\installer.nsi
+makensis -V2 -DVERSION=1.4.1 ErrinILS-source\installer.nsi
 ```
 
 ---

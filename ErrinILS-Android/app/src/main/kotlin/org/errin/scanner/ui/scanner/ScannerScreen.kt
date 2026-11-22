@@ -11,7 +11,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,18 +24,23 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Cloud
-import androidx.compose.material.icons.filled.CloudSync
+import androidx.compose.material.icons.filled.AutoStories
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.FlashOff
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.Keyboard
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -45,15 +49,16 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.TabRowDefaults
+import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -75,7 +80,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import org.errin.scanner.api.ScannerMode
+import org.errin.scanner.api.AppTab
 import org.errin.scanner.camera.CameraScannerView
 import org.errin.scanner.ui.components.ScannerOverlay
 import org.errin.scanner.ui.theme.ErrinCard
@@ -108,6 +113,7 @@ fun ScannerScreen(
 
     LaunchedEffect(Unit) {
         permissionLauncher.launch(Manifest.permission.CAMERA)
+        viewModel.checkPcConnection()
     }
 
     Scaffold(
@@ -132,19 +138,19 @@ fun ScannerScreen(
                             Text(
                                 "ErrinILS Scanner",
                                 color = ErrinTextPrimary,
-                                fontSize = 17.sp,
+                                fontSize = 16.sp,
                                 fontWeight = FontWeight.Bold
                             )
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Box(
                                     modifier = Modifier
-                                        .size(6.dp)
+                                        .size(7.dp)
                                         .clip(CircleShape)
-                                        .background(ErrinGreen)
+                                        .background(if (uiState.isConnectedToPc) ErrinGreen else Color(0xFFFFA000))
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    uiState.syncStatusText,
+                                    uiState.connectionStatusText,
                                     color = ErrinTextMuted,
                                     fontSize = 11.sp,
                                     maxLines = 1,
@@ -155,26 +161,18 @@ fun ScannerScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { viewModel.syncNow() }) {
-                        if (uiState.isSyncing) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                color = ErrinYellow,
-                                strokeWidth = 2.dp
-                            )
-                        } else {
-                            Icon(Icons.Default.CloudSync, contentDescription = "Sync", tint = ErrinYellow)
-                        }
+                    IconButton(onClick = { viewModel.checkPcConnection() }) {
+                        Icon(Icons.Default.Refresh, contentDescription = "Semak Sambungan", tint = ErrinYellow)
                     }
                     IconButton(onClick = { viewModel.toggleTorch() }) {
                         Icon(
                             if (uiState.isTorchOn) Icons.Default.FlashOn else Icons.Default.FlashOff,
-                            contentDescription = "Torch",
+                            contentDescription = "Lampu Suluh",
                             tint = if (uiState.isTorchOn) ErrinYellow else ErrinTextSecondary
                         )
                     }
                     IconButton(onClick = onNavigateToSettings) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings", tint = ErrinTextSecondary)
+                        Icon(Icons.Default.Settings, contentDescription = "Tetapan", tint = ErrinTextSecondary)
                     }
                 }
             )
@@ -185,199 +183,122 @@ fun ScannerScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Upper View: Camera Preview + HUD
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(0.48f)
-                    .background(Color.Black)
-            ) {
-                if (hasCameraPermission) {
-                    CameraScannerView(
-                        onBarcodeScanned = { code, format ->
-                            viewModel.handleBarcodeScanned(code, format)
-                        },
-                        isTorchOn = uiState.isTorchOn
+            // Tab Header (Only 2 features: Barcode Scanner & Add Catalog Record)
+            TabRow(
+                selectedTabIndex = uiState.currentTab.ordinal,
+                containerColor = ErrinSurface,
+                contentColor = ErrinYellow,
+                indicator = { tabPositions ->
+                    TabRowDefaults.SecondaryIndicator(
+                        Modifier.tabIndicatorOffset(tabPositions[uiState.currentTab.ordinal]),
+                        color = ErrinYellow
                     )
-                    ScannerOverlay(
-                        hintText = when (uiState.mode) {
-                            ScannerMode.RETURN -> "Imbas kod bar buku untuk pulangkan"
-                            ScannerMode.CHECKOUT -> if (uiState.activePatron == null) "Imbas kad murid / MyKid" else "Imbas kod bar buku untuk pinjaman"
-                            ScannerMode.LOOKUP -> "Arahkan ke kod bar ISBN buku baharu"
-                            ScannerMode.INSPECT -> "Imbas kod bar untuk semak maklumat"
-                            ScannerMode.WEDGE -> "Imbas untuk salin / hantar terus"
-                        }
-                    )
-                } else {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Button(
-                            onClick = { permissionLauncher.launch(Manifest.permission.CAMERA) },
-                            colors = ButtonDefaults.buttonColors(containerColor = ErrinYellow)
-                        ) {
-                            Text("Beri Kebenaran Kamera", color = ErrinDarkBg)
-                        }
-                    }
                 }
-
-                // Quick manual barcode entry button
-                Surface(
-                    onClick = { viewModel.showManualDialog(true) },
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(12.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    color = ErrinCard.copy(alpha = 0.85f),
-                    border = borderWithColor(ErrinSurfaceVariant)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(Icons.Default.Keyboard, contentDescription = "Manual", tint = ErrinYellow, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Taip Kod", color = ErrinTextPrimary, fontSize = 12.sp)
-                    }
-                }
-            }
-
-            // Middle: Mode Switcher Chips
-            Surface(
-                color = ErrinSurface,
-                modifier = Modifier.fillMaxWidth()
             ) {
-                LazyRow(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    items(ScannerMode.values()) { mode ->
-                        val isSelected = uiState.mode == mode
-                        FilterChip(
-                            selected = isSelected,
-                            onClick = { viewModel.setMode(mode) },
-                            label = {
-                                Text(
-                                    "${mode.badge} ${mode.title}",
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
-                                )
-                            },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = ErrinYellow,
-                                selectedLabelColor = ErrinDarkBg,
-                                containerColor = ErrinSurfaceVariant,
-                                labelColor = ErrinTextSecondary
+                Tab(
+                    selected = uiState.currentTab == AppTab.SCANNER,
+                    onClick = { viewModel.setTab(AppTab.SCANNER) },
+                    text = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("⚡", fontSize = 14.sp)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                "Pengimbas Kod Bar",
+                                fontWeight = if (uiState.currentTab == AppTab.SCANNER) FontWeight.Bold else FontWeight.Normal,
+                                fontSize = 13.sp
                             )
-                        )
-                    }
-                }
+                        }
+                    },
+                    selectedContentColor = ErrinYellow,
+                    unselectedContentColor = ErrinTextSecondary
+                )
+                Tab(
+                    selected = uiState.currentTab == AppTab.ADD_CATALOG,
+                    onClick = { viewModel.setTab(AppTab.ADD_CATALOG) },
+                    text = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("📚", fontSize = 14.sp)
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                "Daftar Buku (ISBN)",
+                                fontWeight = if (uiState.currentTab == AppTab.ADD_CATALOG) FontWeight.Bold else FontWeight.Normal,
+                                fontSize = 13.sp
+                            )
+                        }
+                    },
+                    selectedContentColor = ErrinYellow,
+                    unselectedContentColor = ErrinTextSecondary
+                )
             }
 
-            // Bottom: Dynamic Result Card & History List
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(0.52f)
-                    .background(ErrinDarkBg)
-                    .padding(12.dp)
-            ) {
-                // Active Result Card
-                when (uiState.mode) {
-                    ScannerMode.RETURN -> ReturnModeContent(uiState)
-                    ScannerMode.CHECKOUT -> CheckoutModeContent(uiState, onClearPatron = { viewModel.clearActivePatron() })
-                    ScannerMode.LOOKUP -> LookupModeContent(
+            // Tab Content
+            when (uiState.currentTab) {
+                AppTab.SCANNER -> {
+                    BarcodeScannerTabContent(
                         uiState = uiState,
-                        onAddBook = { bc -> viewModel.saveLookedUpBookToCatalog(bc) }
-                    )
-                    ScannerMode.INSPECT -> InspectModeContent(uiState)
-                    ScannerMode.WEDGE -> WedgeModeContent(
-                        uiState = uiState,
+                        hasCameraPermission = hasCameraPermission,
+                        onScanBarcode = { code, format -> viewModel.handleBarcodeScanned(code, format) },
+                        onManualDialog = { viewModel.showManualBarcodeDialog(true) },
+                        onRequestCamera = { permissionLauncher.launch(Manifest.permission.CAMERA) },
                         onCopyAll = {
                             val all = uiState.scanHistory.joinToString("\n") { it.barcode }
                             val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                             cm.setPrimaryClip(ClipData.newPlainText("Errin Barcodes", all))
-                            Toast.makeText(context, "Kod bar disalin ke papan klip!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Semua kod bar disalin ke papan klip!", Toast.LENGTH_SHORT).show()
                         },
-                        onClear = { viewModel.clearHistory() }
+                        onCopyOne = { code ->
+                            val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                            cm.setPrimaryClip(ClipData.newPlainText("Errin Barcode", code))
+                            Toast.makeText(context, "Kod bar disalin: $code", Toast.LENGTH_SHORT).show()
+                        },
+                        onClearHistory = { viewModel.clearHistory() }
                     )
                 }
 
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Mini Scan History Log
-                if (uiState.scanHistory.isNotEmpty()) {
-                    Text(
-                        "Rekod Imbasan Sesi Ini (${uiState.scanHistory.size})",
-                        color = ErrinTextMuted,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(bottom = 6.dp)
+                AppTab.ADD_CATALOG -> {
+                    AddCatalogTabContent(
+                        uiState = uiState,
+                        hasCameraPermission = hasCameraPermission,
+                        onRequestCamera = { permissionLauncher.launch(Manifest.permission.CAMERA) },
+                        onScanBarcode = { code, format -> viewModel.handleBarcodeScanned(code, format) },
+                        onStartScanIsbn = { viewModel.setIsbnCameraScanning(true) },
+                        onStopScanIsbn = { viewModel.setIsbnCameraScanning(false) },
+                        onStartScanItemBarcode = { viewModel.setItemBarcodeCameraScanning(true) },
+                        onStopScanItemBarcode = { viewModel.setItemBarcodeCameraScanning(false) },
+                        onIsbnChange = { viewModel.updateIsbnInput(it) },
+                        onLookupIsbn = { viewModel.lookupIsbn() },
+                        onTitleChange = { viewModel.updateFormTitle(it) },
+                        onAuthorChange = { viewModel.updateFormAuthor(it) },
+                        onPublisherChange = { viewModel.updateFormPublisher(it) },
+                        onYearChange = { viewModel.updateFormYear(it) },
+                        onBarcodeChange = { viewModel.updateFormBarcode(it) },
+                        onCallChange = { viewModel.updateFormCall(it) },
+                        onSubjectChange = { viewModel.updateFormSubject(it) },
+                        onSaveRecord = { viewModel.saveCatalogRecord() },
+                        onPrepareNext = { viewModel.prepareNextBook() }
                     )
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        items(uiState.scanHistory) { entry ->
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(ErrinSurface)
-                                    .padding(horizontal = 12.dp, vertical = 8.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Box(
-                                        modifier = Modifier
-                                            .size(8.dp)
-                                            .clip(CircleShape)
-                                            .background(if (entry.isSuccess) ErrinGreen else ErrinRed)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Column {
-                                        Text(entry.barcode, color = ErrinTextPrimary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                                        if (!entry.title.isNullOrEmpty()) {
-                                            Text(entry.title, color = ErrinTextMuted, fontSize = 11.sp, maxLines = 1)
-                                        }
-                                    }
-                                }
-                                Text(entry.status, color = if (entry.isSuccess) ErrinTextSecondary else ErrinRed, fontSize = 12.sp)
-                            }
-                        }
-                    }
                 }
             }
         }
     }
 
-    // Manual Barcode Input Dialog
-    if (uiState.showManualInputDialog) {
+    // Manual Barcode Dialog for Tab 1
+    if (uiState.showManualBarcodeDialog) {
         var manualText by remember { mutableStateOf("") }
         AlertDialog(
-            onDismissRequest = { viewModel.showManualDialog(false) },
+            onDismissRequest = { viewModel.showManualBarcodeDialog(false) },
             containerColor = ErrinSurface,
             title = { Text("Taip Kod Bar Manual", color = ErrinTextPrimary, fontWeight = FontWeight.Bold) },
             text = {
                 Column {
-                    Text("Sesuai untuk pelekat kod bar yang pudar atau rosak:", color = ErrinTextSecondary, fontSize = 13.sp)
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Masukkan kod bar buku jika kamera tidak dapat membaca pelekat:", color = ErrinTextSecondary, fontSize = 13.sp)
+                    Spacer(modifier = Modifier.height(10.dp))
                     OutlinedTextField(
                         value = manualText,
                         onValueChange = { manualText = it },
                         singleLine = true,
-                        placeholder = { Text("cth. B1001 atau 9780064400558", color = ErrinTextMuted) },
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = ErrinYellow,
-                            unfocusedBorderColor = ErrinSurfaceVariant,
-                            focusedTextColor = ErrinTextPrimary,
-                            unfocusedTextColor = ErrinTextPrimary
-                        ),
+                        placeholder = { Text("cth. B1001 atau 9789830112345", color = ErrinTextMuted) },
+                        colors = outlinedColors(),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -387,16 +308,16 @@ fun ScannerScreen(
                     onClick = {
                         if (manualText.isNotBlank()) {
                             viewModel.handleBarcodeScanned(manualText.trim(), 0)
-                            viewModel.showManualDialog(false)
+                            viewModel.showManualBarcodeDialog(false)
                         }
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = ErrinYellow)
                 ) {
-                    Text("Proses", color = ErrinDarkBg, fontWeight = FontWeight.Bold)
+                    Text("Hantar / Simpan", color = ErrinDarkBg, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { viewModel.showManualDialog(false) }) {
+                TextButton(onClick = { viewModel.showManualBarcodeDialog(false) }) {
                     Text("Batal", color = ErrinTextSecondary)
                 }
             }
@@ -404,249 +325,565 @@ fun ScannerScreen(
     }
 }
 
+/**
+ * Tab 1: Virtual Barcode Gun / Wedge Screen
+ */
 @Composable
-private fun ReturnModeContent(uiState: ScannerUiState) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = ErrinSurface),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("🔄 Mod Pulang Buku", color = ErrinYellow, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                Text(
-                    "Jumlah: ${uiState.totalReturnedCount} buah",
-                    color = ErrinTextSecondary,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium
+private fun BarcodeScannerTabContent(
+    uiState: ScannerUiState,
+    hasCameraPermission: Boolean,
+    onScanBarcode: (String, Int) -> Unit,
+    onManualDialog: () -> Unit,
+    onRequestCamera: () -> Unit,
+    onCopyAll: () -> Unit,
+    onCopyOne: (String) -> Unit,
+    onClearHistory: () -> Unit
+) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Upper View: Camera Preview + HUD
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(0.50f)
+                .background(Color.Black)
+        ) {
+            if (hasCameraPermission) {
+                CameraScannerView(
+                    onBarcodeScanned = onScanBarcode,
+                    isTorchOn = uiState.isTorchOn
                 )
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            val res = uiState.lastCirculationResult
-            if (res != null) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(if (res.ok) (if (res.isOverdue) ErrinRed.copy(alpha = 0.2f) else ErrinGreen.copy(alpha = 0.15f)) else ErrinRed.copy(alpha = 0.2f))
-                        .padding(12.dp)
-                ) {
-                    Text(
-                        text = res.message.ifEmpty { res.error ?: "" },
-                        color = if (res.ok && !res.isOverdue) ErrinGreen else ErrinRed,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
+                ScannerOverlay(
+                    hintText = if (uiState.isConnectedToPc) "Arahkan kamera ke kod bar untuk taip terus ke PC" else "Arahkan kamera ke kod bar untuk mengimbas"
+                )
             } else {
-                Text(
-                    "Imbas kod bar buku di bahagian belakang atau tulang buku untuk memulangkannya ke sistem perpustakaan.",
-                    color = ErrinTextMuted,
-                    fontSize = 13.sp
-                )
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Button(
+                        onClick = onRequestCamera,
+                        colors = ButtonDefaults.buttonColors(containerColor = ErrinYellow)
+                    ) {
+                        Text("Beri Kebenaran Kamera", color = ErrinDarkBg)
+                    }
+                }
+            }
+
+            // Quick manual barcode entry button
+            Surface(
+                onClick = onManualDialog,
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(12.dp),
+                shape = RoundedCornerShape(20.dp),
+                color = ErrinCard.copy(alpha = 0.88f)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.Keyboard, contentDescription = "Manual", tint = ErrinYellow, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text("Taip Manual", color = ErrinTextPrimary, fontSize = 12.sp)
+                }
             }
         }
-    }
-}
 
-@Composable
-private fun CheckoutModeContent(uiState: ScannerUiState, onClearPatron: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = ErrinSurface),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Row(
+        // Lower View: Status + Scan History
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(0.50f)
+                .background(ErrinDarkBg)
+                .padding(12.dp)
+        ) {
+            // Live Status Card
+            Card(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                colors = CardDefaults.cardColors(containerColor = ErrinSurface),
+                shape = RoundedCornerShape(10.dp)
             ) {
-                Text("📤 Mod Pinjam Buku", color = ErrinYellow, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                Text("Dipinjam: ${uiState.totalBorrowedCount}", color = ErrinTextSecondary, fontSize = 12.sp)
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-
-            val patron = uiState.activePatron
-            if (patron != null) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(ErrinSurfaceVariant)
-                        .padding(10.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Person, contentDescription = null, tint = ErrinYellow, modifier = Modifier.size(24.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Column {
-                            Text(patron.name, color = ErrinTextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                            Text("Kelas: ${patron.cls.ifEmpty { "Umum" }} • Pinjaman aktif: ${patron.activeLoansCount}/3", color = ErrinTextSecondary, fontSize = 11.sp)
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            if (uiState.lastScannedBarcode.isNotEmpty()) "Imbasan Terkini:" else "Status Pengimbas:",
+                            color = ErrinYellow,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Text(
+                            uiState.lastScanStatus.ifEmpty {
+                                if (uiState.isConnectedToPc) "Sedia mengimbas. Kod bar akan ditaip terus ke PC."
+                                else "Mod kendiri. Imbas untuk salin kod bar atau imbas kod QR pairing PC."
+                            },
+                            color = if (uiState.lastScanSuccess) ErrinTextPrimary else ErrinRed,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                    if (uiState.lastScannedBarcode.isNotEmpty()) {
+                        IconButton(onClick = { onCopyOne(uiState.lastScannedBarcode) }) {
+                            Icon(Icons.Default.ContentCopy, contentDescription = "Salin", tint = ErrinYellow)
                         }
                     }
-                    Button(
-                        onClick = onClearPatron,
-                        colors = ButtonDefaults.buttonColors(containerColor = ErrinCard),
-                        shape = RoundedCornerShape(6.dp),
-                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp, vertical = 2.dp)
-                    ) {
-                        Text("Tukar", color = ErrinTextPrimary, fontSize = 11.sp)
-                    }
-                }
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(ErrinSurfaceVariant)
-                        .padding(10.dp)
-                ) {
-                    Text("Langkah 1: Sila imbas ID Murid / No. MyKid terlebih dahulu.", color = ErrinYellow, fontSize = 13.sp)
                 }
             }
 
-            val res = uiState.lastCirculationResult
-            if (res != null) {
-                Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Scan History Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    res.message.ifEmpty { res.error ?: "" },
-                    color = if (res.ok) ErrinGreen else ErrinRed,
-                    fontSize = 12.sp
+                    "Senarai Imbasan Sesi Ini (${uiState.scanHistory.size})",
+                    color = ErrinTextMuted,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold
                 )
+                Row {
+                    if (uiState.scanHistory.isNotEmpty()) {
+                        TextButton(onClick = onCopyAll) {
+                            Text("Salin Semua", color = ErrinYellow, fontSize = 12.sp)
+                        }
+                        TextButton(onClick = onClearHistory) {
+                            Text("Padam", color = ErrinTextMuted, fontSize = 12.sp)
+                        }
+                    }
+                }
+            }
+
+            // History List
+            if (uiState.scanHistory.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "Belum ada kod bar diimbas lagi.\nArahkan kamera ke mana-mana kod bar buku atau kad.",
+                        color = ErrinTextMuted,
+                        fontSize = 12.sp,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    items(uiState.scanHistory) { entry ->
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(ErrinSurface)
+                                .clickable { onCopyOne(entry.barcode) }
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(8.dp)
+                                        .clip(CircleShape)
+                                        .background(if (entry.isSuccess) ErrinGreen else ErrinRed)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    entry.barcode,
+                                    color = ErrinTextPrimary,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            Text(
+                                entry.status,
+                                color = if (entry.isSuccess) ErrinTextSecondary else ErrinRed,
+                                fontSize = 12.sp
+                            )
+                        }
+                    }
+                }
             }
         }
     }
 }
 
+/**
+ * Tab 2: Add New Catalog Record with ISBN Lookup & ISBN Barcode Scanner
+ */
 @Composable
-private fun LookupModeContent(
+private fun AddCatalogTabContent(
     uiState: ScannerUiState,
-    onAddBook: (String) -> Unit
+    hasCameraPermission: Boolean,
+    onRequestCamera: () -> Unit,
+    onScanBarcode: (String, Int) -> Unit,
+    onStartScanIsbn: () -> Unit,
+    onStopScanIsbn: () -> Unit,
+    onStartScanItemBarcode: () -> Unit,
+    onStopScanItemBarcode: () -> Unit,
+    onIsbnChange: (String) -> Unit,
+    onLookupIsbn: () -> Unit,
+    onTitleChange: (String) -> Unit,
+    onAuthorChange: (String) -> Unit,
+    onPublisherChange: (String) -> Unit,
+    onYearChange: (String) -> Unit,
+    onBarcodeChange: (String) -> Unit,
+    onCallChange: (String) -> Unit,
+    onSubjectChange: (String) -> Unit,
+    onSaveRecord: () -> Unit,
+    onPrepareNext: () -> Unit
 ) {
-    var customBarcode by remember { mutableStateOf("") }
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = ErrinSurface),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Text("🔍 Mod Daftar Buku Baharu (ISBN)", color = ErrinYellow, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(8.dp))
-
-            if (uiState.isLookingUpIsbn) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    CircularProgressIndicator(modifier = Modifier.size(16.dp), color = ErrinYellow, strokeWidth = 2.dp)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Mencari maklumat di Google Books & OpenLibrary...", color = ErrinTextSecondary, fontSize = 12.sp)
+    // If camera is currently active for scanning ISBN or Accession Barcode
+    if (uiState.isScanningIsbnCamera || uiState.isScanningItemBarcodeCamera) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
+        ) {
+            if (hasCameraPermission) {
+                CameraScannerView(
+                    onBarcodeScanned = onScanBarcode,
+                    isTorchOn = uiState.isTorchOn
+                )
+                ScannerOverlay(
+                    hintText = if (uiState.isScanningIsbnCamera)
+                        "Arahkan ke kod bar ISBN (EAN-13) pada kulit belakang buku"
+                    else
+                        "Arahkan ke pelekat kod bar buku (cth. B1001)"
+                )
+            } else {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Button(
+                        onClick = onRequestCamera,
+                        colors = ButtonDefaults.buttonColors(containerColor = ErrinYellow)
+                    ) {
+                        Text("Beri Kebenaran Kamera", color = ErrinDarkBg)
+                    }
                 }
-            } else if (uiState.lastIsbnLookup != null) {
-                val item = uiState.lastIsbnLookup
-                if (item.found) {
+            }
+
+            // Top banner with close button
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .align(Alignment.TopCenter),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    color = ErrinCard.copy(alpha = 0.9f),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Text(
+                        if (uiState.isScanningIsbnCamera) "🔍 Imbas Kod Bar ISBN Buku" else "🏷️ Imbas No. Barcode Buku",
+                        color = ErrinYellow,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                    )
+                }
+
+                IconButton(
+                    onClick = {
+                        if (uiState.isScanningIsbnCamera) onStopScanIsbn()
+                        else onStopScanItemBarcode()
+                    },
+                    modifier = Modifier
+                        .size(36.dp)
+                        .clip(CircleShape)
+                        .background(ErrinCard.copy(alpha = 0.9f))
+                ) {
+                    Icon(Icons.Default.Close, contentDescription = "Tutup Kamera", tint = Color.White)
+                }
+            }
+        }
+        return
+    }
+
+    // Standard Form View
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp)
+    ) {
+        // Section 1: ISBN Lookup Box with Camera Scan Button
+        Card(
+            colors = CardDefaults.cardColors(containerColor = ErrinSurface),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(14.dp)) {
+                Text(
+                    "🔍 Carian Maklumat Buku (ISBN)",
+                    color = ErrinYellow,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp
+                )
+                Text(
+                    "Imbas kod bar ISBN pada kulit buku atau taip nombor ISBN untuk mencari maklumat secara automatik.",
+                    color = ErrinTextMuted,
+                    fontSize = 12.sp
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = uiState.isbnInput,
+                        onValueChange = onIsbnChange,
+                        singleLine = true,
+                        placeholder = { Text("cth. 9789830112345", color = ErrinTextMuted, fontSize = 13.sp) },
+                        modifier = Modifier.weight(1f),
+                        colors = outlinedColors()
+                    )
+
+                    Button(
+                        onClick = onLookupIsbn,
+                        enabled = !uiState.isLookingUpIsbn && uiState.isbnInput.isNotBlank(),
+                        colors = ButtonDefaults.buttonColors(containerColor = ErrinYellow),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        if (uiState.isLookingUpIsbn) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), color = ErrinDarkBg, strokeWidth = 2.dp)
+                        } else {
+                            Icon(Icons.Default.Search, contentDescription = "Cari", tint = ErrinDarkBg, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Cari", color = ErrinDarkBg, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Big Button to Launch Camera for ISBN barcode scanning
+                Button(
+                    onClick = onStartScanIsbn,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = ErrinSurfaceVariant),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Icon(Icons.Default.QrCodeScanner, contentDescription = null, tint = ErrinYellow, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Imbas Kod Bar ISBN dengan Kamera", color = ErrinTextPrimary, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                }
+
+                // Lookup source indicator badge
+                if (uiState.lastIsbnLookup != null && uiState.lastIsbnLookup.found) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        "✅ Maklumat dijumpai daripada: ${uiState.lastIsbnLookup.source}",
+                        color = ErrinGreen,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+        }
+
+        // Section 2: Book Catalog Record Form
+        Card(
+            colors = CardDefaults.cardColors(containerColor = ErrinSurface),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(14.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        "📖 Maklumat Rekod Katalog",
+                        color = ErrinYellow,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp
+                    )
+                    if (uiState.formTitle.isNotEmpty()) {
+                        TextButton(onClick = onPrepareNext) {
+                            Text("Kosongkan", color = ErrinTextMuted, fontSize = 11.sp)
+                        }
+                    }
+                }
+
+                // Judul Buku (Title)
+                OutlinedTextField(
+                    value = uiState.formTitle,
+                    onValueChange = onTitleChange,
+                    label = { Text("Judul Buku *", fontSize = 12.sp) },
+                    singleLine = true,
+                    colors = outlinedColors(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Pengarang (Author)
+                OutlinedTextField(
+                    value = uiState.formAuthor,
+                    onValueChange = onAuthorChange,
+                    label = { Text("Pengarang / Penulis", fontSize = 12.sp) },
+                    singleLine = true,
+                    colors = outlinedColors(),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                // Penerbit & Tahun
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = uiState.formPublisher,
+                        onValueChange = onPublisherChange,
+                        label = { Text("Penerbit", fontSize = 12.sp) },
+                        singleLine = true,
+                        colors = outlinedColors(),
+                        modifier = Modifier.weight(1.8f)
+                    )
+                    OutlinedTextField(
+                        value = uiState.formYear,
+                        onValueChange = onYearChange,
+                        label = { Text("Tahun", fontSize = 12.sp) },
+                        singleLine = true,
+                        colors = outlinedColors(),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                // No. Barcode Buku (Accession Barcode) + Scan Button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = uiState.formBarcode,
+                        onValueChange = onBarcodeChange,
+                        label = { Text("No. Barcode Pelekat Buku", fontSize = 12.sp) },
+                        singleLine = true,
+                        colors = outlinedColors(),
+                        modifier = Modifier.weight(1f)
+                    )
+                    Button(
+                        onClick = onStartScanItemBarcode,
+                        colors = ButtonDefaults.buttonColors(containerColor = ErrinSurfaceVariant),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Icon(Icons.Default.QrCodeScanner, contentDescription = null, tint = ErrinYellow, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Imbas", color = ErrinTextPrimary, fontSize = 12.sp)
+                    }
+                }
+
+                // No. Panggilan (Call No) & Subjek
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = uiState.formCall,
+                        onValueChange = onCallChange,
+                        label = { Text("No. Panggilan (DDC)", fontSize = 12.sp) },
+                        singleLine = true,
+                        colors = outlinedColors(),
+                        modifier = Modifier.weight(1f)
+                    )
+                    OutlinedTextField(
+                        value = uiState.formSubject,
+                        onValueChange = onSubjectChange,
+                        label = { Text("Subjek / Kategori", fontSize = 12.sp) },
+                        singleLine = true,
+                        colors = outlinedColors(),
+                        modifier = Modifier.weight(1.5f)
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Error Banner
+                if (uiState.saveErrorMessage != null) {
+                    Text(
+                        uiState.saveErrorMessage ?: "",
+                        color = ErrinRed,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                // Success Banner
+                if (uiState.saveSuccessMessage != null) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clip(RoundedCornerShape(8.dp))
-                            .background(ErrinSurfaceVariant)
+                            .background(ErrinGreen.copy(alpha = 0.15f))
                             .padding(10.dp)
                     ) {
-                        Text(item.title, color = ErrinTextPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                        Text("Pengarang: ${item.author.ifEmpty { "Tidak dinyatakan" }}", color = ErrinTextSecondary, fontSize = 12.sp)
-                        Text("Penerbit: ${item.publisher} (${item.year})", color = ErrinTextMuted, fontSize = 11.sp)
-                        Text("Sumber: ${item.source}", color = ErrinYellow, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
-
-                        Spacer(modifier = Modifier.height(8.dp))
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            OutlinedTextField(
-                                value = customBarcode,
-                                onValueChange = { customBarcode = it },
-                                singleLine = true,
-                                placeholder = { Text("Auto Barcode", color = ErrinTextMuted, fontSize = 11.sp) },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .height(48.dp),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = ErrinYellow,
-                                    unfocusedBorderColor = ErrinCard,
-                                    focusedTextColor = ErrinTextPrimary,
-                                    unfocusedTextColor = ErrinTextPrimary
-                                )
-                            )
+                            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = ErrinGreen, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.width(8.dp))
-                            Button(
-                                onClick = { onAddBook(customBarcode) },
-                                enabled = !uiState.isAddingBook,
-                                colors = ButtonDefaults.buttonColors(containerColor = ErrinYellow),
-                                shape = RoundedCornerShape(6.dp)
-                            ) {
-                                if (uiState.isAddingBook) {
-                                    CircularProgressIndicator(modifier = Modifier.size(14.dp), color = ErrinDarkBg, strokeWidth = 2.dp)
-                                } else {
-                                    Text("Simpan ke GitHub", color = ErrinDarkBg, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-                                }
-                            }
+                            Text(
+                                uiState.saveSuccessMessage ?: "",
+                                color = ErrinGreen,
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(
+                            onClick = onPrepareNext,
+                            colors = ButtonDefaults.buttonColors(containerColor = ErrinGreen),
+                            shape = RoundedCornerShape(6.dp)
+                        ) {
+                            Text("➕ Daftar Buku Seterusnya", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         }
                     }
-                } else {
-                    Text(item.error ?: "Tiada maklumat.", color = ErrinRed, fontSize = 12.sp)
                 }
-            } else {
-                Text("Imbas kod bar ISBN pada kulit belakang buku untuk mendapatkan maklumat buku dan mendaftarkannya terus ke GitHub Catalog.", color = ErrinTextMuted, fontSize = 12.sp)
-            }
-        }
-    }
-}
 
-@Composable
-private fun InspectModeContent(uiState: ScannerUiState) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = ErrinSurface),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Text("📦 Semakan Koleksi & Status", color = ErrinYellow, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(8.dp))
-
-            val book = uiState.lastBookItem
-            if (book != null) {
-                Column(
+                // Save Button
+                Button(
+                    onClick = onSaveRecord,
+                    enabled = !uiState.isSavingBook && uiState.formTitle.isNotBlank(),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(ErrinSurfaceVariant)
-                        .padding(10.dp)
+                        .height(48.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = ErrinYellow),
+                    shape = RoundedCornerShape(8.dp)
                 ) {
-                    Text(book.title, color = ErrinTextPrimary, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                    Text("Pengarang: ${book.author}", color = ErrinTextSecondary, fontSize = 13.sp)
-                    Text("No Panggilan: ${book.call} • Barcode: ${book.barcode}", color = ErrinTextMuted, fontSize = 12.sp)
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(if (book.onLoan) ErrinYellow.copy(alpha = 0.2f) else ErrinGreen.copy(alpha = 0.2f))
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text(
-                            text = if (book.onLoan) "Sedang Dipinjam oleh ${book.loanPatronName ?: ""} (Pulang: ${book.loanDue ?: ""})" else "Tersedia di Rak",
-                            color = if (book.onLoan) ErrinYellow else ErrinGreen,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
-                        )
+                    if (uiState.isSavingBook) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), color = ErrinDarkBg, strokeWidth = 2.dp)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Menyimpan ke katalog...", color = ErrinDarkBg, fontWeight = FontWeight.Bold)
+                    } else {
+                        Icon(Icons.Default.Save, contentDescription = null, tint = ErrinDarkBg)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Simpan ke Katalog", color = ErrinDarkBg, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     }
-                }
-            } else {
-                val err = uiState.lastCirculationResult?.error
-                if (err != null) {
-                    Text(err, color = ErrinRed, fontSize = 13.sp)
-                } else {
-                    Text("Imbas mana-mana buku di atas rak untuk menyemak maklumat dan status pinjamannya.", color = ErrinTextMuted, fontSize = 13.sp)
                 }
             }
         }
@@ -654,50 +891,11 @@ private fun InspectModeContent(uiState: ScannerUiState) {
 }
 
 @Composable
-private fun WedgeModeContent(
-    uiState: ScannerUiState,
-    onCopyAll: () -> Unit,
-    onClear: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = ErrinSurface),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("⚡ Mod Pengimbas Kod Bar", color = ErrinYellow, fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                Row {
-                    TextButton(onClick = onCopyAll) {
-                        Text("Salin Semua", color = ErrinYellow, fontSize = 12.sp)
-                    }
-                    TextButton(onClick = onClear) {
-                        Text("Padam", color = ErrinTextMuted, fontSize = 12.sp)
-                    }
-                }
-            }
-            val isPcConnected = uiState.lastCirculationResult?.message?.contains("PC") == true || (uiState.scanHistory.any { it.status.contains("PC") })
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(ErrinSurfaceVariant)
-                    .padding(10.dp)
-            ) {
-                Text(
-                    uiState.lastCirculationResult?.message
-                        ?: "🎯 Fungsi Pengimbas Fizikal Tanpa Wayar (Virtual Keyboard Wedge):\nApabila disambungkan ke PC melalui Wi-Fi, setiap kod bar yang diimbas akan ditaip terus ke dalam perisian ErrinILS, Microsoft Excel, Notepad, atau mana-mana kotak input di PC + tekan Enter secara automatik!\n\n💡 Tip: Imbas kod QR 'Pair a device' di skrin PC untuk menghubungkan telefon serta-merta.",
-                    color = if (isPcConnected) ErrinGreen else ErrinTextSecondary,
-                    fontSize = 12.sp,
-                    lineHeight = 17.sp
-                )
-            }
-        }
-    }
-}
-
-private fun borderWithColor(color: Color) = androidx.compose.foundation.BorderStroke(1.dp, color)
+private fun outlinedColors() = OutlinedTextFieldDefaults.colors(
+    focusedBorderColor = ErrinYellow,
+    unfocusedBorderColor = ErrinSurfaceVariant,
+    focusedTextColor = ErrinTextPrimary,
+    unfocusedTextColor = ErrinTextPrimary,
+    focusedLabelColor = ErrinYellow,
+    unfocusedLabelColor = ErrinTextMuted
+)

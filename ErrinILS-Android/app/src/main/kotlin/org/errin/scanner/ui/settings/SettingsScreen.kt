@@ -1,7 +1,6 @@
 package org.errin.scanner.ui.settings
 
 import android.widget.Toast
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,10 +16,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Cloud
+import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Computer
+import androidx.compose.material.icons.filled.LinkOff
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -35,6 +36,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -50,7 +52,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
-import org.errin.scanner.data.CloudDataStore
+import org.errin.scanner.api.ErrinApi
+import org.errin.scanner.core.AppPreferences
 import org.errin.scanner.ui.theme.ErrinCard
 import org.errin.scanner.ui.theme.ErrinDarkBg
 import org.errin.scanner.ui.theme.ErrinGreen
@@ -70,16 +73,16 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val store = remember { CloudDataStore(context) }
+    val prefs = remember { AppPreferences(context) }
+    val api = remember { ErrinApi(prefs.serverUrl, prefs.serverToken) }
 
-    var accountEmail by remember { mutableStateOf(store.googleAccount) }
-    var githubRepo by remember { mutableStateOf(store.githubRepo) }
-    var githubPat by remember { mutableStateOf(store.githubToken) }
-    var webAppUrl by remember { mutableStateOf(store.webAppUrl) }
-    var localServerUrl by remember { mutableStateOf(store.localServerUrl) }
-    var isStandalone by remember { mutableStateOf(store.isStandaloneMode) }
-    var soundEnabled by remember { mutableStateOf(store.soundEnabled) }
-    var vibrateEnabled by remember { mutableStateOf(store.vibrateEnabled) }
+    var localServerUrl by remember { mutableStateOf(prefs.serverUrl) }
+    var deviceName by remember { mutableStateOf(prefs.deviceName) }
+    var soundEnabled by remember { mutableStateOf(prefs.soundEnabled) }
+    var vibrateEnabled by remember { mutableStateOf(prefs.vibrateEnabled) }
+    var autoEnter by remember { mutableStateOf(prefs.autoEnter) }
+    var githubRepo by remember { mutableStateOf(prefs.githubRepo) }
+    var githubToken by remember { mutableStateOf(prefs.githubToken) }
 
     var isTesting by remember { mutableStateOf(false) }
     var testResult by remember { mutableStateOf<String?>(null) }
@@ -91,10 +94,10 @@ fun SettingsScreen(
         topBar = {
             TopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = ErrinSurface),
-                title = { Text("Tetapan & Sambungan Awan", color = ErrinTextPrimary, fontSize = 17.sp, fontWeight = FontWeight.Bold) },
+                title = { Text("Tetapan Pengimbas", color = ErrinTextPrimary, fontSize = 17.sp, fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = ErrinYellow)
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Kembali", tint = ErrinYellow)
                     }
                 }
             )
@@ -108,76 +111,37 @@ fun SettingsScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Mode Selector
-            Card(
-                colors = CardDefaults.cardColors(containerColor = ErrinSurface),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Column(modifier = Modifier.padding(14.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Mod Awan Kendiri (Standalone)", color = ErrinTextPrimary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                            Text("Imbas & simpan terus ke Google Drive & GitHub tanpa perlu PC desktop.", color = ErrinTextMuted, fontSize = 12.sp)
-                        }
-                        Switch(
-                            checked = isStandalone,
-                            onCheckedChange = {
-                                isStandalone = it
-                                store.isStandaloneMode = it
-                            },
-                            colors = SwitchDefaults.colors(checkedThumbColor = ErrinYellow, checkedTrackColor = ErrinCard)
-                        )
-                    }
-                }
-            }
-
-            // Cloud Sync Credentials
+            // 1. Desktop PC Connection
             Card(
                 colors = CardDefaults.cardColors(containerColor = ErrinSurface),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Cloud, contentDescription = null, tint = ErrinYellow, modifier = Modifier.size(20.dp))
+                        Icon(Icons.Default.Computer, contentDescription = null, tint = ErrinYellow, modifier = Modifier.size(20.dp))
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Konfigurasi Google Drive & GitHub", color = ErrinYellow, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text("Sambungan Komputer PC ErrinILS", color = ErrinYellow, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     }
 
+                    Text(
+                        "Sambungkan telefon ke perisian ErrinILS di PC untuk menaip kod bar secara langsung ke kotak teks atau mendaftarkan buku terus ke pengkalan data sekolah.",
+                        color = ErrinTextMuted,
+                        fontSize = 12.sp
+                    )
+
                     OutlinedTextField(
-                        value = accountEmail,
-                        onValueChange = { accountEmail = it },
-                        label = { Text("Emel Akaun Google Sekolah", fontSize = 12.sp) },
+                        value = localServerUrl,
+                        onValueChange = { localServerUrl = it },
+                        label = { Text("URL Komputer PC (cth. http://192.168.1.50:8080)", fontSize = 12.sp) },
                         singleLine = true,
                         colors = outlinedColors(),
                         modifier = Modifier.fillMaxWidth()
                     )
 
                     OutlinedTextField(
-                        value = githubRepo,
-                        onValueChange = { githubRepo = it },
-                        label = { Text("Repositori GitHub Katalog", fontSize = 12.sp) },
-                        singleLine = true,
-                        colors = outlinedColors(),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    OutlinedTextField(
-                        value = githubPat,
-                        onValueChange = { githubPat = it },
-                        label = { Text("Token Akses Peribadi GitHub (PAT)", fontSize = 12.sp) },
-                        singleLine = true,
-                        colors = outlinedColors(),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    OutlinedTextField(
-                        value = webAppUrl,
-                        onValueChange = { webAppUrl = it },
-                        label = { Text("URL Web App Google Apps Script", fontSize = 12.sp) },
+                        value = deviceName,
+                        onValueChange = { deviceName = it },
+                        label = { Text("Nama Peranti Telefon", fontSize = 12.sp) },
                         singleLine = true,
                         colors = outlinedColors(),
                         modifier = Modifier.fillMaxWidth()
@@ -189,10 +153,9 @@ fun SettingsScreen(
                     ) {
                         Button(
                             onClick = {
-                                store.googleAccount = accountEmail.trim()
-                                store.githubRepo = githubRepo.trim()
-                                store.githubToken = githubPat.trim()
-                                store.webAppUrl = webAppUrl.trim()
+                                prefs.serverUrl = localServerUrl.trim()
+                                prefs.deviceName = deviceName.trim()
+                                api.updateCredentials(prefs.serverUrl, prefs.serverToken)
                                 Toast.makeText(context, "Tetapan disimpan!", Toast.LENGTH_SHORT).show()
                             },
                             modifier = Modifier.weight(1f),
@@ -209,23 +172,22 @@ fun SettingsScreen(
                                 scope.launch {
                                     isTesting = true
                                     testResult = null
-                                    store.googleAccount = accountEmail.trim()
-                                    store.githubRepo = githubRepo.trim()
-                                    store.githubToken = githubPat.trim()
-                                    store.webAppUrl = webAppUrl.trim()
+                                    prefs.serverUrl = localServerUrl.trim()
+                                    prefs.deviceName = deviceName.trim()
+                                    api.updateCredentials(prefs.serverUrl, prefs.serverToken)
 
-                                    val res = store.syncAll()
+                                    val res = api.verifyConnection()
                                     isTesting = false
-                                    testSuccess = res.isSuccess
-                                    testResult = if (res.isSuccess) {
-                                        "✅ Sambungan Berjaya!\n• Katalog: ${store.cachedItems.size} buah buku\n• Murid: ${store.cachedPatrons.size} orang"
+                                    testSuccess = res.isSuccess && (res.getOrNull()?.ok == true)
+                                    testResult = if (testSuccess) {
+                                        "✅ Sambungan ke PC Berjaya! (${res.getOrNull()?.name})"
                                     } else {
-                                        "❌ Ralat Sambungan: ${res.exceptionOrNull()?.message}"
+                                        "❌ Gagal disambung: ${res.getOrNull()?.error ?: res.exceptionOrNull()?.message ?: "Ralat"}"
                                     }
                                 }
                             },
                             modifier = Modifier.weight(1f),
-                            enabled = !isTesting,
+                            enabled = !isTesting && localServerUrl.isNotBlank(),
                             colors = ButtonDefaults.buttonColors(containerColor = ErrinSurfaceVariant),
                             shape = RoundedCornerShape(8.dp)
                         ) {
@@ -247,43 +209,35 @@ fun SettingsScreen(
                             fontWeight = FontWeight.Medium
                         )
                     }
-                }
-            }
 
-            // Local PC Server Fallback
-            if (!isStandalone) {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = ErrinSurface),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Computer, contentDescription = null, tint = ErrinYellow, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Sambungan Komputer Desktop ErrinILS", color = ErrinYellow, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    if (prefs.isConnectedToPc) {
+                        TextButton(
+                            onClick = {
+                                prefs.clearConnection()
+                                localServerUrl = ""
+                                testResult = "Sambungan PC telah dipadam."
+                                testSuccess = false
+                            }
+                        ) {
+                            Icon(Icons.Default.LinkOff, contentDescription = null, tint = ErrinRed, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text("Putuskan Padanan dengan PC", color = ErrinRed, fontSize = 12.sp)
                         }
-                        OutlinedTextField(
-                            value = localServerUrl,
-                            onValueChange = {
-                                localServerUrl = it
-                                store.localServerUrl = it
-                            },
-                            label = { Text("URL Komputer (cth. http://192.168.1.50:8080)", fontSize = 12.sp) },
-                            singleLine = true,
-                            colors = outlinedColors(),
-                            modifier = Modifier.fillMaxWidth()
-                        )
                     }
                 }
             }
 
-            // Feedback Toggles
+            // 2. Scan Feedback & Wedge Configuration
             Card(
                 colors = CardDefaults.cardColors(containerColor = ErrinSurface),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Maklum Balas Imbasan", color = ErrinYellow, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.VolumeUp, contentDescription = null, tint = ErrinYellow, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Maklum Balas & Mod Imbasan", color = ErrinYellow, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    }
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -295,7 +249,7 @@ fun SettingsScreen(
                             checked = soundEnabled,
                             onCheckedChange = {
                                 soundEnabled = it
-                                store.soundEnabled = it
+                                prefs.soundEnabled = it
                             },
                             colors = SwitchDefaults.colors(checkedThumbColor = ErrinYellow, checkedTrackColor = ErrinCard)
                         )
@@ -306,12 +260,31 @@ fun SettingsScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Getaran (Haptic Feedback)", color = ErrinTextPrimary, fontSize = 13.sp)
+                        Text("Getaran Semasa Imbas (Haptic)", color = ErrinTextPrimary, fontSize = 13.sp)
                         Switch(
                             checked = vibrateEnabled,
                             onCheckedChange = {
                                 vibrateEnabled = it
-                                store.vibrateEnabled = it
+                                prefs.vibrateEnabled = it
+                            },
+                            colors = SwitchDefaults.colors(checkedThumbColor = ErrinYellow, checkedTrackColor = ErrinCard)
+                        )
+                    }
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Tekan 'Enter' Automatik", color = ErrinTextPrimary, fontSize = 13.sp)
+                            Text("Hantar ketukan kekunci Enter selepas kod bar dihantar ke PC.", color = ErrinTextMuted, fontSize = 11.sp)
+                        }
+                        Switch(
+                            checked = autoEnter,
+                            onCheckedChange = {
+                                autoEnter = it
+                                prefs.autoEnter = it
                             },
                             colors = SwitchDefaults.colors(checkedThumbColor = ErrinYellow, checkedTrackColor = ErrinCard)
                         )
@@ -319,15 +292,60 @@ fun SettingsScreen(
                 }
             }
 
-            // About / Info
+            // 3. Optional GitHub Direct Catalog Storage
+            Card(
+                colors = CardDefaults.cardColors(containerColor = ErrinSurface),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Code, contentDescription = null, tint = ErrinYellow, modifier = Modifier.size(20.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Pilihan: GitHub Catalog (Luar Talian PC)", color = ErrinYellow, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    }
+
+                    Text(
+                        "Jika anda ingin menyimpan buku terus ke repositori katalog GitHub sekolah semasa komputer PC tidak aktif:",
+                        color = ErrinTextMuted,
+                        fontSize = 12.sp
+                    )
+
+                    OutlinedTextField(
+                        value = githubRepo,
+                        onValueChange = {
+                            githubRepo = it
+                            prefs.githubRepo = it.trim()
+                        },
+                        label = { Text("Repositori GitHub (cth. pustaka-terbuka/sk-taman-ria)", fontSize = 12.sp) },
+                        singleLine = true,
+                        colors = outlinedColors(),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    OutlinedTextField(
+                        value = githubToken,
+                        onValueChange = {
+                            githubToken = it
+                            prefs.githubToken = it.trim()
+                        },
+                        label = { Text("GitHub Personal Access Token (PAT)", fontSize = 12.sp) },
+                        singleLine = true,
+                        colors = outlinedColors(),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+
+            // 4. About Info
             Card(
                 colors = CardDefaults.cardColors(containerColor = ErrinSurfaceVariant),
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column(modifier = Modifier.padding(14.dp)) {
-                    Text("ErrinILS Scanner v1.0", color = ErrinTextPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                    Text("Sistem Pengurusan Perpustakaan Sekolah Bersepadu", color = ErrinTextSecondary, fontSize = 11.sp)
-                    Text("SK Taman Ria • Pustaka Terbuka Union", color = ErrinTextMuted, fontSize = 11.sp)
+                    Text("ErrinILS Scanner v1.4.0", color = ErrinTextPrimary, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                    Text("Pengimbas Kod Bar & Pendaftaran Buku Pantas", color = ErrinTextSecondary, fontSize = 11.sp)
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text("Direka untuk Guru Perpustakaan & Pengawas PSS.", color = ErrinTextMuted, fontSize = 11.sp)
                 }
             }
         }
