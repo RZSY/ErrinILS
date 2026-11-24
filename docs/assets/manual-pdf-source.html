@@ -296,6 +296,32 @@
       text-align: center;
     }
 
+    .flowchart-box {
+      margin: 14px 0 18px 0;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      background: #fafaf9;
+      padding: 10px 12px;
+      text-align: center;
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
+
+    .flowchart-svg {
+      max-width: 100%;
+      height: auto;
+      display: block;
+      margin: 0 auto;
+    }
+
+    .flowchart-caption {
+      margin-top: 8px;
+      font-size: 8.5pt;
+      font-weight: 700;
+      color: #1e293b;
+      text-align: center;
+    }
+
     /* -------------------------------------------------------------
        CALLOUTS
        ------------------------------------------------------------- */
@@ -406,27 +432,27 @@
     <div class="toc-grid">
       <div>
         <div class="toc-item"><span>1. About ErrinILS &amp; Zero-Dependency Design</span> <strong>3</strong></div>
-        <div class="toc-item"><span>2. System Requirements &amp; Hardware Specs</span> <strong>4</strong></div>
-        <div class="toc-item"><span>3. Installing &amp; Standalone Portable Copy</span> <strong>5</strong></div>
-        <div class="toc-item"><span>4. Getting Started &amp; Initial Security</span> <strong>6</strong></div>
-        <div class="toc-item"><span>5. School Rules &amp; Identifiers</span> <strong>7</strong></div>
-        <div class="toc-item"><span>6. The Dashboard &amp; Daily Overview</span> <strong>8</strong></div>
-        <div class="toc-item"><span>7. Daily Circulation Desk Operations</span> <strong>9</strong></div>
-        <div class="toc-item"><span>8. The Simplified View (Touch Kiosk)</span> <strong>11</strong></div>
-        <div class="toc-item"><span>9. The Catalog &amp; 31-Source ISBN Lookup</span> <strong>12</strong></div>
-        <div class="toc-item"><span>10. Batch Label Printing &amp; Accessioning</span> <strong>14</strong></div>
+        <div class="toc-item"><span>2. System Requirements &amp; Hardware Specs</span> <strong>3</strong></div>
+        <div class="toc-item"><span>3. Installing &amp; Standalone Portable Copy</span> <strong>4</strong></div>
+        <div class="toc-item"><span>4. Initial Setup &amp; Security Configuration</span> <strong>4</strong></div>
+        <div class="toc-item"><span>5. School Rules &amp; Policy Parameters</span> <strong>5</strong></div>
+        <div class="toc-item"><span>6. The Dashboard &amp; Daily Overview</span> <strong>6</strong></div>
+        <div class="toc-item"><span>7. Daily Circulation Desk Operations</span> <strong>7</strong></div>
+        <div class="toc-item"><span>8. The Simplified View (Touch Kiosk)</span> <strong>9</strong></div>
+        <div class="toc-item"><span>9. The Catalog &amp; 31-Source ISBN Lookup</span> <strong>10</strong></div>
+        <div class="toc-item"><span>10. Batch Label Printing &amp; Accessioning</span> <strong>11</strong></div>
       </div>
       <div>
-        <div class="toc-item"><span>11. Student Patrons &amp; Malaysian IC Verification</span> <strong>15</strong></div>
-        <div class="toc-item"><span>12. Fines Management &amp; Lost Books</span> <strong>16</strong></div>
-        <div class="toc-item"><span>13. Collection Weeding &amp; Maintenance</span> <strong>17</strong></div>
-        <div class="toc-item"><span>14. Remote Access, Network Ports (8585) &amp; Web OPAC</span> <strong>18</strong></div>
-        <div class="toc-item"><span>15. ErrinILS Scanner &amp; Bidirectional Operations (8586)</span> <strong>19</strong></div>
-        <div class="toc-item"><span>16. Dual Cloud Sync (Google Drive &amp; GitHub)</span> <strong>21</strong></div>
-        <div class="toc-item"><span>17. Reports, Reading Champions &amp; Analytics</span> <strong>22</strong></div>
-        <div class="toc-item"><span>18. Backup, Restore &amp; Database Optimization</span> <strong>23</strong></div>
-        <div class="toc-item"><span>19. Troubleshooting Guide &amp; Administration</span> <strong>24</strong></div>
-        <div class="toc-item"><span>Appendices: Quick Task Guide &amp; Glossary</span> <strong>25</strong></div>
+        <div class="toc-item"><span>11. Student Patrons &amp; Malaysian IC Verification</span> <strong>12</strong></div>
+        <div class="toc-item"><span>12. Fines Management &amp; Lost Books</span> <strong>13</strong></div>
+        <div class="toc-item"><span>13. Collection Weeding &amp; Maintenance</span> <strong>13</strong></div>
+        <div class="toc-item"><span>14. Remote Access, Network Ports (8585) &amp; Web OPAC</span> <strong>15</strong></div>
+        <div class="toc-item"><span>15. ErrinILS Scanner &amp; Bidirectional Operations (8586)</span> <strong>17</strong></div>
+        <div class="toc-item"><span>16. Dual Cloud Sync (Google Drive &amp; GitHub)</span> <strong>20</strong></div>
+        <div class="toc-item"><span>17. Reports, Reading Champions &amp; Analytics</span> <strong>20</strong></div>
+        <div class="toc-item"><span>18. Backup, Restore &amp; Database Optimization</span> <strong>22</strong></div>
+        <div class="toc-item"><span>19. Troubleshooting Guide &amp; Administration</span> <strong>23</strong></div>
+        <div class="toc-item"><span>Appendices: Quick Task Guide &amp; Glossary</span> <strong>24</strong></div>
       </div>
     </div>
 
@@ -514,6 +540,35 @@
   </table>
 
   <!-- =============================================================
+       CHAPTER 4 & 5: INITIAL SETUP & SCHOOL RULES
+       ============================================================= -->
+  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapters 4 &amp; 5: Setup &amp; Rules</span></div>
+  <h2 class="chapter-heading">4. Initial Setup &amp; Security Configuration</h2>
+  <p>
+    Upon first launch, ErrinILS automatically provisions the SQLite database engine (<code>errin-data.db</code>) with Write-Ahead Logging (WAL) and creates the configuration keystore (<code>errin-config.json</code>). Administrative functions—including system settings, database restoration, record deletion, and cloud sync credentials—are secured with salted PBKDF2/SHA-256 encryption.
+  </p>
+  <ul>
+    <li><strong>Default Master Password:</strong> The factory default password is <code>admin123</code>. You should change this upon initial deployment.</li>
+    <li><strong>Changing Master Password:</strong> Navigate to the <strong>Settings</strong> tab, scroll to <em>Administrator Security</em>, enter your current password, and specify a new secure password.</li>
+    <li><strong>Emergency Password Recovery:</strong> If the administrative password is ever lost or forgotten, close ErrinILS, press <code>Win + R</code>, enter <code>%APPDATA%\Errin</code>, and delete <code>errin-config.json</code>. Upon restarting the system, the password resets to factory default (<code>admin123</code>) while 100% of your student and catalog data remains completely intact.</li>
+  </ul>
+
+  <h2 class="chapter-heading">5. School Circulation Rules &amp; Policy Parameters</h2>
+  <p>
+    Every school library operates under specific lending guidelines. In the <strong>Settings</strong> tab, librarians can configure school-wide circulation rules to match institutional policy:
+  </p>
+  <table>
+    <thead><tr><th>Parameter</th><th>Default Value</th><th>Operational Rule in ErrinILS</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Standard Loan Duration</strong></td><td>7 Days</td><td>Items stamped for 7 calendar days. Auto-calculates return due date.</td></tr>
+      <tr><td><strong>Daily Overdue Fine Rate</strong></td><td>RM 0.10 / day</td><td>Assessed per overdue day upon return. Customizable (or set to 0.00).</td></tr>
+      <tr><td><strong>Fine Blocking Threshold</strong></td><td>RM 5.00</td><td>Patrons with unpaid fines &ge; RM 5.00 are blocked from new checkouts.</td></tr>
+      <tr><td><strong>Maximum Renewal Count</strong></td><td>2 Times</td><td>Extends loan period by 7 days. Blocked if item is overdue or held.</td></tr>
+      <tr><td><strong>Student ID Primary Key</strong></td><td>Malaysian IC / MyKid</td><td>Normalizes 12-digit string to <code>YYMMDD-PB-###G</code> with calendar date validation.</td></tr>
+    </tbody>
+  </table>
+
+  <!-- =============================================================
        CHAPTER 6: THE DASHBOARD & FIGURE 1
        ============================================================= -->
   <div class="page-break"></div>
@@ -563,6 +618,97 @@
     <li><strong>Return:</strong> Scan the book barcode into <strong>Return / Renew</strong> and press Enter. If late, the fine is calculated automatically. If a reservation (hold) exists for another student, a prominent alert prompts you to put the item aside.</li>
     <li><strong>Renew:</strong> Scan the book barcode and click <strong>Renew</strong>. This extends the loan period by 7 days. Renewal is blocked if the book is overdue, has already reached the maximum renewal limit (2 times), or is held by another patron.</li>
   </ul>
+
+  <div class="flowchart-box">
+  <svg class="flowchart-svg" viewBox="0 0 680 250" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+      </marker>
+      <filter id="shadow" x="-5%" y="-5%" width="110%" height="115%" filterUnits="userSpaceOnUse">
+        <feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.08"/>
+      </filter>
+    </defs>
+
+    <!-- Background Card -->
+    <rect x="2" y="2" width="676" height="246" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+
+    <!-- Step 1: Scan Student -->
+    <g filter="url(#shadow)">
+      <rect x="20" y="30" width="120" height="50" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+      <text x="80" y="52" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="11" font-weight="700" fill="#1e3a8a" text-anchor="middle">1. Scan Student IC</text>
+      <text x="80" y="67" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9.5" fill="#3b82f6" text-anchor="middle">Barcode or MyKid</text>
+    </g>
+
+    <!-- Arrow 1 -> 2 -->
+    <line x1="140" y1="55" x2="178" y2="55" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <!-- Step 2: Patron Validation -->
+    <g filter="url(#shadow)">
+      <polygon points="235,25 295,55 235,85 175,55" fill="#fefce8" stroke="#ca8a04" stroke-width="1.5"/>
+      <text x="235" y="52" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="10" font-weight="700" fill="#854d0e" text-anchor="middle">Patron Blocked?</text>
+      <text x="235" y="64" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8.5" fill="#a16207" text-anchor="middle">Overdue / Fines &gt; RM5</text>
+    </g>
+
+    <!-- Branch: Blocked YES -->
+    <line x1="235" y1="85" x2="235" y2="120" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <rect x="180" y="120" width="110" height="42" rx="5" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+    <text x="235" y="138" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="10" font-weight="700" fill="#991b1b" text-anchor="middle">Circulation Blocked</text>
+    <text x="235" y="152" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8.5" fill="#b91c1c" text-anchor="middle">Settle fines or return book</text>
+
+    <!-- Branch: Blocked NO -> Step 3 -->
+    <line x1="295" y1="55" x2="338" y2="55" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <text x="316" y="47" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9" font-weight="700" fill="#16a34a" text-anchor="middle">NO</text>
+
+    <!-- Step 3: Scan Item -->
+    <g filter="url(#shadow)">
+      <rect x="340" y="30" width="125" height="50" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+      <text x="402" y="52" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="11" font-weight="700" fill="#1e3a8a" text-anchor="middle">2. Scan Item Barcode</text>
+      <text x="402" y="67" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9.5" fill="#3b82f6" text-anchor="middle">Verify copy status</text>
+    </g>
+
+    <!-- Arrow 3 -> 4 -->
+    <line x1="465" y1="55" x2="508" y2="55" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <!-- Step 4: Loan Complete -->
+    <g filter="url(#shadow)">
+      <rect x="510" y="30" width="150" height="50" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+      <text x="585" y="52" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="11" font-weight="700" fill="#166534" text-anchor="middle">Loan Active (7 Days)</text>
+      <text x="585" y="67" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9.5" fill="#15803d" text-anchor="middle">Chime &amp; Due Date Stamped</text>
+    </g>
+
+    <!-- Dividing Dash -->
+    <line x1="20" y1="180" x2="660" y2="180" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="4 4"/>
+
+    <!-- Return Process Header -->
+    <text x="25" y="200" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="10.5" font-weight="700" fill="#0f172a">RETURN WORKFLOW:</text>
+
+    <!-- Return Flow -->
+    <rect x="145" y="190" width="115" height="42" rx="5" fill="#f8fafc" stroke="#64748b" stroke-width="1.2"/>
+    <text x="202" y="208" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9.5" font-weight="700" fill="#334155" text-anchor="middle">Scan Book Barcode</text>
+    <text x="202" y="222" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8.5" fill="#64748b" text-anchor="middle">Return / Renew box</text>
+
+    <line x1="260" y1="211" x2="288" y2="211" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <polygon points="330,190 375,211 330,232 285,211" fill="#fefce8" stroke="#ca8a04" stroke-width="1.2"/>
+    <text x="330" y="208" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9" font-weight="700" fill="#854d0e" text-anchor="middle">Overdue?</text>
+    <text x="330" y="220" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8" fill="#a16207" text-anchor="middle">&gt; 7 Days</text>
+
+    <line x1="375" y1="211" x2="415" y2="211" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arrow)"/>
+    <text x="395" y="204" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8" font-weight="700" fill="#dc2626" text-anchor="middle">YES</text>
+
+    <rect x="420" y="190" width="115" height="42" rx="5" fill="#fef2f2" stroke="#dc2626" stroke-width="1.2"/>
+    <text x="477" y="208" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9.5" font-weight="700" fill="#991b1b" text-anchor="middle">Fine Assessed</text>
+    <text x="477" y="222" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8.5" fill="#b91c1c" text-anchor="middle">RM 0.10 &times; Overdue Days</text>
+
+    <line x1="535" y1="211" x2="558" y2="211" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <rect x="560" y="190" width="100" height="42" rx="5" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.2"/>
+    <text x="610" y="208" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9.5" font-weight="700" fill="#166534" text-anchor="middle">Copy Restored</text>
+    <text x="610" y="222" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8.5" fill="#15803d" text-anchor="middle">Status = Available</text>
+  </svg>
+  <div class="flowchart-caption">Flowchart 1: Circulation Desk Lending, Verification &amp; Return Decision Logic</div>
+</div>
 
   <!-- =============================================================
        CHAPTER 8: SIMPLIFIED VIEW
@@ -618,6 +764,76 @@
   </ul>
   <p>Title, author, publisher, publication year, subjects, and Dewey Decimal call number are automatically populated in under 1 second.</p>
 
+  <div class="flowchart-box">
+  <svg class="flowchart-svg" viewBox="0 0 680 240" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="arrow2" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+      </marker>
+      <filter id="shadow2" x="-5%" y="-5%" width="110%" height="115%" filterUnits="userSpaceOnUse">
+        <feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.08"/>
+      </filter>
+    </defs>
+
+    <rect x="2" y="2" width="676" height="236" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+
+    <!-- Input -->
+    <g filter="url(#shadow2)">
+      <rect x="20" y="85" width="115" height="55" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+      <text x="77" y="108" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="11" font-weight="700" fill="#1e3a8a" text-anchor="middle">ISBN Barcode</text>
+      <text x="77" y="123" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9.5" fill="#3b82f6" text-anchor="middle">Scan or Type</text>
+    </g>
+
+    <!-- Fan out lines -->
+    <line x1="135" y1="112" x2="175" y2="40" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow2)"/>
+    <line x1="135" y1="112" x2="175" y2="88" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow2)"/>
+    <line x1="135" y1="112" x2="175" y2="136" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow2)"/>
+    <line x1="135" y1="112" x2="175" y2="184" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow2)"/>
+
+    <!-- 4 Tiers of 31 Sources -->
+    <rect x="180" y="20" width="180" height="38" rx="5" fill="#f8fafc" stroke="#3b82f6" stroke-width="1.2"/>
+    <text x="270" y="36" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9.5" font-weight="700" fill="#1e40af" text-anchor="middle">National Union &amp; Shards</text>
+    <text x="270" y="49" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8.5" fill="#475569" text-anchor="middle">Pustaka Terbuka, KIK, u-Pustaka</text>
+
+    <rect x="180" y="68" width="180" height="38" rx="5" fill="#f8fafc" stroke="#3b82f6" stroke-width="1.2"/>
+    <text x="270" y="84" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9.5" font-weight="700" fill="#1e40af" text-anchor="middle">PNM &amp; 14 State Libraries</text>
+    <text x="270" y="97" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8.5" fill="#475569" text-anchor="middle">PPAS, PPAP, PPANPK, PNS...</text>
+
+    <rect x="180" y="116" width="180" height="38" rx="5" fill="#f8fafc" stroke="#3b82f6" stroke-width="1.2"/>
+    <text x="270" y="132" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9.5" font-weight="700" fill="#1e40af" text-anchor="middle">Universities &amp; DBP</text>
+    <text x="270" y="145" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8.5" fill="#475569" text-anchor="middle">UM, UKM, UiTM, UPSI, MALCat</text>
+
+    <rect x="180" y="164" width="180" height="38" rx="5" fill="#f8fafc" stroke="#3b82f6" stroke-width="1.2"/>
+    <text x="270" y="180" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9.5" font-weight="700" fill="#1e40af" text-anchor="middle">Global Union Archives</text>
+    <text x="270" y="193" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8.5" fill="#475569" text-anchor="middle">LOC (Z39.50), OpenLib, Google, K10</text>
+
+    <!-- Fan in lines -->
+    <line x1="360" y1="40" x2="395" y2="108" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow2)"/>
+    <line x1="360" y1="88" x2="395" y2="110" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow2)"/>
+    <line x1="360" y1="136" x2="395" y2="114" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow2)"/>
+    <line x1="360" y1="184" x2="395" y2="116" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow2)"/>
+
+    <!-- Resolution & Parser -->
+    <g filter="url(#shadow2)">
+      <rect x="400" y="85" width="125" height="55" rx="6" fill="#fefce8" stroke="#ca8a04" stroke-width="1.5"/>
+      <text x="462" y="106" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="10.5" font-weight="700" fill="#854d0e" text-anchor="middle">MARC21 Engine</text>
+      <text x="462" y="120" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9" fill="#a16207" text-anchor="middle">Field Extraction</text>
+      <text x="462" y="132" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8" fill="#a16207" text-anchor="middle">Title, Author, DDC, 650</text>
+    </g>
+
+    <line x1="525" y1="112" x2="550" y2="112" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow2)"/>
+
+    <!-- Accessioning -->
+    <g filter="url(#shadow2)">
+      <rect x="555" y="85" width="110" height="55" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+      <text x="610" y="106" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="10.5" font-weight="700" fill="#166534" text-anchor="middle">Accession &amp; Save</text>
+      <text x="610" y="120" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8.5" fill="#15803d" text-anchor="middle">Assign ACQ-xxxxxx</text>
+      <text x="610" y="132" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8" fill="#15803d" text-anchor="middle">Print Code 128 / Spine</text>
+    </g>
+  </svg>
+  <div class="flowchart-caption">Flowchart 2: 31-Source Parallel Copy-Cataloguing &amp; Accessioning Workflow</div>
+</div>
+
   <!-- =============================================================
        CHAPTER 10: BATCH LABEL PRINTING
        ============================================================= -->
@@ -652,6 +868,76 @@
     Click <strong>+ Register student</strong>. Enter the 12-digit Malaysian IC or MyKid number. ErrinILS automatically formats the number into <code>YYMMDD-PB-###G</code> and verifies that the birth month (01&ndash;12) and day are mathematically valid for the given calendar month. Enter the student's name and class (e.g. <code>5 Gemilang</code>), then click <strong>Print Card</strong> to produce a standard library card (85.6 &times; 54 mm).
   </p>
 
+  <div class="flowchart-box">
+  <svg class="flowchart-svg" viewBox="0 0 680 200" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="arrow3" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+      </marker>
+      <filter id="shadow3" x="-5%" y="-5%" width="110%" height="115%" filterUnits="userSpaceOnUse">
+        <feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.08"/>
+      </filter>
+    </defs>
+
+    <rect x="2" y="2" width="676" height="196" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+
+    <!-- Input -->
+    <g filter="url(#shadow3)">
+      <rect x="15" y="35" width="115" height="50" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+      <text x="72" y="56" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="10.5" font-weight="700" fill="#1e3a8a" text-anchor="middle">12-Digit IC / MyKid</text>
+      <text x="72" y="70" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9" fill="#3b82f6" text-anchor="middle">Manual or Excel/CSV</text>
+    </g>
+
+    <line x1="130" y1="60" x2="165" y2="60" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow3)"/>
+
+    <!-- Validation -->
+    <g filter="url(#shadow3)">
+      <polygon points="220,30 275,60 220,90 165,60" fill="#fefce8" stroke="#ca8a04" stroke-width="1.5"/>
+      <text x="220" y="56" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9.5" font-weight="700" fill="#854d0e" text-anchor="middle">Valid Date?</text>
+      <text x="220" y="69" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8" fill="#a16207" text-anchor="middle">YYMMDD &amp; State</text>
+    </g>
+
+    <!-- Invalid Branch -->
+    <line x1="220" y1="90" x2="220" y2="125" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arrow3)"/>
+    <text x="232" y="110" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8.5" font-weight="700" fill="#dc2626">NO</text>
+    <rect x="170" y="125" width="100" height="35" rx="5" fill="#fef2f2" stroke="#dc2626" stroke-width="1.2"/>
+    <text x="220" y="142" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9" font-weight="700" fill="#991b1b" text-anchor="middle">Reject IC</text>
+    <text x="220" y="153" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="7.5" fill="#b91c1c" text-anchor="middle">Display Correction Prompt</text>
+
+    <!-- Valid Branch -->
+    <line x1="275" y1="60" x2="310" y2="60" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow3)"/>
+    <text x="292" y="52" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8.5" font-weight="700" fill="#16a34a">YES</text>
+
+    <!-- Active Patron & Circulation -->
+    <g filter="url(#shadow3)">
+      <rect x="315" y="35" width="115" height="50" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+      <text x="372" y="56" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="10" font-weight="700" fill="#166534" text-anchor="middle">Active Patron</text>
+      <text x="372" y="70" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8.5" fill="#15803d" text-anchor="middle">Eligible for Circulation</text>
+    </g>
+
+    <line x1="430" y1="60" x2="465" y2="60" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow3)"/>
+
+    <!-- Annual Cohort Archiving -->
+    <rect x="470" y="35" width="95" height="50" rx="5" fill="#f8fafc" stroke="#64748b" stroke-width="1.2"/>
+    <text x="517" y="56" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9.5" font-weight="700" fill="#334155" text-anchor="middle">Dec 31 Snapshot</text>
+    <text x="517" y="70" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8" fill="#64748b" text-anchor="middle">Class History Cohort</text>
+
+    <line x1="565" y1="60" x2="590" y2="60" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow3)"/>
+
+    <!-- 6-Year Deactivation & Archive -->
+    <g filter="url(#shadow3)">
+      <rect x="595" y="35" width="70" height="50" rx="5" fill="#faf5ff" stroke="#9333ea" stroke-width="1.5"/>
+      <text x="630" y="56" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9.5" font-weight="700" fill="#6b21a8" text-anchor="middle">&gt; 6 Years</text>
+      <text x="630" y="70" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8" fill="#7e22ce" text-anchor="middle">Safe Archive</text>
+    </g>
+
+    <!-- Bottom Explanatory Banner -->
+    <rect x="15" y="172" width="650" height="18" rx="3" fill="#f1f5f9"/>
+    <text x="340" y="184" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8" fill="#475569" text-anchor="middle">Privacy Guarantee: Archived student records retain borrowing &amp; fine histories permanently, but are excluded from active leaderboards.</text>
+  </svg>
+  <div class="flowchart-caption">Flowchart 3: Patron Registration, Malaysian IC Validation &amp; Student Retention Lifecycle</div>
+</div>
+
   <!-- =============================================================
        CHAPTER 12: FINES MANAGEMENT
        ============================================================= -->
@@ -669,6 +955,27 @@
   <p>
     Select any fine record in the table and click <strong>Pay</strong> when the student pays cash, or <strong>Waive</strong> if excusing the charge. Settling fines immediately lifts the circulation block.
   </p>
+
+  <!-- =============================================================
+       CHAPTER 13: COLLECTION WEEDING & MAINTENANCE
+       ============================================================= -->
+  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 13: Collection Weeding</span></div>
+  <h2 class="chapter-heading">13. Collection Weeding &amp; Inventory Maintenance</h2>
+  <p>
+    Maintaining a healthy, relevant school library collection requires periodic planned withdrawal (weeding) of damaged, obsolete, or missing materials. ErrinILS provides a structured, audit-proof weeding workflow that preserves historical circulation logs for administrative reporting.
+  </p>
+  <ul>
+    <li><strong>Weeding a Copy:</strong> In the <strong>Catalog</strong> tab, select any bibliographic record, click <strong>Weed Copy</strong>, and choose the withdrawal reason:
+      <ul>
+        <li><em>Condition / Damage:</em> Physical wear, torn pages, water exposure, or mildew.</li>
+        <li><em>Obsolete Content:</em> Superceded syllabus materials or outdated factual references.</li>
+        <li><em>Lost / Missing:</em> Unreturned copies confirmed missing during annual inventory audit.</li>
+        <li><em>Excess Duplicate:</em> Pruning surplus copies of low-demand legacy titles.</li>
+      </ul>
+    </li>
+    <li><strong>Audit Trail Preservation:</strong> Weeded items are immediately hidden from active OPAC search and student circulation, preventing accidental checkouts. However, all accession records, historical borrowing counts, and disposal timestamps are permanently retained in SQLite for annual school audit verification.</li>
+    <li><strong>Restoring Withdrawn Copies:</strong> If a missing book is recovered, switch the Catalog filter from <em>Active Copies</em> to <em>Weeded Copies</em>, select the title, and click <strong>Restore to Active</strong> to return the copy to the active shelves.</li>
+  </ul>
 
   <!-- =============================================================
        CHAPTER 14: REMOTE ACCESS, NETWORK PORTS & OPAC
@@ -796,6 +1103,77 @@
     <li><strong>Manual Barcode Keyboard Fallback:</strong> If a physical barcode sticker is torn or faded, tap the keyboard icon to type the barcode number manually; it streams wirelessly to the PC exactly like a camera scan.</li>
   </ul>
 
+  <div class="flowchart-box">
+  <svg class="flowchart-svg" viewBox="0 0 680 250" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="arrow4" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563eb"/>
+      </marker>
+      <marker id="arrow4-rev" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#16a34a"/>
+      </marker>
+      <filter id="shadow4" x="-5%" y="-5%" width="110%" height="115%" filterUnits="userSpaceOnUse">
+        <feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.08"/>
+      </filter>
+    </defs>
+
+    <rect x="2" y="2" width="676" height="246" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+
+    <!-- Desktop Subsystem -->
+    <rect x="20" y="20" width="280" height="205" rx="7" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+    <rect x="20" y="20" width="280" height="28" rx="7" fill="#2563eb"/>
+    <text x="160" y="38" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">DESKTOP SYSTEM (Port 8585)</text>
+
+    <!-- Desktop Components -->
+    <rect x="35" y="60" width="250" height="32" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1"/>
+    <text x="160" y="80" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9.5" font-weight="700" fill="#1e293b" text-anchor="middle">HTTP REST Server (0.0.0.0:8585)</text>
+
+    <rect x="35" y="100" width="250" height="32" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1"/>
+    <text x="160" y="120" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9.5" fill="#334155" text-anchor="middle">Wedge Controller &amp; Key Injection</text>
+
+    <rect x="35" y="140" width="250" height="32" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1"/>
+    <text x="160" y="160" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9.5" fill="#334155" text-anchor="middle">Device Roster &amp; Subnet Discovery</text>
+
+    <rect x="35" y="180" width="250" height="32" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1"/>
+    <text x="160" y="200" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9" fill="#64748b" text-anchor="middle">Actions: Ping App | Beep Phone | Push Pair</text>
+
+    <!-- Mobile Subsystem -->
+    <rect x="380" y="20" width="280" height="205" rx="7" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+    <rect x="380" y="20" width="280" height="28" rx="7" fill="#16a34a"/>
+    <text x="520" y="38" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">SCANNER APP (Port 8586)</text>
+
+    <!-- Mobile Components -->
+    <rect x="395" y="60" width="250" height="32" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1"/>
+    <text x="520" y="80" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9.5" font-weight="700" fill="#1e293b" text-anchor="middle">ScannerHttpServer.kt (Port 8586)</text>
+
+    <rect x="395" y="100" width="250" height="32" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1"/>
+    <text x="520" y="120" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9.5" fill="#334155" text-anchor="middle">Camera ML Kit Barcode Reader</text>
+
+    <rect x="395" y="140" width="250" height="32" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1"/>
+    <text x="520" y="160" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9.5" fill="#334155" text-anchor="middle">Audio Tone &amp; Haptic Vibration Motor</text>
+
+    <rect x="395" y="180" width="250" height="32" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1"/>
+    <text x="520" y="200" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9" fill="#64748b" text-anchor="middle">Auto-Enter Keystroke &amp; Torch Toggle</text>
+
+    <!-- Communication Paths (Bidirectional) -->
+    <!-- Mobile to Desktop: Scanned Barcode Stream -->
+    <path d="M 395 76 L 310 76" stroke="#16a34a" stroke-width="2" marker-end="url(#arrow4-rev)"/>
+    <rect x="312" y="62" width="60" height="15" rx="3" fill="#dcfce7"/>
+    <text x="342" y="73" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8" font-weight="700" fill="#15803d" text-anchor="middle">POST /wedge</text>
+
+    <!-- Desktop to Mobile: Remote Ping -->
+    <path d="M 285 156 L 370 156" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow4)"/>
+    <rect x="310" y="142" width="65" height="15" rx="3" fill="#dbeafe"/>
+    <text x="342" y="153" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8" font-weight="700" fill="#1e40af" text-anchor="middle">GET /ping</text>
+
+    <!-- Desktop to Mobile: Remote Beep & Pair -->
+    <path d="M 285 196 L 370 196" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow4)"/>
+    <rect x="310" y="182" width="65" height="15" rx="3" fill="#dbeafe"/>
+    <text x="342" y="193" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8" font-weight="700" fill="#1e40af" text-anchor="middle">POST /beep</text>
+  </svg>
+  <div class="flowchart-caption">Flowchart 4: Bidirectional Dual-Port Companion Architecture (Desktop Port 8585 &harr; Mobile Port 8586)</div>
+</div>
+
   <!-- =============================================================
        CHAPTER 16: DUAL CLOUD SYNC
        ============================================================= -->
@@ -810,6 +1188,67 @@
     <li><strong>Public Catalog Data via GitHub:</strong> Bibliographic catalog data contains no personal information. It conforms strictly to the <em>Pustaka Terbuka Data Provider Standard</em> (PPAPP model), synchronizing catalog records to GitHub (<code>catalog.json</code>, <code>catalog.mrc</code>, <code>catalog.xml</code>, single-record MARCXML shards, and holdings tables).</li>
     <li><strong>Multi-PC Parity:</strong> Installing ErrinILS on a second library computer connects to Google Drive and pulls the GitHub catalog, achieving seamless multi-station circulation and cataloging.</li>
   </ul>
+
+  <div class="flowchart-box">
+  <svg class="flowchart-svg" viewBox="0 0 680 230" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="arrow5-blue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#2563eb"/>
+      </marker>
+      <marker id="arrow5-dark" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#334155"/>
+      </marker>
+      <filter id="shadow5" x="-5%" y="-5%" width="110%" height="115%" filterUnits="userSpaceOnUse">
+        <feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.08"/>
+      </filter>
+    </defs>
+
+    <rect x="2" y="2" width="676" height="226" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+
+    <!-- School Library PC (Center Left) -->
+    <g filter="url(#shadow5)">
+      <rect x="20" y="65" width="160" height="95" rx="6" fill="#1e293b"/>
+      <text x="100" y="90" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="11" font-weight="700" fill="#f8fafc" text-anchor="middle">School Library PC</text>
+      <text x="100" y="106" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9" fill="#94a3b8" text-anchor="middle">ErrinILS Desktop Engine</text>
+      <rect x="35" y="118" width="130" height="26" rx="3" fill="#334155"/>
+      <text x="100" y="135" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8.5" font-weight="700" fill="#f6c61b" text-anchor="middle">Dual-Channel Sync</text>
+    </g>
+
+    <!-- Branch 1: Private Records to Google Drive -->
+    <path d="M 180 95 C 230 95, 250 45, 300 45" fill="none" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow5-blue)"/>
+    <text x="240" y="62" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8.5" font-weight="700" fill="#1e40af">Private Channel</text>
+
+    <g filter="url(#shadow5)">
+      <rect x="310" y="20" width="220" height="60" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+      <text x="420" y="42" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="10.5" font-weight="700" fill="#1e3a8a" text-anchor="middle">Google Drive (REST API v3)</text>
+      <text x="420" y="56" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8.5" fill="#3b82f6" text-anchor="middle">Confidential Student Data &amp; ICs</text>
+      <text x="420" y="68" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="7.5" fill="#64748b" text-anchor="middle">Loans, Fines, Class Rosters, Settings</text>
+    </g>
+
+    <!-- Branch 2: Public Bibliographic Data to GitHub -->
+    <path d="M 180 130 C 230 130, 250 175, 300 175" fill="none" stroke="#334155" stroke-width="2" marker-end="url(#arrow5-dark)"/>
+    <text x="240" y="165" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8.5" font-weight="700" fill="#334155">Open Data Channel</text>
+
+    <g filter="url(#shadow5)">
+      <rect x="310" y="145" width="220" height="65" rx="6" fill="#f8fafc" stroke="#334155" stroke-width="1.5"/>
+      <text x="420" y="167" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="10.5" font-weight="700" fill="#0f172a" text-anchor="middle">GitHub (Pustaka Terbuka PPAPP)</text>
+      <text x="420" y="182" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8.5" fill="#475569" text-anchor="middle">Public Bibliographic Records Only</text>
+      <text x="420" y="196" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="7.5" fill="#64748b" text-anchor="middle">MARCXML Shards, catalog.json, holdings.csv</text>
+    </g>
+
+    <!-- Multi-PC Parity Box (Right) -->
+    <line x1="530" y1="50" x2="560" y2="95" stroke="#2563eb" stroke-width="1.2" stroke-dasharray="3 3"/>
+    <line x1="530" y1="175" x2="560" y2="125" stroke="#334155" stroke-width="1.2" stroke-dasharray="3 3"/>
+
+    <g filter="url(#shadow5)">
+      <rect x="560" y="80" width="105" height="65" rx="5" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.2"/>
+      <text x="612" y="102" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9.5" font-weight="700" fill="#166534" text-anchor="middle">Library PC #2</text>
+      <text x="612" y="117" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8" fill="#15803d" text-anchor="middle">Instant Multi-Station</text>
+      <text x="612" y="130" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8" font-weight="700" fill="#15803d" text-anchor="middle">100% Parity</text>
+    </g>
+  </svg>
+  <div class="flowchart-caption">Flowchart 5: Dual Privacy-Preserving Cloud Synchronization Architecture</div>
+</div>
 
   <!-- =============================================================
        CHAPTER 17: REPORTS & ANALYTICS
@@ -845,6 +1284,70 @@
     <li><strong>Restoring from Backup:</strong> On a new or repaired computer, install ErrinILS, open the Backup tab, click <strong>Restore from backup</strong>, and select your backup ZIP file. ErrinILS restores all records instantly.</li>
     <li><strong>Database Optimization:</strong> Under Settings or Backup, click <strong>Optimize Database</strong>. ErrinILS executes <code>PRAGMA integrity_check;</code>, <code>PRAGMA optimize;</code>, and <code>VACUUM;</code> to reclaim unused disk space, defragment tables, and verify file integrity.</li>
   </ul>
+
+  <div class="flowchart-box">
+  <svg class="flowchart-svg" viewBox="0 0 680 195" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="arrow6" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#475569"/>
+      </marker>
+      <filter id="shadow6" x="-5%" y="-5%" width="110%" height="115%" filterUnits="userSpaceOnUse">
+        <feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="#0f172a" flood-opacity="0.08"/>
+      </filter>
+    </defs>
+
+    <rect x="2" y="2" width="676" height="191" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+
+    <!-- Backup Routine (Top Row) -->
+    <rect x="20" y="20" width="130" height="45" rx="5" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="85" y="38" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="10" font-weight="700" fill="#1e3a8a" text-anchor="middle">Export Backup (ZIP)</text>
+    <text x="85" y="52" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8.5" fill="#3b82f6" text-anchor="middle">Weekly USB Routine</text>
+
+    <line x1="150" y1="42" x2="185" y2="42" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow6)"/>
+
+    <rect x="190" y="20" width="150" height="45" rx="5" fill="#f8fafc" stroke="#64748b" stroke-width="1.2"/>
+    <text x="265" y="38" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9.5" font-weight="700" fill="#334155" text-anchor="middle">Pure C# DEFLATE Engine</text>
+    <text x="265" y="52" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8" fill="#64748b" text-anchor="middle">errin-data.db + config.json</text>
+
+    <line x1="340" y1="42" x2="375" y2="42" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow6)"/>
+
+    <rect x="380" y="20" width="140" height="45" rx="5" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.2"/>
+    <text x="450" y="38" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9.5" font-weight="700" fill="#166534" text-anchor="middle">External USB Backup</text>
+    <text x="450" y="52" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8" fill="#15803d" text-anchor="middle">Safe Off-Site Archive</text>
+
+    <line x1="520" y1="42" x2="555" y2="42" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow6)"/>
+
+    <rect x="560" y="20" width="105" height="45" rx="5" fill="#faf5ff" stroke="#9333ea" stroke-width="1.2"/>
+    <text x="612" y="38" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9.5" font-weight="700" fill="#6b21a8" text-anchor="middle">Instant Restore</text>
+    <text x="612" y="52" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8" fill="#7e22ce" text-anchor="middle">&lt; 5s Disas. Recovery</text>
+
+    <!-- Divider -->
+    <line x1="20" y1="85" x2="660" y2="85" stroke="#e2e8f0" stroke-width="1" stroke-dasharray="3 3"/>
+
+    <!-- Database Optimization Pipeline (Bottom Row) -->
+    <text x="25" y="105" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="10" font-weight="700" fill="#0f172a">DATABASE OPTIMIZATION PIPELINE ("Optimize Database"):</text>
+
+    <rect x="25" y="118" width="180" height="55" rx="5" fill="#fefce8" stroke="#ca8a04" stroke-width="1.2"/>
+    <text x="115" y="138" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9.5" font-weight="700" fill="#854d0e" text-anchor="middle">1. PRAGMA integrity_check;</text>
+    <text x="115" y="152" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8" fill="#a16207" text-anchor="middle">Verifies zero B-tree corruption</text>
+    <text x="115" y="164" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8" fill="#a16207" text-anchor="middle">Validates index consistency</text>
+
+    <line x1="205" y1="145" x2="235" y2="145" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow6)"/>
+
+    <rect x="240" y="118" width="180" height="55" rx="5" fill="#fefce8" stroke="#ca8a04" stroke-width="1.2"/>
+    <text x="330" y="138" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9.5" font-weight="700" fill="#854d0e" text-anchor="middle">2. PRAGMA optimize;</text>
+    <text x="330" y="152" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8" fill="#a16207" text-anchor="middle">Updates query planner stats</text>
+    <text x="330" y="164" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8" fill="#a16207" text-anchor="middle">Accelerates catalog search</text>
+
+    <line x1="420" y1="145" x2="450" y2="145" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow6)"/>
+
+    <rect x="455" y="118" width="200" height="55" rx="5" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.2"/>
+    <text x="555" y="138" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="9.5" font-weight="700" fill="#166534" text-anchor="middle">3. VACUUM;</text>
+    <text x="555" y="152" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8" fill="#15803d" text-anchor="middle">Reclaims unused database pages</text>
+    <text x="555" y="164" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8" fill="#15803d" text-anchor="middle">Defragments SQLite storage</text>
+  </svg>
+  <div class="flowchart-caption">Flowchart 6: Backup, Disaster Recovery &amp; SQLite Optimization Pipeline</div>
+</div>
 
   <h2 class="chapter-heading">19. Troubleshooting Guide</h2>
   <table>

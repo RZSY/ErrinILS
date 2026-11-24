@@ -1,7 +1,7 @@
 # ErrinILS School Library System
 ## User Manual and Operating Guidelines
 **Installation, daily circulation, cataloguing, students, fines, weeding, remote access, reports, backup, Android scanner, and administration**  
-**Software Version 1.4.2 (Windows Edition &amp; Android Companion)**  
+**Software Version 1.4.3 (Windows Edition &amp; Android Companion)**  
 *For Windows 7, 8, 8.1, 10 and 11 (32-bit and 64-bit) &amp; Android 7.0+*  
 *Official Repository: https://github.com/RZSY/ErrinILS*  
 *Online Portal: https://rzsy.github.io/ErrinILS/*
@@ -245,8 +245,8 @@ ErrinILS is engineered to work out of the box with any **USB Keyboard Wedge Barc
 ## 3. Installing, Updating and Starting ErrinILS
 
 ### 3.1 Installing with the Setup program
-1. Download `ErrinILS-Setup-1.4.2.exe` from the official release page: `https://github.com/RZSY/ErrinILS/releases/tag/v1.4.2`.
-2. Double-click `ErrinILS-Setup-1.4.2.exe`.
+1. Download `ErrinILS-Setup-1.4.3.exe` from the official release page: `https://github.com/RZSY/ErrinILS/releases/tag/v1.4.3`.
+2. Double-click `ErrinILS-Setup-1.4.3.exe`.
 3. If Windows User Account Control (UAC) prompts *"Do you want to allow this app to make changes?"*, click **Yes**.
 4. If a blue **Windows protected your PC** (SmartScreen) notification appears, click **More info**, then click **Run anyway**. *(This appears on open-source releases that do not have costly commercial signing certificates).*
 5. The setup wizard opens. Click **Next**, keep the default destination directory (`C:\Program Files (x86)\ErrinILS` or `C:\Program Files\ErrinILS`), click **Install**, then click **Finish**.
@@ -336,8 +336,8 @@ If an unhandled system error occurs, ErrinILS displays a notification: *"Somethi
 
 | Rule | Default Value | Configurable? | Location in Settings |
 |---|---|---|---|
-| **Loan Period** | 7 calendar days | Fixed in v1.4.2 | Core Circulation Engine |
-| **Max Renewals per Loan** | 2 renewals (+14 days max) | Fixed in v1.4.2 | Core Circulation Engine |
+| **Loan Period** | 7 calendar days | Fixed in v1.4.3 | Core Circulation Engine |
+| **Max Renewals per Loan** | 2 renewals (+14 days max) | Fixed in v1.4.3 | Core Circulation Engine |
 | **Max Books per Student** | 3 books | Yes | **Settings → Max items per student** |
 | **Overdue Fine Rate** | RM 0.10 / day late | Yes | **Settings → Fine per day late** |
 | **Borrowing Block Threshold** | RM 5.00 unpaid fines | Yes | **Settings → Block checkout at unpaid fines of** |
@@ -901,9 +901,9 @@ Schools can publish their OPAC 24/7 on the internet for free without needing a d
 4. The OPAC runs 100% client-side with full in-browser search and subject filtering with zero server hosting costs.
 
 ### 13.9 Android Companion App (ErrinILS Scanner) & Wireless Wedge Gun
-The **ErrinILS Scanner** Android app (`ErrinILS-Scanner-v1.4.2.apk`) transforms any standard Android smartphone or tablet into an enterprise wireless barcode terminal without buying dedicated hardware:
+The **ErrinILS Scanner** Android app (`ErrinILS-Scanner-v1.4.3.apk`) transforms any standard Android smartphone or tablet into an enterprise wireless barcode terminal without buying dedicated hardware:
 1. **Installation & Setup**:
-   - Download `ErrinILS-Scanner-v1.4.2.apk` onto the phone.
+   - Download `ErrinILS-Scanner-v1.4.3.apk` onto the phone.
    - Tap to install (enable "Install unknown apps" if prompted).
    - In ErrinILS desktop, open **Settings → Remote Access & Device Pairing** and click **Pair New Device**.
    - Launch ErrinILS Scanner on Android, tap **Scan QR to Pair**, and scan the QR code displayed on the computer monitor.

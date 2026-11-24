@@ -97,8 +97,8 @@ function initScreenshotViewer() {
     catalog: {
       src: 'assets/screenshot-catalog.png',
       alt: 'ErrinILS ISBN Copy-Cataloguing Screen',
-      title: 'ErrinILS — Catalog & Lookup',
-      caption: '<strong>5-Source ISBN Copy-Cataloguing:</strong> Scan or type any ISBN. ErrinILS automatically queries the Library of Congress (via native Z39.50) and Open Library to fill in title, author, publisher, and Dewey Decimal classification.'
+      title: 'ErrinILS — Catalog & 31-Source Union Lookup',
+      caption: '<strong>31-Source Parallel Copy-Cataloguing:</strong> Scan or type any ISBN. ErrinILS simultaneously queries 31 Malaysian national, state, university, and global union archives (PNM, KIK, 14 State Public Libraries, UM, UKM, UiTM, UPSI, DBP, LOC Z39.50, and Open Library) to automatically populate bibliographic metadata and Dewey call numbers in under 1 second.'
     },
     simple: {
       src: 'assets/screenshot-kiosk.png',
@@ -254,7 +254,7 @@ function initGuideActions() {
           return res.text();
         })
         .then(function (mdText) {
-          triggerBlobDownload(mdText, 'ErrinILS-User-Guide-v1.4.2.md', 'text/markdown;charset=utf-8');
+          triggerBlobDownload(mdText, 'ErrinILS-User-Guide-v1.4.3.md', 'text/markdown;charset=utf-8');
         })
         .catch(function () {
           window.location.href = guidePath;
@@ -271,7 +271,7 @@ function initGuideActions() {
           return res.text();
         })
         .then(function (text) {
-          triggerBlobDownload(text, 'ErrinILS-User-Guide-v1.4.2.txt', 'text/plain;charset=utf-8');
+          triggerBlobDownload(text, 'ErrinILS-User-Guide-v1.4.3.txt', 'text/plain;charset=utf-8');
         })
         .catch(function () {
           window.location.href = guidePath;
