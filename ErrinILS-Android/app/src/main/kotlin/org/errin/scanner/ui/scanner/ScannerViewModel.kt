@@ -22,7 +22,7 @@ data class ScannerUiState(
     val isTorchOn: Boolean = false,
     val isConnectedToPc: Boolean = false,
     val pcServerUrl: String = "",
-    val connectionStatusText: String = "Mod Pengimbas Bebas (Tanpa PC)",
+    val connectionStatusText: String = "Standalone Mode (Not connected to PC)",
     // Tab 1: Barcode Scanner Gun
     val lastScannedBarcode: String = "",
     val lastScanStatus: String = "",
@@ -85,18 +85,20 @@ class ScannerViewModel(application: Application) : AndroidViewModel(application)
 
     fun checkPcConnection() {
         viewModelScope.launch {
-            if (prefs.serverUrl.isNotBlank()) {
-                errinApi.updateCredentials(prefs.serverUrl, prefs.serverToken)
+            val url = prefs.serverUrl
+            if (url.isNotBlank()) {
+                errinApi.updateCredentials(url, prefs.serverToken)
                 val verify = errinApi.verifyConnection()
                 val ok = verify.isSuccess && verify.getOrNull()?.ok == true
+                val displayHost = if (prefs.serverHost.isNotBlank()) "${prefs.serverHost}:${prefs.serverPort}" else url.removePrefix("http://").removePrefix("https://")
                 _uiState.update {
                     it.copy(
                         isConnectedToPc = ok,
-                        pcServerUrl = prefs.serverUrl,
+                        pcServerUrl = url,
                         connectionStatusText = if (ok) {
-                            "Disambung ke PC (${prefs.serverUrl.removePrefix("http://")})"
+                            "Connected to PC ($displayHost)"
                         } else {
-                            "PC Luar Talian (${prefs.serverUrl.removePrefix("http://")})"
+                            "PC Offline ($displayHost)"
                         }
                     )
                 }
@@ -105,7 +107,7 @@ class ScannerViewModel(application: Application) : AndroidViewModel(application)
                     it.copy(
                         isConnectedToPc = false,
                         pcServerUrl = "",
-                        connectionStatusText = "Mod Bebas (Ketik untuk sambung PC)"
+                        connectionStatusText = "Standalone Mode (Tap Settings to connect PC)"
                     )
                 }
             }
@@ -118,7 +120,7 @@ class ScannerViewModel(application: Application) : AndroidViewModel(application)
 
         val state = _uiState.value
 
-        // Check if user is on Tab 2 and currently scanning an ISBN with the camera
+        // Check if user is on Tab 2 and currently scanning an ISBN or Barcode with the camera
         if (state.currentTab == AppTab.ADD_CATALOG) {
             if (state.isScanningIsbnCamera) {
                 _uiState.update {
@@ -150,29 +152,85 @@ class ScannerViewModel(application: Application) : AndroidViewModel(application)
 
     private fun processScannerGun(barcode: String) {
         viewModelScope.launch {
-            // Check if this is a desktop pairing QR code: e.g. http://192.168.1.50:8585/?code=123456
-            if ((barcode.startsWith("http://") || barcode.startsWith("https://")) && barcode.contains("code=")) {
-                val uri = android.net.Uri.parse(barcode)
-                val codeParam = uri.getQueryParameter("code")
-                val host = uri.host ?: ""
-                val port = uri.port
-                if (!codeParam.isNullOrBlank() && host.isNotEmpty()) {
+            // Check if this is an ErrinILS desktop URL or pairing QR code
+            if (barcode.startsWith("http://") || barcode.startsWith("https://")) {
+                val uri = try { android.net.Uri.parse(barcode) } catch (_: Exception) { null }
+                if (uri != null) {
+                    val host = uri.host ?: ""
+                    val port = if (uri.port != -1) uri.port else 8585
                     val scheme = uri.scheme ?: "http"
-                    val serverUrl = "$scheme://$host" + (if (port != -1) ":$port" else "")
-                    val pairRes = errinApi.pair(serverUrl, codeParam, prefs.deviceName)
-                    if (pairRes.isSuccess && pairRes.getOrNull()?.ok == true) {
+                    val codeParam = uri.getQueryParameter("code")
+
+                    if (host.isNotEmpty()) {
+                        val serverUrl = "$scheme://$host:$port"
+
+                        // Case A: Pairing QR Code (contains ?code=123456)
+                        if (!codeParam.isNullOrBlank()) {
+                            val pairRes = errinApi.pair(serverUrl, codeParam, prefs.deviceName)
+                            if (pairRes.isSuccess && pairRes.getOrNull()?.ok == true) {
+                                prefs.serverHost = host
+                                prefs.serverPort = port.toString()
+                                prefs.serverUrl = serverUrl
+                                prefs.serverToken = pairRes.getOrNull()?.token ?: ""
+                                errinApi.updateCredentials(serverUrl, prefs.serverToken)
+
+                                feedbackManager.playSuccess(prefs.soundEnabled, prefs.vibrateEnabled)
+                                _uiState.update {
+                                    it.copy(
+                                        isConnectedToPc = true,
+                                        pcServerUrl = serverUrl,
+                                        connectionStatusText = "Connected to PC ($host:$port)",
+                                        lastScannedBarcode = barcode,
+                                        lastScanStatus = "✅ Successfully paired with Desktop PC!",
+                                        lastScanSuccess = true
+                                    )
+                                }
+                                return@launch
+                            } else {
+                                feedbackManager.playAlert(prefs.soundEnabled, prefs.vibrateEnabled)
+                                _uiState.update {
+                                    it.copy(
+                                        lastScannedBarcode = barcode,
+                                        lastScanStatus = "❌ Pairing failed: ${pairRes.getOrNull()?.error ?: "Check PC"}",
+                                        lastScanSuccess = false
+                                    )
+                                }
+                                return@launch
+                            }
+                        }
+
+                        // Case B: General ErrinILS Remote URL (from 'Show QR Code' on PC)
+                        prefs.serverHost = host
+                        prefs.serverPort = port.toString()
                         prefs.serverUrl = serverUrl
-                        prefs.serverToken = pairRes.getOrNull()?.token ?: ""
                         errinApi.updateCredentials(serverUrl, prefs.serverToken)
 
-                        feedbackManager.playSuccess(prefs.soundEnabled, prefs.vibrateEnabled)
+                        // If already paired with token, test connection
+                        if (prefs.serverToken.isNotEmpty()) {
+                            val verify = errinApi.verifyConnection()
+                            val ok = verify.isSuccess && verify.getOrNull()?.ok == true
+                            if (ok) {
+                                feedbackManager.playSuccess(prefs.soundEnabled, prefs.vibrateEnabled)
+                                _uiState.update {
+                                    it.copy(
+                                        isConnectedToPc = true,
+                                        pcServerUrl = serverUrl,
+                                        connectionStatusText = "Connected to PC ($host:$port)",
+                                        lastScannedBarcode = barcode,
+                                        lastScanStatus = "✅ Connected to PC ($host:$port)",
+                                        lastScanSuccess = true
+                                    )
+                                }
+                                return@launch
+                            }
+                        }
+
+                        // Needs pairing code
+                        feedbackManager.playAlert(prefs.soundEnabled, prefs.vibrateEnabled)
                         _uiState.update {
                             it.copy(
-                                isConnectedToPc = true,
-                                pcServerUrl = serverUrl,
-                                connectionStatusText = "Disambung ke PC (${serverUrl.removePrefix("http://")})",
                                 lastScannedBarcode = barcode,
-                                lastScanStatus = "✅ Berjaya dipadankan dengan Komputer PC!",
+                                lastScanStatus = "Server set to $host:$port. Click '+ Pair new device' on PC for pairing code.",
                                 lastScanSuccess = true
                             )
                         }
@@ -182,14 +240,14 @@ class ScannerViewModel(application: Application) : AndroidViewModel(application)
             }
 
             var sentToPc = false
-            if (prefs.serverUrl.isNotBlank()) {
+            if (prefs.serverUrl.isNotBlank() && prefs.serverToken.isNotBlank()) {
                 val res = errinApi.sendWedge(barcode, prefs.autoEnter)
                 sentToPc = res.isSuccess && (res.getOrNull() == true)
             }
 
             feedbackManager.playSuccess(prefs.soundEnabled, prefs.vibrateEnabled)
 
-            val statusText = if (sentToPc) "Ditaip terus ke PC ✓" else "Diimbas (Disalin ke papan klip)"
+            val statusText = if (sentToPc) "Typed directly to PC ✓" else "Scanned (Copied to clipboard)"
             val newEntry = ScanHistoryEntry(
                 barcode = barcode,
                 status = statusText,
@@ -199,7 +257,7 @@ class ScannerViewModel(application: Application) : AndroidViewModel(application)
             _uiState.update {
                 it.copy(
                     lastScannedBarcode = barcode,
-                    lastScanStatus = if (sentToPc) "✅ Ditaip ke PC: $barcode" else "Imbasan: $barcode",
+                    lastScanStatus = if (sentToPc) "✅ Typed to PC: $barcode" else "Scanned: $barcode",
                     lastScanSuccess = true,
                     scanHistory = listOf(newEntry) + it.scanHistory.take(50)
                 )
@@ -236,7 +294,7 @@ class ScannerViewModel(application: Application) : AndroidViewModel(application)
             feedbackManager.playAlert(prefs.soundEnabled, prefs.vibrateEnabled)
             _uiState.update {
                 it.copy(
-                    saveErrorMessage = "Sila masukkan sekurang-kurangnya 10 angka ISBN yang sah.",
+                    saveErrorMessage = "Please enter a valid ISBN (at least 10 digits).",
                     saveSuccessMessage = null
                 )
             }
@@ -252,7 +310,7 @@ class ScannerViewModel(application: Application) : AndroidViewModel(application)
                 )
             }
 
-            // 1. Try desktop ErrinILS server if connected (queries all 31 union catalogs)
+            // 1. Try desktop ErrinILS server if connected (queries 31 union catalogs)
             var result: IsbnLookupResult? = null
             if (prefs.isConnectedToPc) {
                 val apiRes = errinApi.lookupIsbn(clean)
@@ -298,7 +356,7 @@ class ScannerViewModel(application: Application) : AndroidViewModel(application)
                         isLookingUpIsbn = false,
                         lastIsbnLookup = result,
                         formIsbn = clean,
-                        saveErrorMessage = "Tiada maklumat dijumpai untuk ISBN $clean. Anda boleh mengisi butiran secara manual.",
+                        saveErrorMessage = "No information found for ISBN $clean. You may fill in the details manually.",
                         saveSuccessMessage = null
                     )
                 }
@@ -325,7 +383,7 @@ class ScannerViewModel(application: Application) : AndroidViewModel(application)
 
         if (title.isBlank()) {
             feedbackManager.playAlert(prefs.soundEnabled, prefs.vibrateEnabled)
-            _uiState.update { it.copy(saveErrorMessage = "Sila masukkan Judul Buku.") }
+            _uiState.update { it.copy(saveErrorMessage = "Please enter the Book Title.") }
             return
         }
 
@@ -372,7 +430,7 @@ class ScannerViewModel(application: Application) : AndroidViewModel(application)
                 _uiState.update {
                     it.copy(
                         isSavingBook = false,
-                        saveSuccessMessage = "Buku '$title' berjaya didaftarkan ke katalog! (Barcode: $barcode)",
+                        saveSuccessMessage = "Book '$title' successfully added to catalog! (Barcode: $barcode)",
                         saveErrorMessage = null
                     )
                 }
@@ -381,7 +439,7 @@ class ScannerViewModel(application: Application) : AndroidViewModel(application)
                 _uiState.update {
                     it.copy(
                         isSavingBook = false,
-                        saveErrorMessage = errorMsg ?: "Sila sambungkan aplikasi ke PC atau konfigurasikan GitHub dalam Tetapan untuk menyimpan.",
+                        saveErrorMessage = errorMsg ?: "Please pair the app with ErrinILS on PC, or configure GitHub in Settings to save.",
                         saveSuccessMessage = null
                     )
                 }

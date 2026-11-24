@@ -34,7 +34,7 @@ import org.errin.scanner.ui.theme.ErrinYellow
 @Composable
 fun ScannerOverlay(
     modifier: Modifier = Modifier,
-    hintText: String = "Arahkan kamera ke kod bar / ISBN"
+    hintText: String = "Point camera at barcode / ISBN"
 ) {
     val infiniteTransition = rememberInfiniteTransition(label = "laser")
     val laserProgress by infiniteTransition.animateFloat(

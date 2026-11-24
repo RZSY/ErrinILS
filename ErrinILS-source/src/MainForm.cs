@@ -2013,9 +2013,13 @@ namespace Errin
                     }
                 }
             }));
-            wGrid = Ui.Grid(); wGrid.Height = Ui.S(130); wGrid.Width = Ui.S(820); WebRefreshGrid();
+            wGrid = Ui.Grid(); wGrid.Height = Ui.S(160); wGrid.Width = Ui.S(860); WebRefreshGrid();
             var wBtns = Ui.Flow(false);
             wBtns.Controls.Add(Ui.Btn("+ Pair new device", 0, (a, b) => PairNewDeviceDialog()));
+            wBtns.Controls.Add(Ui.Btn("+ Connect Scanner by IP...", 0, (a, b) => ConnectScannerByIpDialog()));
+            wBtns.Controls.Add(Ui.Btn("Ping App", 1, (a, b) => WebPingSelected()));
+            wBtns.Controls.Add(Ui.Btn("Beep Phone", 1, (a, b) => WebBeepSelected()));
+            wBtns.Controls.Add(Ui.Btn("Discover Scanners", 1, (a, b) => DiscoverScannersDialog()));
             wBtns.Controls.Add(Ui.Btn("Show QR Code", 1, (a, b) => ShowQrDialog()));
             wBtns.Controls.Add(Ui.Btn("Remove selected", 1, (a, b) => WebRemoveSelected()));
             var webBody = Vbox(
@@ -2027,7 +2031,7 @@ namespace Errin
                 new Label { UseMnemonic = false, Text = "Paired Devices", Font = Th.FT, AutoSize = true, ForeColor = Th.Ink, Margin = Ui.S(new Padding(0, 10, 0, 4)) },
                 wGrid,
                 wBtns,
-                Ui.Lbl("Clicking 'Pair new device' shows a code. Type it on the other device's screen to connect it.", true));
+                Ui.Lbl("Click 'Pair new device' for QR code/PIN, '+ Connect Scanner by IP' to pair from PC, or 'Ping App' / 'Beep Phone' to test connectivity.", true));
 
             var autoUpdCheck = new CheckBox { Text = "Automatically check for updates on startup", Checked = autoUpdate, AutoSize = true, ForeColor = Th.Ink, BackColor = Color.Transparent };
             autoUpdCheck.CheckedChanged += (chkSender, chkArgs) => { autoUpdate = autoUpdCheck.Checked; SaveCfg(); };
@@ -2306,7 +2310,7 @@ namespace Errin
         }
 
         /* ---------- Remote Access (Web server settings + lifecycle) ---------- */
-        class WebCfg { public bool enabled; public int port = 8585; public string bind = "network"; public bool ssl = false; public string certPath = ""; public string certPass = ""; public List<Web.Device> devices = new List<Web.Device>(); }
+        class WebCfg { public bool enabled = true; public int port = 8585; public string bind = "network"; public bool ssl = false; public string certPath = ""; public string certPass = ""; public List<Web.Device> devices = new List<Web.Device>(); }
         WebCfg wc = new WebCfg(); Web.Server wsrv; string werr = ""; Label wStatusLabel; DataGridView wGrid; bool autoUpdate = true;
         void ApplyWeb()
         {
@@ -2390,15 +2394,22 @@ namespace Errin
         void WebRefreshGrid()
         {
             if (wGrid == null || wGrid.IsDisposed) return;
-            string[] headers = new[] { "Name", "Paired", "Last seen" };
+            string[] headers = new[] { "Device Name", "IP Address", "Port", "Status", "Paired Date", "Last Active" };
             var rows = new List<string[]>();
             var tags = new List<object>();
             foreach (var d in wc.devices)
             {
-                rows.Add(new[] { d.name, d.paired, d.seen });
+                rows.Add(new[] {
+                    d.name,
+                    string.IsNullOrEmpty(d.ip) ? "(unknown)" : d.ip,
+                    d.port > 0 ? d.port.ToString() : "8586",
+                    "Paired",
+                    d.paired,
+                    d.seen
+                });
                 tags.Add(d);
             }
-            Ui.Fill(wGrid, headers, rows, tags, "No devices paired yet. Click '+ Pair new device' to connect one.");
+            Ui.Fill(wGrid, headers, rows, tags, "No devices paired yet. Click '+ Pair new device' or '+ Connect Scanner by IP' to connect one.");
         }
         void WebRemoveSelected()
         {
@@ -2413,12 +2424,454 @@ namespace Errin
                 Toast("Device revoked: " + dev.name);
             }
         }
+        string PromptIpDialog(string title, string msg, string initial)
+        {
+            using (var d = Ui.Dlg(title, 360, 180))
+            {
+                var fl = new FlowLayoutPanel
+                {
+                    Dock = DockStyle.Fill,
+                    FlowDirection = FlowDirection.TopDown,
+                    Padding = Ui.S(new Padding(16)),
+                    WrapContents = false
+                };
+                fl.Controls.Add(new Label { Text = msg, Font = Th.F, ForeColor = Th.Ink, AutoSize = true, Margin = Ui.S(new Padding(0, 0, 0, 6)) });
+                var txt = Ui.Txt();
+                txt.Width = Ui.S(300);
+                txt.Text = initial ?? "";
+                fl.Controls.Add(txt);
+
+                var btns = Ui.Flow(false);
+                var ok = Ui.Btn("OK", 0, (s, e) => { d.DialogResult = DialogResult.OK; d.Close(); });
+                var cancel = Ui.Btn("Cancel", 1, (s, e) => { d.DialogResult = DialogResult.Cancel; d.Close(); });
+                btns.Controls.Add(ok);
+                btns.Controls.Add(cancel);
+                fl.Controls.Add(btns);
+
+                d.Controls.Add(fl);
+                d.AcceptButton = ok;
+                d.CancelButton = cancel;
+                return d.ShowDialog(this) == DialogResult.OK ? txt.Text.Trim() : "";
+            }
+        }
+        void WebPingSelected()
+        {
+            if (wGrid == null || wGrid.CurrentRow == null) { Toast("Select a device from the list to ping"); return; }
+            var dev = wGrid.CurrentRow.Tag as Web.Device;
+            if (dev == null) return;
+
+            string targetIp = dev.ip;
+            int targetPort = dev.port > 0 ? dev.port : 8586;
+
+            if (string.IsNullOrEmpty(targetIp))
+            {
+                targetIp = PromptIpDialog("Ping Scanner App", "Enter phone's IP address (see Settings in Scanner app):", "192.168.1.");
+                if (string.IsNullOrEmpty(targetIp)) return;
+                dev.ip = targetIp;
+                SaveCfg();
+                WebRefreshGrid();
+            }
+
+            Toast("Pinging scanner at " + targetIp + ":" + targetPort + "...");
+            ThreadPool.QueueUserWorkItem(st =>
+            {
+                var ping = Web.PingScanner(targetIp, targetPort, 3000);
+                if (!IsDisposed)
+                {
+                    try
+                    {
+                        BeginInvoke(new Action(() =>
+                        {
+                            if (ping.Ok)
+                            {
+                                dev.seen = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
+                                SaveCfg();
+                                WebRefreshGrid();
+                                Toast(string.Format("Connected to {0}! Latency: {1}ms ({2} v{3})", ping.Name, ping.LatencyMs, ping.App, ping.Version));
+                            }
+                            else
+                            {
+                                Toast("Ping failed: " + ping.Error + " (Check phone Wi-Fi & port " + targetPort + ")");
+                            }
+                        }));
+                    }
+                    catch { }
+                }
+            });
+        }
+        void WebBeepSelected()
+        {
+            if (wGrid == null || wGrid.CurrentRow == null) { Toast("Select a device from the list to beep"); return; }
+            var dev = wGrid.CurrentRow.Tag as Web.Device;
+            if (dev == null) return;
+
+            string targetIp = dev.ip;
+            int targetPort = dev.port > 0 ? dev.port : 8586;
+
+            if (string.IsNullOrEmpty(targetIp))
+            {
+                targetIp = PromptIpDialog("Beep Phone", "Enter phone's IP address (see Settings in Scanner app):", "192.168.1.");
+                if (string.IsNullOrEmpty(targetIp)) return;
+                dev.ip = targetIp;
+                SaveCfg();
+                WebRefreshGrid();
+            }
+
+            Toast("Sending beep signal to " + dev.name + " (" + targetIp + ":" + targetPort + ")...");
+            ThreadPool.QueueUserWorkItem(st =>
+            {
+                string err;
+                bool ok = Web.SendScannerBeep(targetIp, targetPort, out err, 3000);
+                if (!IsDisposed)
+                {
+                    try
+                    {
+                        BeginInvoke(new Action(() =>
+                        {
+                            if (ok)
+                            {
+                                dev.seen = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
+                                SaveCfg();
+                                WebRefreshGrid();
+                                Toast("Beep & vibration signal sent to " + dev.name + "!");
+                            }
+                            else
+                            {
+                                Toast("Failed to send beep: " + err);
+                            }
+                        }));
+                    }
+                    catch { }
+                }
+            });
+        }
+        void ConnectScannerByIpDialog()
+        {
+            if (wsrv == null || !wc.enabled)
+            {
+                wc.enabled = true;
+                ApplyWeb();
+                WebShow();
+            }
+
+            using (var d = Ui.Dlg("Connect Scanner App by IP", 480, 380))
+            {
+                var fl = new FlowLayoutPanel
+                {
+                    Dock = DockStyle.Fill,
+                    FlowDirection = FlowDirection.TopDown,
+                    WrapContents = false,
+                    AutoScroll = true,
+                    Padding = Ui.S(new Padding(16))
+                };
+
+                fl.Controls.Add(new Label
+                {
+                    Text = "Connect to Scanner App directly over Wi-Fi:\nOpen the Scanner app on your phone, tap Settings, and check 'Phone Listener URL' (e.g. 192.168.1.105:8586).",
+                    Font = Th.F,
+                    ForeColor = Th.Mut,
+                    AutoSize = true,
+                    Margin = Ui.S(new Padding(0, 0, 0, 10))
+                });
+
+                var ipBox = Ui.Txt();
+                ipBox.Width = Ui.S(240);
+                ipBox.Text = "192.168.1.";
+
+                var portBox = new NumericUpDown
+                {
+                    Minimum = 1,
+                    Maximum = 65535,
+                    Value = 8586,
+                    Width = Ui.S(90),
+                    Font = Th.F,
+                    ForeColor = Th.Ink,
+                    BackColor = Th.Bg
+                };
+
+                var ipRow = Ui.Flow(false);
+                ipRow.Controls.Add(Ui.Lbl("Scanner IP:", false));
+                ipRow.Controls.Add(ipBox);
+                ipRow.Controls.Add(Ui.Lbl("Port:", false));
+                ipRow.Controls.Add(portBox);
+                fl.Controls.Add(ipRow);
+
+                var statusLbl = new Label
+                {
+                    Text = "Ready to connect.",
+                    Font = Th.F,
+                    ForeColor = Th.Mut,
+                    AutoSize = true,
+                    Margin = Ui.S(new Padding(0, 8, 0, 8))
+                };
+                fl.Controls.Add(statusLbl);
+
+                var btnRow = Ui.Flow(false);
+                var testBtn = Ui.Btn("Test Connection", 1);
+                var pairBtn = Ui.Btn("Connect & Pair Device", 0);
+                var closeBtn = Ui.Btn("Close", 1, (s, e) => d.Close());
+
+                testBtn.Click += (s, e) =>
+                {
+                    string ip = ipBox.Text.Trim();
+                    int port = (int)portBox.Value;
+                    if (string.IsNullOrEmpty(ip)) { statusLbl.Text = "Please enter an IP address."; statusLbl.ForeColor = Th.Red; return; }
+                    testBtn.Enabled = false;
+                    statusLbl.Text = "Testing connection to " + ip + ":" + port + "...";
+                    statusLbl.ForeColor = Th.Mut;
+
+                    ThreadPool.QueueUserWorkItem(st =>
+                    {
+                        var ping = Web.PingScanner(ip, port, 3000);
+                        d.BeginInvoke(new Action(() =>
+                        {
+                            testBtn.Enabled = true;
+                            if (ping.Ok)
+                            {
+                                statusLbl.Text = string.Format("Found {0}! ({1}ms, v{2})", ping.Name, ping.LatencyMs, ping.Version);
+                                statusLbl.ForeColor = Th.Green;
+                            }
+                            else
+                            {
+                                statusLbl.Text = "Connection failed: " + ping.Error;
+                                statusLbl.ForeColor = Th.Red;
+                            }
+                        }));
+                    });
+                };
+
+                pairBtn.Click += (s, e) =>
+                {
+                    string ip = ipBox.Text.Trim();
+                    int port = (int)portBox.Value;
+                    if (string.IsNullOrEmpty(ip)) { statusLbl.Text = "Please enter an IP address."; statusLbl.ForeColor = Th.Red; return; }
+
+                    pairBtn.Enabled = false;
+                    statusLbl.Text = "Pairing with phone at " + ip + ":" + port + "...";
+                    statusLbl.ForeColor = Th.Mut;
+
+                    ThreadPool.QueueUserWorkItem(st =>
+                    {
+                        var lanIps = NetHelper.GetReachableIpAddresses();
+                        string myIp = lanIps.Count > 0 ? lanIps[0] : "127.0.0.1";
+                        string scheme = (wsrv != null && wsrv.UseTls) ? "https://" : "http://";
+                        string serverUrl = scheme + myIp + ":" + wc.port;
+
+                        byte[] b = new byte[32];
+                        using (var rng = RandomNumberGenerator.Create()) rng.GetBytes(b);
+                        string token = BitConverter.ToString(b).Replace("-", "").ToLowerInvariant();
+
+                        string pcName = Environment.MachineName + " (ErrinILS)";
+                        string scannerName;
+                        string err;
+                        bool ok = Web.PushPairingToScanner(ip, port, serverUrl, token, pcName, out scannerName, out err, 4000);
+
+                        d.BeginInvoke(new Action(() =>
+                        {
+                            pairBtn.Enabled = true;
+                            if (ok)
+                            {
+                                string devName = !string.IsNullOrEmpty(scannerName) ? scannerName : "ErrinILS Scanner";
+                                var dev = new Web.Device
+                                {
+                                    token = token,
+                                    name = devName,
+                                    paired = Lib.Today(),
+                                    seen = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+                                    ip = ip,
+                                    port = port
+                                };
+                                wc.devices.Add(dev);
+                                SaveCfg();
+                                WebRefreshGrid();
+                                statusLbl.Text = "Paired successfully with " + devName + "!";
+                                statusLbl.ForeColor = Th.Green;
+                                Toast("Scanner '" + devName + "' paired successfully!");
+                                d.Close();
+                            }
+                            else
+                            {
+                                statusLbl.Text = "Pairing failed: " + err;
+                                statusLbl.ForeColor = Th.Red;
+                            }
+                        }));
+                    });
+                };
+
+                btnRow.Controls.Add(testBtn);
+                btnRow.Controls.Add(pairBtn);
+                btnRow.Controls.Add(closeBtn);
+                fl.Controls.Add(btnRow);
+
+                d.Controls.Add(fl);
+                d.ShowDialog(this);
+            }
+        }
+        void DiscoverScannersDialog()
+        {
+            if (wsrv == null || !wc.enabled)
+            {
+                wc.enabled = true;
+                ApplyWeb();
+                WebShow();
+            }
+
+            using (var d = Ui.Dlg("Discover ErrinILS Scanners on Wi-Fi", 540, 440))
+            {
+                var fl = new FlowLayoutPanel
+                {
+                    Dock = DockStyle.Fill,
+                    FlowDirection = FlowDirection.TopDown,
+                    WrapContents = false,
+                    AutoScroll = true,
+                    Padding = Ui.S(new Padding(16))
+                };
+
+                fl.Controls.Add(new Label
+                {
+                    Text = "Scanning your local network for active ErrinILS Scanner companion apps...",
+                    Font = Th.F,
+                    ForeColor = Th.Mut,
+                    AutoSize = true,
+                    Margin = Ui.S(new Padding(0, 0, 0, 8))
+                });
+
+                var listGrid = Ui.Grid();
+                listGrid.Width = Ui.S(500);
+                listGrid.Height = Ui.S(220);
+                string[] listHeaders = new[] { "Device Name", "IP Address", "Port", "Latency", "App Version" };
+                Ui.Fill(listGrid, listHeaders, new List<string[]>(), new List<object>(), "Scanning subnet for scanners...");
+                fl.Controls.Add(listGrid);
+
+                var statusLbl = new Label
+                {
+                    Text = "Scanning in progress...",
+                    Font = Th.F,
+                    ForeColor = Th.Yel,
+                    AutoSize = true,
+                    Margin = Ui.S(new Padding(0, 8, 0, 8))
+                };
+                fl.Controls.Add(statusLbl);
+
+                var btnRow = Ui.Flow(false);
+                var pairSelectedBtn = Ui.Btn("Connect & Pair Selected", 0);
+                var rescanBtn = Ui.Btn("Scan Again", 1);
+                var closeBtn = Ui.Btn("Close", 1, (s, e) => d.Close());
+                pairSelectedBtn.Enabled = false;
+
+                Action runScan = () =>
+                {
+                    statusLbl.Text = "Scanning subnet for scanners on port 8586...";
+                    statusLbl.ForeColor = Th.Yel;
+                    pairSelectedBtn.Enabled = false;
+                    rescanBtn.Enabled = false;
+                    Ui.Fill(listGrid, listHeaders, new List<string[]>(), new List<object>(), "Scanning network...");
+
+                    ThreadPool.QueueUserWorkItem(st =>
+                    {
+                        var found = Web.DiscoverScannerApps(8586, 1000);
+                        d.BeginInvoke(new Action(() =>
+                        {
+                            rescanBtn.Enabled = true;
+                            var rows = new List<string[]>();
+                            var tags = new List<object>();
+                            foreach (var sc in found)
+                            {
+                                rows.Add(new[] { sc.Name, sc.Ip, sc.Port.ToString(), sc.LatencyMs + "ms", sc.App + " v" + sc.Version });
+                                tags.Add(sc);
+                            }
+                            if (found.Count > 0)
+                            {
+                                Ui.Fill(listGrid, listHeaders, rows, tags, "");
+                                statusLbl.Text = string.Format("Found {0} scanner device(s) on Wi-Fi!", found.Count);
+                                statusLbl.ForeColor = Th.Green;
+                                pairSelectedBtn.Enabled = true;
+                            }
+                            else
+                            {
+                                Ui.Fill(listGrid, listHeaders, rows, tags, "No scanner apps found on subnet.");
+                                statusLbl.Text = "No active scanner apps found. Make sure app is open on the same Wi-Fi.";
+                                statusLbl.ForeColor = Th.Mut;
+                            }
+                        }));
+                    });
+                };
+
+                rescanBtn.Click += (s, e) => runScan();
+
+                pairSelectedBtn.Click += (s, e) =>
+                {
+                    if (listGrid.CurrentRow == null) return;
+                    var sc = listGrid.CurrentRow.Tag as Web.ScannerPingResult;
+                    if (sc == null) return;
+
+                    pairSelectedBtn.Enabled = false;
+                    statusLbl.Text = "Pairing with " + sc.Name + " (" + sc.Ip + ")...";
+                    statusLbl.ForeColor = Th.Mut;
+
+                    ThreadPool.QueueUserWorkItem(st =>
+                    {
+                        var lanIps = NetHelper.GetReachableIpAddresses();
+                        string myIp = lanIps.Count > 0 ? lanIps[0] : "127.0.0.1";
+                        string scheme = (wsrv != null && wsrv.UseTls) ? "https://" : "http://";
+                        string serverUrl = scheme + myIp + ":" + wc.port;
+
+                        byte[] b = new byte[32];
+                        using (var rng = RandomNumberGenerator.Create()) rng.GetBytes(b);
+                        string token = BitConverter.ToString(b).Replace("-", "").ToLowerInvariant();
+
+                        string pcName = Environment.MachineName + " (ErrinILS)";
+                        string scannerName;
+                        string err;
+                        bool ok = Web.PushPairingToScanner(sc.Ip, sc.Port, serverUrl, token, pcName, out scannerName, out err, 4000);
+
+                        d.BeginInvoke(new Action(() =>
+                        {
+                            pairSelectedBtn.Enabled = true;
+                            if (ok)
+                            {
+                                string devName = !string.IsNullOrEmpty(scannerName) ? scannerName : sc.Name;
+                                var dev = new Web.Device
+                                {
+                                    token = token,
+                                    name = devName,
+                                    paired = Lib.Today(),
+                                    seen = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+                                    ip = sc.Ip,
+                                    port = sc.Port
+                                };
+                                wc.devices.Add(dev);
+                                SaveCfg();
+                                WebRefreshGrid();
+                                Toast("Scanner '" + devName + "' paired successfully!");
+                                d.Close();
+                            }
+                            else
+                            {
+                                statusLbl.Text = "Pairing failed: " + err;
+                                statusLbl.ForeColor = Th.Red;
+                            }
+                        }));
+                    });
+                };
+
+                btnRow.Controls.Add(pairSelectedBtn);
+                btnRow.Controls.Add(rescanBtn);
+                btnRow.Controls.Add(closeBtn);
+                fl.Controls.Add(btnRow);
+
+                d.Controls.Add(fl);
+                d.Shown += (s, e) => runScan();
+                d.ShowDialog(this);
+            }
+        }
         void PairNewDeviceDialog()
         {
             if (wsrv == null || !wc.enabled)
             {
-                Toast("Please turn Remote Access ON and click Apply first.");
-                return;
+                wc.enabled = true;
+                ApplyWeb();
+                WebShow();
             }
 
             var rng = new Random();
@@ -2503,7 +2956,7 @@ namespace Errin
                 fl.Controls.Add(new Label
                 {
                     UseMnemonic = false,
-                    Text = "Or manually open browser and enter code:",
+                    Text = "Or manually open browser or ErrinILS Scanner and enter code:",
                     Font = Th.F,
                     ForeColor = Th.Mut,
                     AutoSize = true
@@ -2582,8 +3035,9 @@ namespace Errin
         {
             if (wsrv == null || !wc.enabled)
             {
-                Toast("Please turn Remote Access ON and click Apply first.");
-                return;
+                wc.enabled = true;
+                ApplyWeb();
+                WebShow();
             }
 
             var ips = NetHelper.GetReachableIpAddresses();

@@ -136,7 +136,16 @@ d:/errin/
 - **Batch ISBN Lookup**: High-throughput multi-ISBN copy cataloguing designed for book donations and bulk cataloguing (`BatchLookupDialog`). Supports pasting ISBN lists, scanning barcodes continuously, or loading files, with live multithreaded lookups and bulk catalog additions.
 - **Item Circulation History**: Full historical borrowing lens for any item (`ItemHistoryDialog`), detailing which students borrowed it, loan dates, due dates, return timestamps, and overdue metrics.
 
-### 3.5 Remote Access & OPAC (`Web.cs`, `Qr.cs`, `Dialogs.cs`)
+### 3.5 Remote Access, Bidirectional Scanner App & OPAC (`Web.cs`, `Qr.cs`, `Dialogs.cs`)
+- **Dual Network Port Architecture**:
+  - **Desktop ErrinILS Server (Port 8585)**: Pure C# HTTP/HTTPS server binding to `0.0.0.0` (all interfaces: Ethernet, Wi-Fi 2.4/5GHz, mobile hotspots, VPNs). Serves Web OPAC, Single Page App (SPA), and REST endpoints (`/api/wedge`, `/api/item`, `/api/pair`).
+  - **Mobile Scanner Companion Server (Port 8586)**: Embedded Kotlin/Java HTTP socket server (`ScannerHttpServer.kt`) running inside the Android companion app on port 8586. Listens for incoming desktop pings, haptic test triggers, and push pairing.
+- **Bidirectional System-to-App Operations**:
+  - **Ping Scanner (`Web.PingScanner`)**: Pings the companion phone from desktop, displaying live round-trip latency in milliseconds.
+  - **Beep Phone (`Web.SendScannerBeep`)**: Desktop triggers remote audio tone and haptic vibration pattern on the librarian's phone.
+  - **Connect Scanner by IP (`ConnectScannerByIpDialog`)**: Librarians enter the phone's IP to test and push pairing tokens directly to the phone without typing a 6-digit PIN.
+  - **Subnet Auto-Discovery (`Web.DiscoverScannerApps`)**: Scans the local network subnet (`192.168.x.1-254`) on port 8586 in parallel, detecting all running scanner apps with one-click pairing.
+  - **Live IP/Port Tracking**: Every mobile request transmits client IP and header `X-Scanner-Port: 8586`, automatically populated into `wc.devices` table (`Name | IP Address | Port | Status | Paired Date | Last Active`).
 - **Device Pairing Model**: Zero-password access control using temporary 6-digit pairing codes (5-minute expiry, 3-attempt lockout) and persistent 32-byte cryptographically secure device tokens (`X-Errin-Token`).
 - **QR Code Generation (`Qr.cs`)**: Pure C# zero-dependency ISO/IEC 18004 QR code generator supporting Versions 1 to 10 with Error Correction Level M, rendering sharp `Bitmap`, `ToPng()`, and `ToSvg()` representations. Used in `PairNewDeviceDialog` for instant mobile connection via camera scanning (auto-filling pairing code), in Settings for sharing remote access links, and exposed via HTTP at `/api/qr` and `/qr.png`.
 - **Online Public Access Catalog (OPAC)**: Public-facing catalog served at `/opac` using the same pure C# HTTP server (`Web.cs`). Matches desktop `MainForm` visual theme (charcoal `#232427`, yellow accents `#f6c61b`, royal blue logo, left-border card styling). Enables searching by title, author, call number, and dedicated **Subject Heading** search, with multi-token keyword filters and subject topic exploration.

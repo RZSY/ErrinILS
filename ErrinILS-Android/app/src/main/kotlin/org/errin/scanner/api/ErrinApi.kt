@@ -9,7 +9,12 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONArray
 import org.json.JSONObject
 import java.net.URLEncoder
+import java.security.SecureRandom
+import java.security.cert.X509Certificate
 import java.util.concurrent.TimeUnit
+import javax.net.ssl.SSLContext
+import javax.net.ssl.TrustManager
+import javax.net.ssl.X509TrustManager
 
 class ErrinApi(
     private var baseUrl: String = "",
@@ -17,11 +22,28 @@ class ErrinApi(
 ) {
     private val jsonMedia = "application/json; charset=utf-8".toMediaType()
 
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(7, TimeUnit.SECONDS)
-        .readTimeout(12, TimeUnit.SECONDS)
-        .writeTimeout(12, TimeUnit.SECONDS)
-        .build()
+    private val client = createOkHttpClient()
+
+    private fun createOkHttpClient(): OkHttpClient {
+        val builder = OkHttpClient.Builder()
+            .connectTimeout(7, TimeUnit.SECONDS)
+            .readTimeout(12, TimeUnit.SECONDS)
+            .writeTimeout(12, TimeUnit.SECONDS)
+
+        try {
+            val trustAllCerts = arrayOf<TrustManager>(object : X509TrustManager {
+                override fun checkClientTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
+                override fun checkServerTrusted(chain: Array<out X509Certificate>?, authType: String?) {}
+                override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf()
+            })
+            val sslContext = SSLContext.getInstance("TLS")
+            sslContext.init(null, trustAllCerts, SecureRandom())
+            builder.sslSocketFactory(sslContext.socketFactory, trustAllCerts[0] as X509TrustManager)
+            builder.hostnameVerifier { _, _ -> true }
+        } catch (_: Exception) {}
+
+        return builder.build()
+    }
 
     fun updateCredentials(url: String, newToken: String) {
         baseUrl = cleanUrl(url)
@@ -31,13 +53,17 @@ class ErrinApi(
     fun getBaseUrl(): String = baseUrl
     fun getToken(): String = token
 
-    private fun cleanUrl(raw: String): String {
+    fun cleanUrl(raw: String, defaultPort: String = "8585"): String {
         var u = raw.trim()
         if (u.isEmpty()) return ""
-        if (!u.startsWith("http://") && !u.startsWith("https://")) {
-            u = "http://$u"
+        val isHttps = u.startsWith("https://")
+        val scheme = if (isHttps) "https://" else "http://"
+        val bare = u.removePrefix("https://").removePrefix("http://").trimEnd('/')
+        if (bare.contains(":")) {
+            return "$scheme$bare"
         }
-        return u.trimEnd('/')
+        val port = if (defaultPort.isNotBlank()) defaultPort.trim() else "8585"
+        return "$scheme$bare:$port"
     }
 
     private fun buildRequest(path: String, method: String = "GET", jsonBody: JSONObject? = null): Request {
@@ -45,6 +71,7 @@ class ErrinApi(
         val builder = Request.Builder()
             .url(fullUrl)
             .addHeader("Accept", "application/json")
+            .addHeader("X-Scanner-Port", "8586")
 
         if (token.isNotEmpty()) {
             builder.addHeader("X-Errin-Token", token)
@@ -66,10 +93,12 @@ class ErrinApi(
             val json = JSONObject().apply {
                 put("code", code.replace(Regex("[\\s-]"), ""))
                 put("name", deviceName)
+                put("scannerPort", 8586)
             }
             val req = Request.Builder()
                 .url("$cleanBase/api/pair")
                 .addHeader("Accept", "application/json")
+                .addHeader("X-Scanner-Port", "8586")
                 .post(json.toString().toRequestBody(jsonMedia))
                 .build()
 
@@ -83,7 +112,7 @@ class ErrinApi(
                     token = tok
                     Result.success(PairResult(ok = true, token = tok, name = name))
                 } else {
-                    val err = resObj.optString("error", "Padanan gagal (HTTP ${response.code})")
+                    val err = resObj.optString("error", "Pairing failed (HTTP ${response.code})")
                     Result.success(PairResult(ok = false, error = err))
                 }
             }
@@ -95,7 +124,7 @@ class ErrinApi(
     suspend fun verifyConnection(): Result<MeResult> = withContext(Dispatchers.IO) {
         try {
             if (baseUrl.isEmpty()) {
-                return@withContext Result.success(MeResult(ok = false, error = "URL pelayan belum ditetapkan"))
+                return@withContext Result.success(MeResult(ok = false, error = "Server URL is not configured"))
             }
             val req = buildRequest("/api/me")
             client.newCall(req).execute().use { response ->
@@ -110,7 +139,7 @@ class ErrinApi(
                         )
                     )
                 } else {
-                    val err = json.optString("error", "Sambungan ditolak atau pelayan tidak sah (${response.code})")
+                    val err = json.optString("error", "Connection rejected or invalid server (${response.code})")
                     Result.success(MeResult(ok = false, error = err))
                 }
             }
@@ -122,7 +151,7 @@ class ErrinApi(
     suspend fun sendWedge(barcode: String, enter: Boolean = true): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
             if (baseUrl.isEmpty()) {
-                return@withContext Result.failure(IllegalStateException("Tiada sambungan ke PC"))
+                return@withContext Result.failure(IllegalStateException("No connection to PC"))
             }
             val json = JSONObject().apply {
                 put("barcode", barcode.trim())
@@ -142,7 +171,7 @@ class ErrinApi(
     suspend fun lookupIsbn(isbn: String): Result<IsbnLookupResult> = withContext(Dispatchers.IO) {
         try {
             if (baseUrl.isEmpty()) {
-                return@withContext Result.failure(IllegalStateException("Tiada sambungan ke PC"))
+                return@withContext Result.failure(IllegalStateException("No connection to PC"))
             }
             val enc = URLEncoder.encode(isbn.trim(), "UTF-8")
             val req = buildRequest("/api/lookup/isbn?isbn=$enc")
@@ -159,7 +188,7 @@ class ErrinApi(
     suspend fun saveItem(book: BookItem): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
             if (baseUrl.isEmpty()) {
-                return@withContext Result.failure(IllegalStateException("Tiada sambungan ke PC"))
+                return@withContext Result.failure(IllegalStateException("No connection to PC"))
             }
             val json = book.toJson()
             val req = buildRequest("/api/item", method = "POST", jsonBody = json)
@@ -169,7 +198,7 @@ class ErrinApi(
                 if (response.isSuccessful && resObj.optBoolean("ok", false)) {
                     Result.success(true)
                 } else {
-                    val err = resObj.optString("error", "Gagal menyimpan item ke katalog (HTTP ${response.code})")
+                    val err = resObj.optString("error", "Failed to save item to catalog (HTTP ${response.code})")
                     Result.failure(Exception(err))
                 }
             }
@@ -181,7 +210,7 @@ class ErrinApi(
     suspend fun saveItemToGitHub(repo: String, pat: String, book: BookItem): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
             if (repo.isBlank() || pat.isBlank()) {
-                return@withContext Result.failure(IllegalStateException("Tetapan GitHub tidak lengkap"))
+                return@withContext Result.failure(IllegalStateException("GitHub settings are incomplete"))
             }
 
             val cleanRepo = repo.trim().removePrefix("https://github.com/").trim('/')

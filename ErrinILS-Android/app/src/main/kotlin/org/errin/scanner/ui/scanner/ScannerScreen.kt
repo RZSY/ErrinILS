@@ -7,9 +7,6 @@ import android.content.Context
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -30,7 +27,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoStories
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
@@ -162,17 +158,17 @@ fun ScannerScreen(
                 },
                 actions = {
                     IconButton(onClick = { viewModel.checkPcConnection() }) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Semak Sambungan", tint = ErrinYellow)
+                        Icon(Icons.Default.Refresh, contentDescription = "Refresh Connection", tint = ErrinYellow)
                     }
                     IconButton(onClick = { viewModel.toggleTorch() }) {
                         Icon(
                             if (uiState.isTorchOn) Icons.Default.FlashOn else Icons.Default.FlashOff,
-                            contentDescription = "Lampu Suluh",
+                            contentDescription = "Flashlight",
                             tint = if (uiState.isTorchOn) ErrinYellow else ErrinTextSecondary
                         )
                     }
                     IconButton(onClick = onNavigateToSettings) {
-                        Icon(Icons.Default.Settings, contentDescription = "Tetapan", tint = ErrinTextSecondary)
+                        Icon(Icons.Default.Settings, contentDescription = "Settings", tint = ErrinTextSecondary)
                     }
                 }
             )
@@ -183,7 +179,7 @@ fun ScannerScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            // Tab Header (Only 2 features: Barcode Scanner & Add Catalog Record)
+            // Tab Header (Two core capabilities: Barcode Scanner & Add Catalog Record)
             TabRow(
                 selectedTabIndex = uiState.currentTab.ordinal,
                 containerColor = ErrinSurface,
@@ -203,7 +199,7 @@ fun ScannerScreen(
                             Text("⚡", fontSize = 14.sp)
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                "Pengimbas Kod Bar",
+                                "Barcode Scanner",
                                 fontWeight = if (uiState.currentTab == AppTab.SCANNER) FontWeight.Bold else FontWeight.Normal,
                                 fontSize = 13.sp
                             )
@@ -220,7 +216,7 @@ fun ScannerScreen(
                             Text("📚", fontSize = 14.sp)
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                "Daftar Buku (ISBN)",
+                                "Add Book (ISBN)",
                                 fontWeight = if (uiState.currentTab == AppTab.ADD_CATALOG) FontWeight.Bold else FontWeight.Normal,
                                 fontSize = 13.sp
                             )
@@ -244,12 +240,12 @@ fun ScannerScreen(
                             val all = uiState.scanHistory.joinToString("\n") { it.barcode }
                             val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                             cm.setPrimaryClip(ClipData.newPlainText("Errin Barcodes", all))
-                            Toast.makeText(context, "Semua kod bar disalin ke papan klip!", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "All barcodes copied to clipboard!", Toast.LENGTH_SHORT).show()
                         },
                         onCopyOne = { code ->
                             val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                             cm.setPrimaryClip(ClipData.newPlainText("Errin Barcode", code))
-                            Toast.makeText(context, "Kod bar disalin: $code", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(context, "Copied: $code", Toast.LENGTH_SHORT).show()
                         },
                         onClearHistory = { viewModel.clearHistory() }
                     )
@@ -288,16 +284,16 @@ fun ScannerScreen(
         AlertDialog(
             onDismissRequest = { viewModel.showManualBarcodeDialog(false) },
             containerColor = ErrinSurface,
-            title = { Text("Taip Kod Bar Manual", color = ErrinTextPrimary, fontWeight = FontWeight.Bold) },
+            title = { Text("Type Barcode Manually", color = ErrinTextPrimary, fontWeight = FontWeight.Bold) },
             text = {
                 Column {
-                    Text("Masukkan kod bar buku jika kamera tidak dapat membaca pelekat:", color = ErrinTextSecondary, fontSize = 13.sp)
+                    Text("Enter book or student barcode if the camera cannot read the label:", color = ErrinTextSecondary, fontSize = 13.sp)
                     Spacer(modifier = Modifier.height(10.dp))
                     OutlinedTextField(
                         value = manualText,
                         onValueChange = { manualText = it },
                         singleLine = true,
-                        placeholder = { Text("cth. B1001 atau 9789830112345", color = ErrinTextMuted) },
+                        placeholder = { Text("e.g. B1001 or 9789830112345", color = ErrinTextMuted) },
                         colors = outlinedColors(),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -313,12 +309,12 @@ fun ScannerScreen(
                     },
                     colors = ButtonDefaults.buttonColors(containerColor = ErrinYellow)
                 ) {
-                    Text("Hantar / Simpan", color = ErrinDarkBg, fontWeight = FontWeight.Bold)
+                    Text("Submit", color = ErrinDarkBg, fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { viewModel.showManualBarcodeDialog(false) }) {
-                    Text("Batal", color = ErrinTextSecondary)
+                    Text("Cancel", color = ErrinTextSecondary)
                 }
             }
         )
@@ -353,7 +349,7 @@ private fun BarcodeScannerTabContent(
                     isTorchOn = uiState.isTorchOn
                 )
                 ScannerOverlay(
-                    hintText = if (uiState.isConnectedToPc) "Arahkan kamera ke kod bar untuk taip terus ke PC" else "Arahkan kamera ke kod bar untuk mengimbas"
+                    hintText = if (uiState.isConnectedToPc) "Point camera at barcode to type directly to PC" else "Point camera at barcode to scan"
                 )
             } else {
                 Box(
@@ -364,7 +360,7 @@ private fun BarcodeScannerTabContent(
                         onClick = onRequestCamera,
                         colors = ButtonDefaults.buttonColors(containerColor = ErrinYellow)
                     ) {
-                        Text("Beri Kebenaran Kamera", color = ErrinDarkBg)
+                        Text("Grant Camera Permission", color = ErrinDarkBg)
                     }
                 }
             }
@@ -384,7 +380,7 @@ private fun BarcodeScannerTabContent(
                 ) {
                     Icon(Icons.Default.Keyboard, contentDescription = "Manual", tint = ErrinYellow, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text("Taip Manual", color = ErrinTextPrimary, fontSize = 12.sp)
+                    Text("Type Manual", color = ErrinTextPrimary, fontSize = 12.sp)
                 }
             }
         }
@@ -412,15 +408,15 @@ private fun BarcodeScannerTabContent(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            if (uiState.lastScannedBarcode.isNotEmpty()) "Imbasan Terkini:" else "Status Pengimbas:",
+                            if (uiState.lastScannedBarcode.isNotEmpty()) "Recent Scan:" else "Scanner Status:",
                             color = ErrinYellow,
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold
                         )
                         Text(
                             uiState.lastScanStatus.ifEmpty {
-                                if (uiState.isConnectedToPc) "Sedia mengimbas. Kod bar akan ditaip terus ke PC."
-                                else "Mod kendiri. Imbas untuk salin kod bar atau imbas kod QR pairing PC."
+                                if (uiState.isConnectedToPc) "Ready to scan. Barcodes are typed directly into PC."
+                                else "Standalone mode. Scan to copy barcode, or scan PC pairing QR code."
                             },
                             color = if (uiState.lastScanSuccess) ErrinTextPrimary else ErrinRed,
                             fontSize = 13.sp,
@@ -429,7 +425,7 @@ private fun BarcodeScannerTabContent(
                     }
                     if (uiState.lastScannedBarcode.isNotEmpty()) {
                         IconButton(onClick = { onCopyOne(uiState.lastScannedBarcode) }) {
-                            Icon(Icons.Default.ContentCopy, contentDescription = "Salin", tint = ErrinYellow)
+                            Icon(Icons.Default.ContentCopy, contentDescription = "Copy", tint = ErrinYellow)
                         }
                     }
                 }
@@ -444,7 +440,7 @@ private fun BarcodeScannerTabContent(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Senarai Imbasan Sesi Ini (${uiState.scanHistory.size})",
+                    "Recent Scans This Session (${uiState.scanHistory.size})",
                     color = ErrinTextMuted,
                     fontSize = 12.sp,
                     fontWeight = FontWeight.SemiBold
@@ -452,10 +448,10 @@ private fun BarcodeScannerTabContent(
                 Row {
                     if (uiState.scanHistory.isNotEmpty()) {
                         TextButton(onClick = onCopyAll) {
-                            Text("Salin Semua", color = ErrinYellow, fontSize = 12.sp)
+                            Text("Copy All", color = ErrinYellow, fontSize = 12.sp)
                         }
                         TextButton(onClick = onClearHistory) {
-                            Text("Padam", color = ErrinTextMuted, fontSize = 12.sp)
+                            Text("Clear", color = ErrinTextMuted, fontSize = 12.sp)
                         }
                     }
                 }
@@ -470,7 +466,7 @@ private fun BarcodeScannerTabContent(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        "Belum ada kod bar diimbas lagi.\nArahkan kamera ke mana-mana kod bar buku atau kad.",
+                        "No barcodes scanned yet.\nPoint camera at any book or patron card barcode.",
                         color = ErrinTextMuted,
                         fontSize = 12.sp,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center
@@ -561,9 +557,9 @@ private fun AddCatalogTabContent(
                 )
                 ScannerOverlay(
                     hintText = if (uiState.isScanningIsbnCamera)
-                        "Arahkan ke kod bar ISBN (EAN-13) pada kulit belakang buku"
+                        "Point at ISBN barcode (EAN-13) on book back cover"
                     else
-                        "Arahkan ke pelekat kod bar buku (cth. B1001)"
+                        "Point at book barcode sticker (e.g. B1001)"
                 )
             } else {
                 Box(
@@ -574,7 +570,7 @@ private fun AddCatalogTabContent(
                         onClick = onRequestCamera,
                         colors = ButtonDefaults.buttonColors(containerColor = ErrinYellow)
                     ) {
-                        Text("Beri Kebenaran Kamera", color = ErrinDarkBg)
+                        Text("Grant Camera Permission", color = ErrinDarkBg)
                     }
                 }
             }
@@ -593,7 +589,7 @@ private fun AddCatalogTabContent(
                     shape = RoundedCornerShape(16.dp)
                 ) {
                     Text(
-                        if (uiState.isScanningIsbnCamera) "🔍 Imbas Kod Bar ISBN Buku" else "🏷️ Imbas No. Barcode Buku",
+                        if (uiState.isScanningIsbnCamera) "🔍 Scan Book ISBN Barcode" else "🏷️ Scan Book Barcode Sticker",
                         color = ErrinYellow,
                         fontSize = 13.sp,
                         fontWeight = FontWeight.Bold,
@@ -611,7 +607,7 @@ private fun AddCatalogTabContent(
                         .clip(CircleShape)
                         .background(ErrinCard.copy(alpha = 0.9f))
                 ) {
-                    Icon(Icons.Default.Close, contentDescription = "Tutup Kamera", tint = Color.White)
+                    Icon(Icons.Default.Close, contentDescription = "Close Camera", tint = Color.White)
                 }
             }
         }
@@ -634,13 +630,13 @@ private fun AddCatalogTabContent(
         ) {
             Column(modifier = Modifier.padding(14.dp)) {
                 Text(
-                    "🔍 Carian Maklumat Buku (ISBN)",
+                    "🔍 Book Information Lookup (ISBN)",
                     color = ErrinYellow,
                     fontWeight = FontWeight.Bold,
                     fontSize = 14.sp
                 )
                 Text(
-                    "Imbas kod bar ISBN pada kulit buku atau taip nombor ISBN untuk mencari maklumat secara automatik.",
+                    "Scan the ISBN barcode on the book cover or type the ISBN to look up details automatically.",
                     color = ErrinTextMuted,
                     fontSize = 12.sp
                 )
@@ -656,7 +652,7 @@ private fun AddCatalogTabContent(
                         value = uiState.isbnInput,
                         onValueChange = onIsbnChange,
                         singleLine = true,
-                        placeholder = { Text("cth. 9789830112345", color = ErrinTextMuted, fontSize = 13.sp) },
+                        placeholder = { Text("e.g. 9789830112345", color = ErrinTextMuted, fontSize = 13.sp) },
                         modifier = Modifier.weight(1f),
                         colors = outlinedColors()
                     )
@@ -670,16 +666,16 @@ private fun AddCatalogTabContent(
                         if (uiState.isLookingUpIsbn) {
                             CircularProgressIndicator(modifier = Modifier.size(16.dp), color = ErrinDarkBg, strokeWidth = 2.dp)
                         } else {
-                            Icon(Icons.Default.Search, contentDescription = "Cari", tint = ErrinDarkBg, modifier = Modifier.size(16.dp))
+                            Icon(Icons.Default.Search, contentDescription = "Search", tint = ErrinDarkBg, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("Cari", color = ErrinDarkBg, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+                            Text("Search", color = ErrinDarkBg, fontWeight = FontWeight.Bold, fontSize = 13.sp)
                         }
                     }
                 }
 
                 Spacer(modifier = Modifier.height(10.dp))
 
-                // Big Button to Launch Camera for ISBN barcode scanning
+                // Button to Launch Camera for ISBN barcode scanning
                 Button(
                     onClick = onStartScanIsbn,
                     modifier = Modifier.fillMaxWidth(),
@@ -688,14 +684,14 @@ private fun AddCatalogTabContent(
                 ) {
                     Icon(Icons.Default.QrCodeScanner, contentDescription = null, tint = ErrinYellow, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Imbas Kod Bar ISBN dengan Kamera", color = ErrinTextPrimary, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                    Text("Scan ISBN Barcode with Camera", color = ErrinTextPrimary, fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                 }
 
                 // Lookup source indicator badge
                 if (uiState.lastIsbnLookup != null && uiState.lastIsbnLookup.found) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        "✅ Maklumat dijumpai daripada: ${uiState.lastIsbnLookup.source}",
+                        "✅ Information retrieved from: ${uiState.lastIsbnLookup.source}",
                         color = ErrinGreen,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Medium
@@ -720,39 +716,39 @@ private fun AddCatalogTabContent(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        "📖 Maklumat Rekod Katalog",
+                        "📖 Catalog Record Details",
                         color = ErrinYellow,
                         fontWeight = FontWeight.Bold,
                         fontSize = 14.sp
                     )
                     if (uiState.formTitle.isNotEmpty()) {
                         TextButton(onClick = onPrepareNext) {
-                            Text("Kosongkan", color = ErrinTextMuted, fontSize = 11.sp)
+                            Text("Clear", color = ErrinTextMuted, fontSize = 11.sp)
                         }
                     }
                 }
 
-                // Judul Buku (Title)
+                // Title
                 OutlinedTextField(
                     value = uiState.formTitle,
                     onValueChange = onTitleChange,
-                    label = { Text("Judul Buku *", fontSize = 12.sp) },
+                    label = { Text("Book Title *", fontSize = 12.sp) },
                     singleLine = true,
                     colors = outlinedColors(),
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Pengarang (Author)
+                // Author
                 OutlinedTextField(
                     value = uiState.formAuthor,
                     onValueChange = onAuthorChange,
-                    label = { Text("Pengarang / Penulis", fontSize = 12.sp) },
+                    label = { Text("Author / Writer", fontSize = 12.sp) },
                     singleLine = true,
                     colors = outlinedColors(),
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Penerbit & Tahun
+                // Publisher & Year
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -760,7 +756,7 @@ private fun AddCatalogTabContent(
                     OutlinedTextField(
                         value = uiState.formPublisher,
                         onValueChange = onPublisherChange,
-                        label = { Text("Penerbit", fontSize = 12.sp) },
+                        label = { Text("Publisher", fontSize = 12.sp) },
                         singleLine = true,
                         colors = outlinedColors(),
                         modifier = Modifier.weight(1.8f)
@@ -768,14 +764,14 @@ private fun AddCatalogTabContent(
                     OutlinedTextField(
                         value = uiState.formYear,
                         onValueChange = onYearChange,
-                        label = { Text("Tahun", fontSize = 12.sp) },
+                        label = { Text("Year", fontSize = 12.sp) },
                         singleLine = true,
                         colors = outlinedColors(),
                         modifier = Modifier.weight(1f)
                     )
                 }
 
-                // No. Barcode Buku (Accession Barcode) + Scan Button
+                // Accession Barcode + Camera Scan Button
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -784,7 +780,7 @@ private fun AddCatalogTabContent(
                     OutlinedTextField(
                         value = uiState.formBarcode,
                         onValueChange = onBarcodeChange,
-                        label = { Text("No. Barcode Pelekat Buku", fontSize = 12.sp) },
+                        label = { Text("Book Barcode (Accession No.)", fontSize = 12.sp) },
                         singleLine = true,
                         colors = outlinedColors(),
                         modifier = Modifier.weight(1f)
@@ -796,11 +792,11 @@ private fun AddCatalogTabContent(
                     ) {
                         Icon(Icons.Default.QrCodeScanner, contentDescription = null, tint = ErrinYellow, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Imbas", color = ErrinTextPrimary, fontSize = 12.sp)
+                        Text("Scan", color = ErrinTextPrimary, fontSize = 12.sp)
                     }
                 }
 
-                // No. Panggilan (Call No) & Subjek
+                // Call Number & Subject
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -808,7 +804,7 @@ private fun AddCatalogTabContent(
                     OutlinedTextField(
                         value = uiState.formCall,
                         onValueChange = onCallChange,
-                        label = { Text("No. Panggilan (DDC)", fontSize = 12.sp) },
+                        label = { Text("Call Number (DDC)", fontSize = 12.sp) },
                         singleLine = true,
                         colors = outlinedColors(),
                         modifier = Modifier.weight(1f)
@@ -816,7 +812,7 @@ private fun AddCatalogTabContent(
                     OutlinedTextField(
                         value = uiState.formSubject,
                         onValueChange = onSubjectChange,
-                        label = { Text("Subjek / Kategori", fontSize = 12.sp) },
+                        label = { Text("Subject / Category", fontSize = 12.sp) },
                         singleLine = true,
                         colors = outlinedColors(),
                         modifier = Modifier.weight(1.5f)
@@ -860,7 +856,7 @@ private fun AddCatalogTabContent(
                             colors = ButtonDefaults.buttonColors(containerColor = ErrinGreen),
                             shape = RoundedCornerShape(6.dp)
                         ) {
-                            Text("➕ Daftar Buku Seterusnya", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            Text("➕ Register Next Book", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                         }
                     }
                 }
@@ -878,11 +874,11 @@ private fun AddCatalogTabContent(
                     if (uiState.isSavingBook) {
                         CircularProgressIndicator(modifier = Modifier.size(20.dp), color = ErrinDarkBg, strokeWidth = 2.dp)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Menyimpan ke katalog...", color = ErrinDarkBg, fontWeight = FontWeight.Bold)
+                        Text("Saving to catalog...", color = ErrinDarkBg, fontWeight = FontWeight.Bold)
                     } else {
                         Icon(Icons.Default.Save, contentDescription = null, tint = ErrinDarkBg)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Simpan ke Katalog", color = ErrinDarkBg, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                        Text("Save to Catalog", color = ErrinDarkBg, fontWeight = FontWeight.Bold, fontSize = 14.sp)
                     }
                 }
             }

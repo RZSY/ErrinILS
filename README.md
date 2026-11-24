@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/RZSY/ErrinILS/releases"><img src="https://img.shields.io/badge/version-1.4.2-blue.svg?style=flat-square" height="20" alt="Version 1.4.2" /></a>
+  <a href="https://github.com/RZSY/ErrinILS/releases"><img src="https://img.shields.io/badge/version-1.4.3-blue.svg?style=flat-square" height="20" alt="Version 1.4.3" /></a>
   <a href="#system-requirements"><img src="https://img.shields.io/badge/platform-Windows%207%20|%208%20|%2010%20|%2011%20|%20Android-0078D6.svg?style=flat-square&logo=windows" height="20" alt="Platform: Windows & Android" /></a>
   <a href="#system-requirements"><img src="https://img.shields.io/badge/runtime-.NET%20Framework%204.0%2B-512BD4.svg?style=flat-square&logo=dotnet" height="20" alt=".NET 4.0+" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg?style=flat-square" height="20" alt="MIT License" /></a>
@@ -19,6 +19,7 @@
 <p align="center">
   <a href="https://rzsy.github.io/ErrinILS/">Website</a> •
   <a href="https://github.com/RZSY/ErrinILS/releases">Releases</a> •
+  <a href="docs/assets/ErrinILS-User-Guide.pdf">Official PDF Manual</a> •
   <a href="https://rzsy.github.io/ErrinILS/guide.html">User Manual &amp; Flowcharts</a> •
   <a href="AGENTS.md">Developer Guide</a> •
   <a href="#quick-start">Quick Start</a>
@@ -30,7 +31,7 @@
 
 ErrinILS is a zero-dependency school library management system (ILS) designed for standard Windows PCs and Android devices. Rather than requiring dedicated Linux servers, complex database administration, or web server setups like Koha or SLiMS, ErrinILS runs as a standalone executable on any computer running Windows 7 or newer, accompanied by a native Android scanning app.
 
-It covers everyday school library operations: barcode checkouts and returns, copy-cataloguing across 31 Malaysian and international library databases, batch label and spine printing with multi-selection, simplified self-service mode for students, and mobile stock audits over local Wi-Fi. All library data is stored locally in a single SQLite database without external database drivers.
+It covers everyday school library operations: barcode checkouts and returns, copy-cataloguing across 31 Malaysian and international library databases, batch label and spine printing with multi-selection, simplified self-service mode for students, mobile stock audits over local Wi-Fi, and **bidirectional mobile scanner integration** (desktop port 8585, mobile listener port 8586). All library data is stored locally in a single SQLite database without external database drivers.
 
 ```text
                 _       ___ _     ____  
@@ -47,10 +48,11 @@ It covers everyday school library operations: barcode checkouts and returns, cop
 - **Barcode Circulation**: Scan student IDs and book labels with instant visual feedback, automatic return dates, loan limit checks (default: 3 books for 7 days), and hold alerts.
 - **31-Source ISBN Union Cataloguing**: Enter or scan an ISBN to automatically pull title, author, publisher, publication year, DDC, and subjects across 31 union archives: Pustaka Terbuka Union, KIK (National Union), PNM (Perpustakaan Negara Malaysia), all 14 State Public Libraries (Selangor, Penang, Perak, Kedah, Perlis, Johor, Kelantan, Terengganu, Pahang, Negeri Sembilan, Melaka, Sarawak, Sabah, KL, Putrajaya, Labuan), u-Pustaka, MALCat, Universiti Malaya (UM), UKM Tun Seri Lanang, UiTM PTAR, UPSI, Dewan Bahasa dan Pustaka (DBP), Library of Congress (Z39.50), Open Library, Google Books, HathiTrust, and K10plus German Union.
 - **Batch Label & Spine Printing**: Select multiple items using `Ctrl+A`, Shift-click, or row selection. Print physical 3.5"×1.1" barcode labels or 1"×1.5" Dewey spine labels with live antialiased preview, copies-per-record selector, and print dialog.
-- **Android Companion App (ErrinILS Scanner)**: High-performance native Android app (Kotlin, Jetpack Compose, CameraX, Google ML Kit) with Standalone Cloud Mode (Google Drive & GitHub sync without requiring a PC) and 5 core scanning modes: Return, Borrow, ISBN Cataloging, Shelf Audit, and **Virtual Barcode Gun** (`/api/wedge` wireless keystroke streaming to PC). Available as `ErrinILS-Scanner-v1.4.2.apk`.
+- **Android Companion App (ErrinILS Scanner v1.4.3)**: Native Android app (Kotlin, Jetpack Compose, CameraX, Google ML Kit) with 2 primary librarian workflows: **Virtual Barcode Gun** (`/api/wedge` wireless keystroke streaming to PC) and **Mobile ISBN Cataloging** (camera ISBN lookup and accessioning). Available as `dist/ErrinILS-Scanner-v1.4.3.apk`.
+- **Bidirectional PC-to-App Connectivity**: The desktop system can initiate connections to the Android phone (listening on port `8586`), measure ping latency, trigger remote haptic and audible alerts (*Beep Phone*), pair directly by IP address without typing a 6-digit PIN (*+ Connect Scanner by IP*), and auto-discover companion scanners across the local subnet.
 - **Remote Access Copy-Cataloging**: Look up books by ISBN directly in the browser-based remote access interface (`Web.cs`) with 31-source search and direct one-click commits to the catalog.
 - **Simplified View**: Interface designed for students and young readers. Features oversized buttons, clear visual status banners, and a dedicated exit button back to librarian controls.
-- **Mobile Access and QR Pairing**: Built-in HTTP server (`0.0.0.0:8080`) serving a mobile web app. Pair a phone or tablet by scanning an on-screen QR code for cable-free shelf audits and inventory checks.
+- **Mobile Access and QR Pairing**: Built-in HTTP server (`0.0.0.0:8585`) serving a mobile web app. Pair a phone or tablet by scanning an on-screen QR code for cable-free shelf audits and inventory checks.
 - **Automatic Self-Updater**: One-click updates with TLS 1.3 support, GitHub Releases integration, automatic detection of installer vs standalone portable binary, and bounded retry resilience.
 - **School Localization**: Built-in Malaysian IC and MyKid validation (`YYMMDD-PB-###G`) with birthdate calendar checks, overdue fines calculated in Ringgit Malaysia (RM 0.10/day default), and Nilam reading reports.
 - **SQLite Database Optimization**: All data persists in `%APPDATA%\Errin\errin-data.db` using high-performance ACID SQLite storage with WAL journaling. Includes built-in 1-click database vacuuming, integrity check, and JSON backups.

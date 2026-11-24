@@ -2,27 +2,27 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ErrinILS School Library System - User Manual (Version 1.4.2)</title>
+  <title>ErrinILS School Library System - Official User Manual & Operating Guidelines (v1.4.3)</title>
   <style>
-    /* Strict Sharp Corners & Professional Print Typography */
+    /* Professional Publication & Print Typography */
     *, *::before, *::after {
       box-sizing: border-box;
-      border-radius: 0 !important;
       margin: 0;
       padding: 0;
     }
 
     @page {
       size: A4 portrait;
-      margin: 18mm 15mm 18mm 15mm;
+      margin: 14mm 14mm 14mm 14mm;
     }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       font-size: 10pt;
-      line-height: 1.55;
-      color: #1a1b1e;
+      line-height: 1.6;
+      color: #111827;
       background: #ffffff;
+      -webkit-font-smoothing: antialiased;
     }
 
     .page-break {
@@ -36,23 +36,22 @@
     }
 
     /* -------------------------------------------------------------
-       Cover Page Styling
+       COVER PAGE
        ------------------------------------------------------------- */
     .cover-page {
-      height: 250mm;
-      max-height: 250mm;
+      height: 260mm;
+      max-height: 260mm;
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      border: 4px solid #1a1b1e;
-      padding: 16mm 16mm;
-      background: #fafaf8;
+      border: 3.5px solid #111827;
+      padding: 14mm 14mm;
+      background: #fafaf9;
       position: relative;
-      page-break-inside: avoid;
-      break-inside: avoid;
       page-break-after: always;
       break-after: page;
+      overflow: hidden;
     }
 
     .cover-top {
@@ -62,37 +61,37 @@
 
     .cover-badge {
       display: inline-block;
-      font-family: "Courier New", Courier, monospace;
-      font-size: 9pt;
-      font-weight: bold;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      font-size: 8.5pt;
+      font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.1em;
-      background: #1a1b1e;
+      letter-spacing: 0.12em;
+      background: #111827;
       color: #f6c61b;
-      padding: 4px 10px;
-      margin-bottom: 16px;
+      padding: 4px 12px;
+      margin-bottom: 14px;
     }
 
     .cover-title {
-      font-size: 32pt;
+      font-size: 34pt;
       font-weight: 900;
-      line-height: 1.1;
-      color: #1a1b1e;
+      line-height: 1.05;
+      color: #111827;
       letter-spacing: -0.03em;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
 
     .cover-subtitle {
       font-size: 16pt;
-      font-weight: 600;
-      color: #555861;
-      margin-bottom: 16px;
+      font-weight: 700;
+      color: #4b5563;
+      margin-bottom: 12px;
     }
 
     .cover-desc {
-      font-size: 11pt;
-      color: #6c707d;
-      max-width: 520px;
+      font-size: 10.5pt;
+      color: #4b5563;
+      max-width: 540px;
       line-height: 1.5;
     }
 
@@ -102,237 +101,266 @@
     }
 
     .cover-logo {
-      width: 80px;
-      height: 80px;
+      width: 78px;
+      height: 78px;
       margin: 0 auto 12px auto;
+      display: block;
+    }
+
+    .cover-version {
+      font-weight: 800;
+      font-size: 14pt;
+      color: #111827;
+      letter-spacing: -0.01em;
+    }
+
+    .cover-arch {
+      font-size: 9.5pt;
+      color: #6b7280;
+      margin-top: 4px;
+      font-weight: 500;
     }
 
     .cover-meta {
       background: #ffffff;
-      border: 1px solid #d4d6dc;
-      border-top: 3px solid #1a1b1e;
+      border: 1.5px solid #d1d5db;
+      border-top: 3.5px solid #111827;
       padding: 12px 18px;
       font-size: 8.8pt;
-      color: #4a4d57;
+      color: #374151;
     }
 
     .cover-meta-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 8px 20px;
+      gap: 7px 22px;
     }
 
     .cover-meta-item strong {
-      color: #1a1b1e;
+      color: #111827;
       display: inline-block;
-      width: 130px;
+      width: 135px;
     }
 
     /* -------------------------------------------------------------
-       Table of Contents
+       TABLE OF CONTENTS
        ------------------------------------------------------------- */
     .toc-container {
-      padding: 6mm 0;
-      page-break-inside: avoid;
-      break-inside: avoid;
+      padding: 4mm 0;
     }
 
     .toc-title {
-      font-size: 20pt;
-      font-weight: 800;
-      color: #1a1b1e;
-      border-bottom: 2px solid #1a1b1e;
-      padding-bottom: 8px;
-      margin-bottom: 20px;
+      font-size: 19pt;
+      font-weight: 900;
+      color: #111827;
+      border-bottom: 2.5px solid #111827;
+      padding-bottom: 6px;
+      margin-bottom: 16px;
     }
 
     .toc-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 12px 30px;
+      gap: 10px 28px;
       font-size: 9.5pt;
     }
 
     .toc-item {
       display: flex;
       justify-content: space-between;
-      border-bottom: 1px dotted #ccc;
+      border-bottom: 1px dotted #cbd5e1;
       padding: 3px 0;
+      color: #1f2937;
     }
 
     .toc-item strong {
-      color: #1a1b1e;
+      color: #111827;
+      font-weight: 700;
     }
 
     /* -------------------------------------------------------------
-       Headings & Content Layout
+       TYPOGRAPHY & SECTION HEADINGS
        ------------------------------------------------------------- */
     h2.chapter-heading {
-      font-size: 16pt;
+      font-size: 15pt;
       font-weight: 800;
-      color: #1a1b1e;
+      color: #0f172a;
       border-bottom: 2px solid #f6c61b;
       padding-bottom: 5px;
-      margin: 24px 0 12px 0;
-      page-break-before: auto;
+      margin: 22px 0 10px 0;
+      page-break-after: avoid;
+      break-after: avoid;
     }
 
     h3.subheading {
-      font-size: 12pt;
+      font-size: 11.5pt;
       font-weight: 700;
-      color: #2b2e38;
-      margin: 16px 0 8px 0;
+      color: #1e293b;
+      margin: 14px 0 6px 0;
+      page-break-after: avoid;
+      break-after: avoid;
     }
 
     h4 {
       font-size: 10.5pt;
       font-weight: 700;
-      color: #3f4350;
-      margin: 12px 0 6px 0;
+      color: #334155;
+      margin: 10px 0 4px 0;
+      page-break-after: avoid;
+      break-after: avoid;
     }
 
     p {
-      margin-bottom: 10px;
+      margin-bottom: 9px;
       text-align: justify;
-      color: #282a30;
+      color: #1f2937;
     }
 
     ul, ol {
-      margin: 8px 0 12px 22px;
-      color: #282a30;
+      margin: 6px 0 10px 22px;
+      color: #1f2937;
     }
 
     li {
-      margin-bottom: 5px;
+      margin-bottom: 4px;
     }
 
     code, kbd {
-      font-family: "Courier New", Courier, monospace;
-      font-size: 8.5pt;
-      background: #f0f1f4;
+      font-family: Consolas, "Courier New", Courier, monospace;
+      font-size: 8.8pt;
+      background: #f1f5f9;
       padding: 1px 5px;
-      border: 1px solid #dcdfe6;
-      color: #1a1b1e;
+      border: 1px solid #cbd5e1;
+      color: #0f172a;
+      font-weight: 600;
     }
 
     /* -------------------------------------------------------------
-       Tables (Sharp styling)
+       TABLES
        ------------------------------------------------------------- */
     table {
       width: 100%;
       border-collapse: collapse;
-      margin: 12px 0 16px 0;
+      margin: 10px 0 14px 0;
       font-size: 8.8pt;
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
 
     th {
-      background: #24262c;
+      background: #1e293b;
       color: #ffffff;
       text-align: left;
       padding: 7px 10px;
       font-weight: 700;
-      border: 1px solid #24262c;
+      border: 1px solid #1e293b;
     }
 
     td {
-      padding: 7px 10px;
-      border: 1px solid #d8dae0;
+      padding: 6px 10px;
+      border: 1px solid #cbd5e1;
       vertical-align: top;
-      color: #333640;
+      color: #1f2937;
     }
 
     tr:nth-child(even) td {
-      background: #fbfbfd;
+      background: #f8fafc;
     }
 
     /* -------------------------------------------------------------
-       Screenshots & Figures
+       FIGURES & SCREENSHOTS
        ------------------------------------------------------------- */
     .figure-box {
-      margin: 16px 0 20px 0;
-      border: 1px solid #cfd2da;
-      background: #fdfdfd;
-      padding: 10px;
+      margin: 14px 0 18px 0;
+      border: 1px solid #cbd5e1;
+      background: #ffffff;
+      padding: 8px;
       text-align: center;
       page-break-inside: avoid;
+      break-inside: avoid;
     }
 
     .figure-img {
       max-width: 100%;
       height: auto;
-      border: 1px solid #e0e2e8;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+      border: 1px solid #e2e8f0;
+      display: block;
+      margin: 0 auto;
     }
 
     .figure-caption {
-      margin-top: 8px;
+      margin-top: 7px;
       font-size: 8.5pt;
-      font-weight: bold;
-      color: #4a4d57;
+      font-weight: 700;
+      color: #475569;
       text-align: center;
     }
 
     /* -------------------------------------------------------------
-       Callouts (Tip, Note, Warning, Important)
+       CALLOUTS
        ------------------------------------------------------------- */
     .callout {
-      margin: 12px 0 16px 0;
+      margin: 10px 0 14px 0;
       padding: 10px 14px;
-      border: 1px solid #ccc;
-      border-left: 4px solid #888;
-      background: #fafafc;
+      border: 1px solid #cbd5e1;
+      border-left: 4.5px solid #64748b;
+      background: #f8fafc;
       font-size: 9pt;
       page-break-inside: avoid;
+      break-inside: avoid;
     }
 
     .callout-header {
-      font-weight: bold;
-      margin-bottom: 4px;
+      font-weight: 800;
+      margin-bottom: 3px;
       font-size: 9.5pt;
     }
 
     .callout-tip {
       border-left-color: #10b981;
-      background: #f2fbf7;
+      background: #f0fdf4;
     }
     .callout-tip .callout-header { color: #047857; }
 
     .callout-note {
-      border-left-color: #3b82f6;
-      background: #f2f7ff;
+      border-left-color: #2563eb;
+      background: #eff6ff;
     }
     .callout-note .callout-header { color: #1d4ed8; }
 
     .callout-warning {
       border-left-color: #f59e0b;
-      background: #fffdf5;
+      background: #fffbeb;
     }
     .callout-warning .callout-header { color: #b45309; }
 
     .callout-important {
       border-left-color: #ef4444;
-      background: #fef4f4;
+      background: #fef2f2;
     }
     .callout-important .callout-header { color: #b91c1c; }
 
-    /* Running Headers / Footers */
+    /* -------------------------------------------------------------
+       RUNNING HEADERS & FOOTERS
+       ------------------------------------------------------------- */
     .header-rule {
-      border-bottom: 1px solid #d4d6dc;
+      border-bottom: 1.5px solid #cbd5e1;
       padding-bottom: 4px;
-      margin-bottom: 16px;
+      margin-bottom: 14px;
       display: flex;
       justify-content: space-between;
       font-size: 8pt;
-      color: #8c909e;
+      color: #64748b;
+      font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.05em;
+      letter-spacing: 0.06em;
     }
   </style>
 </head>
 <body>
 
   <!-- =============================================================
-       COVER PAGE
+       COVER PAGE (EXACT SINGLE A4 PAGE)
        ============================================================= -->
   <div class="cover-page page-break">
     <div class="cover-top">
@@ -340,24 +368,26 @@
       <h1 class="cover-title">ErrinILS</h1>
       <div class="cover-subtitle">School Integrated Library System</div>
       <p class="cover-desc">
-        Installation, daily circulation desk, automated 5-source cataloguing, student management, collection weeding, QR remote device pairing, analytics, and administrative recovery.
+        Complete step-by-step operating guidelines for school librarians, administrators, and student helpers. Covers daily circulation desk operations, 31-source automated ISBN copy-cataloguing, batch label printing, the wireless Android companion scanner app, dual cloud sync, Malaysian IC patron management, simplified circulation, weeding, and disaster recovery.
       </p>
     </div>
 
     <div class="cover-center">
       <img src="icon.png" alt="ErrinILS Logo" class="cover-logo">
-      <div style="font-weight: bold; font-size: 14pt; color: #1a1b1e;">Version 1.4.2 (Windows Edition)</div>
-      <div style="font-size: 9.5pt; color: #6b6f7c; margin-top: 4px;">Zero-Dependency Architecture &bull; Standalone C# Executable</div>
+      <div class="cover-version">Version 1.4.3 (Windows &amp; Companion Android Editions)</div>
+      <div class="cover-arch">Zero-Dependency C# Architecture &bull; Standalone Executable &bull; High-DPI Sharp</div>
     </div>
 
     <div class="cover-meta">
       <div class="cover-meta-grid">
         <div class="cover-meta-item"><strong>Target OS:</strong> Windows 7, 8, 8.1, 10, 11 (32/64-bit)</div>
-        <div class="cover-meta-item"><strong>Runtime:</strong> Microsoft .NET Framework 4.0+</div>
-        <div class="cover-meta-item"><strong>Database:</strong> Single SQLite Database (<code>errin-data.db</code>)</div>
-        <div class="cover-meta-item"><strong>Release Date:</strong> November 2026</div>
+        <div class="cover-meta-item"><strong>Companion App:</strong> Android 8.0+ (ErrinILS Scanner)</div>
+        <div class="cover-meta-item"><strong>Desktop Runtime:</strong> Microsoft .NET Framework 4.0+</div>
+        <div class="cover-meta-item"><strong>Database Engine:</strong> SQLite WAL (<code>errin-data.db</code>)</div>
+        <div class="cover-meta-item"><strong>Default Port:</strong> 8585 (HTTP / TLS HTTPS)</div>
         <div class="cover-meta-item"><strong>License:</strong> MIT Open Source License</div>
-        <div class="cover-meta-item"><strong>Web Portal:</strong> https://rzsy.github.io/ErrinILS/</div>
+        <div class="cover-meta-item"><strong>Documentation:</strong> https://rzsy.github.io/ErrinILS/</div>
+        <div class="cover-meta-item"><strong>Release Date:</strong> November 2026</div>
       </div>
     </div>
   </div>
@@ -367,7 +397,7 @@
        ============================================================= -->
   <div class="toc-container page-break">
     <div class="header-rule">
-      <span>ErrinILS v1.4.2 User Manual</span>
+      <span>ErrinILS v1.4.3 Official Manual</span>
       <span>Contents Overview</span>
     </div>
 
@@ -375,105 +405,111 @@
 
     <div class="toc-grid">
       <div>
-        <div class="toc-item"><span>1. About ErrinILS</span> <strong>3</strong></div>
-        <div class="toc-item"><span>2. System Requirements &amp; Hardware</span> <strong>4</strong></div>
-        <div class="toc-item"><span>3. Installing &amp; Starting ErrinILS</span> <strong>5</strong></div>
-        <div class="toc-item"><span>4. Getting Started &amp; Initial Config</span> <strong>6</strong></div>
-        <div class="toc-item"><span>5. Library Rules and Numbering</span> <strong>7</strong></div>
+        <div class="toc-item"><span>1. About ErrinILS &amp; Zero-Dependency Design</span> <strong>3</strong></div>
+        <div class="toc-item"><span>2. System Requirements &amp; Hardware Specs</span> <strong>4</strong></div>
+        <div class="toc-item"><span>3. Installing &amp; Standalone Portable Copy</span> <strong>5</strong></div>
+        <div class="toc-item"><span>4. Getting Started &amp; Initial Security</span> <strong>6</strong></div>
+        <div class="toc-item"><span>5. School Rules &amp; Identifiers</span> <strong>7</strong></div>
         <div class="toc-item"><span>6. The Dashboard &amp; Daily Overview</span> <strong>8</strong></div>
-        <div class="toc-item"><span>7. Daily Circulation (Desk Operations)</span> <strong>9</strong></div>
-        <div class="toc-item"><span>8. The Simplified View</span> <strong>11</strong></div>
-        <div class="toc-item"><span>9. The Catalog &amp; 5-Source Lookup</span> <strong>12</strong></div>
-        <div class="toc-item"><span>10. Students &amp; Patron Management</span> <strong>14</strong></div>
+        <div class="toc-item"><span>7. Daily Circulation Desk Operations</span> <strong>9</strong></div>
+        <div class="toc-item"><span>8. The Simplified View (Touch Kiosk)</span> <strong>11</strong></div>
+        <div class="toc-item"><span>9. The Catalog &amp; 31-Source ISBN Lookup</span> <strong>12</strong></div>
+        <div class="toc-item"><span>10. Batch Label Printing &amp; Accessioning</span> <strong>14</strong></div>
       </div>
       <div>
-        <div class="toc-item"><span>11. Fines Management &amp; Lost Books</span> <strong>15</strong></div>
-        <div class="toc-item"><span>12. Collection Weeding &amp; Maintenance</span> <strong>16</strong></div>
-        <div class="toc-item"><span>13. Remote Access &amp; QR Code Pairing</span> <strong>17</strong></div>
-        <div class="toc-item"><span>14. Reports, Reading Champions &amp; Analytics</span> <strong>18</strong></div>
-        <div class="toc-item"><span>15. Backup, Restore &amp; Disaster Recovery</span> <strong>19</strong></div>
-        <div class="toc-item"><span>16. Settings and Administration</span> <strong>20</strong></div>
-        <div class="toc-item"><span>17. Recommended Operational Routines</span> <strong>21</strong></div>
-        <div class="toc-item"><span>18. Troubleshooting Guide</span> <strong>22</strong></div>
-        <div class="toc-item"><span>19. Frequently Asked Questions (FAQ)</span> <strong>23</strong></div>
-        <div class="toc-item"><span>Appendices A, B &amp; C (Task Guide, Glossary)</span> <strong>24</strong></div>
+        <div class="toc-item"><span>11. Student Patrons &amp; Malaysian IC Verification</span> <strong>15</strong></div>
+        <div class="toc-item"><span>12. Fines Management &amp; Lost Books</span> <strong>16</strong></div>
+        <div class="toc-item"><span>13. Collection Weeding &amp; Maintenance</span> <strong>17</strong></div>
+        <div class="toc-item"><span>14. Remote Access, Network Ports (8585) &amp; Web OPAC</span> <strong>18</strong></div>
+        <div class="toc-item"><span>15. ErrinILS Scanner &amp; Bidirectional Operations (8586)</span> <strong>19</strong></div>
+        <div class="toc-item"><span>16. Dual Cloud Sync (Google Drive &amp; GitHub)</span> <strong>21</strong></div>
+        <div class="toc-item"><span>17. Reports, Reading Champions &amp; Analytics</span> <strong>22</strong></div>
+        <div class="toc-item"><span>18. Backup, Restore &amp; Database Optimization</span> <strong>23</strong></div>
+        <div class="toc-item"><span>19. Troubleshooting Guide &amp; Administration</span> <strong>24</strong></div>
+        <div class="toc-item"><span>Appendices: Quick Task Guide &amp; Glossary</span> <strong>25</strong></div>
       </div>
     </div>
 
-    <div style="margin-top: 30px;" class="callout callout-note avoid-break">
-      <div class="callout-header">Quick Role Guidance</div>
-      <p><strong>Librarians &amp; Administrators:</strong> Read all chapters. Start with Chapters 3 to 5, then proceed to Chapters 6 through 16.<br>
-      <strong>Student Helpers &amp; Prefects:</strong> Focus on Chapter 4.4 (scanners), Chapter 7 (Circulation Desk), and Chapter 8 (Simplified View).<br>
-      <strong>IT Technicians:</strong> Focus on Chapters 2, 3, 13 (Remote QR), 15 (Backups), and 18 (Troubleshooting).</p>
+    <div style="margin-top: 24px;" class="callout callout-note avoid-break">
+      <div class="callout-header">Role-Based Orientation</div>
+      <p><strong>School Librarians &amp; Administrators:</strong> Read all chapters. Start with Chapters 3 to 6, then review Chapters 7, 9, 14, and 15.<br>
+      <strong>Student Helpers &amp; Prefects:</strong> Focus on Chapter 7 (Circulation Desk), Chapter 8 (Simplified View), and Chapter 15 (Android Barcode Gun).<br>
+      <strong>School IT Technicians:</strong> Focus on Chapters 2, 3, 14 (Network Ports &amp; QR Pairing), 16 (Cloud Sync), and 18 (Backups &amp; SQLite Optimization).</p>
     </div>
   </div>
 
   <!-- =============================================================
        CHAPTER 1: ABOUT ERRINILS
        ============================================================= -->
-  <div class="header-rule"><span>ErrinILS v1.4.2 User Manual</span><span>Chapter 1: About ErrinILS</span></div>
+  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 1: About ErrinILS</span></div>
   <h2 class="chapter-heading">1. About ErrinILS</h2>
   
   <h3 class="subheading">1.1 What ErrinILS is</h3>
   <p>
-    <strong>ErrinILS</strong> is an integrated library system (ILS) designed specifically for school libraries. It is a lightweight Windows desktop program that maintains synchronized, audit-proof records of three operational elements:
+    <strong>ErrinILS</strong> is an integrated library system (ILS) engineered specifically for primary, secondary, and vernacular school libraries. It is a lightweight, high-performance Windows desktop program that tracks three core operational pillars:
   </p>
   <ul>
-    <li>The <strong>books and learning items</strong> in the library collection.</li>
-    <li>The <strong>students, teachers, and patrons</strong> registered to borrow them.</li>
-    <li>The <strong>active loans, historical borrowings, holds (reservations), and fines</strong> connecting patrons and items.</li>
+    <li><strong>The Catalog:</strong> Books, readers, textbooks, and learning items in the school collection.</li>
+    <li><strong>The Patrons:</strong> Students, teachers, and staff registered to borrow books, with automated validation for Malaysian 12-digit IC and MyKid numbers (<code>YYMMDD-PB-###G</code>).</li>
+    <li><strong>Circulation &amp; Accountability:</strong> Loans, reservations (holds), return audits, and fine tracking connecting patrons and items.</li>
   </ul>
   <p>
-    Everyday library operation does not need an internet connection. All information is kept on the library computer and is saved automatically each time you make a change. The internet is used only for two optional tasks: looking up book bibliographic details by ISBN, and searching remote library catalogues via Z39.50.
+    Everyday library operation does not require an active internet connection. All data persists locally in an ACID-compliant SQLite database and is committed the instant an action occurs. The internet is utilized strictly for optional cloud features: querying 31 Malaysian national and international union catalogs for ISBN copy-cataloguing, remote wireless barcode scanning via local Wi-Fi, and background cloud synchronization.
   </p>
 
   <h3 class="subheading">1.2 Core Philosophy &amp; Zero-Dependency Architecture</h3>
   <p>
-    Traditional library systems (such as Koha or SLiMS) require heavy server stacks: Apache, PHP, MySQL, and Linux administration. ErrinILS runs on a <strong>zero-external-dependency rule</strong>. Built with pure C# on base .NET Framework 4.0 assemblies (`mscorlib`, `System`, `System.Drawing`, `System.Windows.Forms`), it compiles into a standalone ~200 KB executable (`ErrinILS.exe`) storing all data in a high-performance SQLite database (`%APPDATA%\Errin\errin-data.db`).
+    Unlike enterprise library software (such as Koha, Evergreen, or SLiMS) that requires complex web servers, Apache/Nginx, MySQL/PostgreSQL daemons, and dedicated server administrators, ErrinILS is built on a <strong>strict zero-external-dependency rule</strong>. Written in pure C# using only base .NET Framework 4.0 runtime assemblies (<code>mscorlib</code>, <code>System</code>, <code>System.Drawing</code>, <code>System.Windows.Forms</code>), it runs as a single standalone executable (<code>ErrinILS.exe</code>) with zero third-party DLLs and stores data in a fast SQLite database (<code>%APPDATA%\Errin\errin-data.db</code>).
   </p>
 
   <!-- =============================================================
        CHAPTER 2: SYSTEM REQUIREMENTS
        ============================================================= -->
-  <div class="header-rule"><span>ErrinILS v1.4.2 User Manual</span><span>Chapter 2: System Requirements</span></div>
+  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 2: System Requirements</span></div>
   <h2 class="chapter-heading">2. System Requirements &amp; Hardware Guidelines</h2>
-  <p>ErrinILS is deliberately light, running smoothly on older classroom PCs without servers or database daemons.</p>
+  <p>ErrinILS is engineered for school hardware, functioning smoothly on older classroom netbooks and desktop PCs.</p>
 
   <table>
     <thead>
-      <tr><th>Component</th><th>Minimum Requirement</th><th>Recommended Specification</th></tr>
+      <tr><th>Component</th><th>Minimum Specification</th><th>Recommended Specification</th></tr>
     </thead>
     <tbody>
-      <tr><td><strong>Operating System</strong></td><td>Windows 7 SP1 (32 or 64-bit)</td><td>Windows 10 or Windows 11 (64-bit)</td></tr>
-      <tr><td><strong>Runtime</strong></td><td>Microsoft .NET Framework 4.0</td><td>Microsoft .NET Framework 4.8 (built-in on Win 10/11)</td></tr>
-      <tr><td><strong>Memory (RAM)</strong></td><td>1 GB RAM</td><td>2 GB RAM or more</td></tr>
-      <tr><td><strong>Disk Space</strong></td><td>10 MB for program; ~50 MB for data</td><td>100 MB free storage</td></tr>
-      <tr><td><strong>Display Screen</strong></td><td>1024 × 600 (min: 900 × 600)</td><td>1366 × 768 or 1920 × 1080 (High-DPI PerMonitorV2)</td></tr>
-      <tr><td><strong>Scanner</strong></td><td>Keyboard wedge scanner (USB)</td><td>Standard USB 1D laser or 2D image scanner</td></tr>
-      <tr><td><strong>Printer</strong></td><td>Optional</td><td>A4 printer or thermal label printer (Code 128 barcodes)</td></tr>
+      <tr><td><strong>Operating System</strong></td><td>Windows 7 SP1 (32-bit or 64-bit)</td><td>Windows 10 or Windows 11 (64-bit)</td></tr>
+      <tr><td><strong>Runtime</strong></td><td>Microsoft .NET Framework 4.0</td><td>Microsoft .NET Framework 4.8 (built into Win 10/11)</td></tr>
+      <tr><td><strong>Memory (RAM)</strong></td><td>1 GB RAM (under 40 MB active RAM usage)</td><td>2 GB RAM or higher</td></tr>
+      <tr><td><strong>Disk Storage</strong></td><td>15 MB for program binary; 50 MB for database</td><td>200 MB free hard drive space</td></tr>
+      <tr><td><strong>Display Screen</strong></td><td>1024 &times; 600 (PerMonitorV2 High-DPI support)</td><td>1366 &times; 768 or 1920 &times; 1080 (Sharp ClearType)</td></tr>
+      <tr><td><strong>Barcode Scanner</strong></td><td>USB HID Keyboard Wedge (or Android Phone App)</td><td>Standard 1D/2D USB Laser Scanner or ErrinILS Scanner App</td></tr>
+      <tr><td><strong>Label Printer</strong></td><td>Standard A4 printer</td><td>Standard A4 or thermal sticker printer (Code 128)</td></tr>
+      <tr><td><strong>Network Port</strong></td><td>Port 8585 (LAN / Wi-Fi)</td><td>Port 8585 open on local school Wi-Fi / hotspot</td></tr>
     </tbody>
   </table>
 
   <!-- =============================================================
        CHAPTER 3: INSTALLING & STARTING
        ============================================================= -->
-  <div class="header-rule"><span>ErrinILS v1.4.2 User Manual</span><span>Chapter 3: Installation &amp; Storage</span></div>
+  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 3: Installation &amp; Storage</span></div>
   <h2 class="chapter-heading">3. Installing, Updating and Starting ErrinILS</h2>
 
-  <h3 class="subheading">3.1 Installing with Setup program</h3>
-  <p>Download <code>ErrinILS-Setup-1.4.2.exe</code>. Double-click it, click <strong>Yes</strong> at the UAC prompt, and if Windows SmartScreen appears, click <strong>More info</strong> then <strong>Run anyway</strong>. Follow the wizard and click <strong>Finish</strong>.</p>
+  <h3 class="subheading">3.1 Standard Windows Setup</h3>
+  <p>
+    Download <code>ErrinILS-Setup-1.4.3.exe</code>. Double-click the installer, click <strong>Yes</strong> at the Windows UAC security prompt. If Windows SmartScreen appears ("Windows protected your PC"), click <strong>More info</strong> and select <strong>Run anyway</strong>. Follow the setup wizard and click <strong>Finish</strong>. An application shortcut will be created on the Desktop and Start Menu.
+  </p>
 
-  <h3 class="subheading">3.2 Running without installing (portable copy)</h3>
-  <p>Extract <code>ErrinILS-Windows.zip</code> to any folder or USB flash drive and double-click <code>ErrinILS.exe</code>. It runs portably and keeps data in the same user profile directory.</p>
+  <h3 class="subheading">3.2 Portable Standalone Execution</h3>
+  <p>
+    ErrinILS can also run completely portable without administrative installation. Extract <code>ErrinILS-Windows.zip</code> to any directory or USB flash drive and double-click <code>ErrinILS.exe</code>. It operates self-contained and persists all data to your user profile directory.
+  </p>
 
-  <h3 class="subheading">3.3 Where your data is stored</h3>
-  <p>Everything lives in <code>%APPDATA%\Errin\</code> (press Win+R and type <code>%APPDATA%\Errin</code>):</p>
+  <h3 class="subheading">3.3 File System Storage Architecture</h3>
+  <p>All database files, configuration settings, and rollback snapshots reside in <code>%APPDATA%\Errin\</code>:</p>
   <table>
-    <thead><tr><th>File Name</th><th>Purpose and Contents</th></tr></thead>
+    <thead><tr><th>File Name</th><th>Purpose &amp; Data Maintained</th></tr></thead>
     <tbody>
-      <tr><td><code>errin-data.db</code></td><td>Main SQLite database: catalog, patrons, loans, holds, fines, class history, and policy rules.</td></tr>
-      <tr><td><code>errin-data.db.bak</code></td><td>Automatic rollback copy: saved before writes. Recovers if needed.</td></tr>
-      <tr><td><code>errin-config.json</code></td><td>Administrator password hash (PBKDF2/SHA-256), Z39.50 settings, and paired device tokens.</td></tr>
+      <tr><td><code>errin-data.db</code></td><td>Main SQLite relational database: Catalog, patrons, loans, holds, fines, class cohorts, and policy settings.</td></tr>
+      <tr><td><code>errin-data.db.bak</code></td><td>Automatic atomic rollback snapshot taken before bulk operations to guard against hardware power failure.</td></tr>
+      <tr><td><code>errin-config.json</code></td><td>Administrative password hash (PBKDF2/SHA-256), Z39.50 gateway settings, and paired device tokens.</td></tr>
+      <tr><td><code>errin-ssl.pfx</code></td><td>Auto-generated self-signed TLS/SSL certificate used when secure HTTPS remote access is enabled.</td></tr>
     </tbody>
   </table>
 
@@ -481,257 +517,388 @@
        CHAPTER 6: THE DASHBOARD & FIGURE 1
        ============================================================= -->
   <div class="page-break"></div>
-  <div class="header-rule"><span>ErrinILS v1.4.2 User Manual</span><span>Chapter 6: The Dashboard</span></div>
+  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 6: The Dashboard</span></div>
   <h2 class="chapter-heading">6. The Dashboard &amp; Daily Overview</h2>
   <p>
-    The Dashboard is the first page you see upon launching ErrinILS. It provides an immediate overview of active operations without requiring any manual data entry.
+    The Dashboard is the executive command screen presented upon launching ErrinILS. It summarizes real-time library operations without requiring manual reporting queries.
   </p>
 
   <div class="figure-box">
     <img src="screenshot-dashboard.png" alt="ErrinILS Dashboard Screenshot" class="figure-img">
-    <div class="figure-caption">Figure 1: The ErrinILS Dashboard — Active collection metrics, real-time overdue notices table, and reading leaderboard.</div>
+    <div class="figure-caption">Figure 1: The ErrinILS Dashboard &mdash; Real-time collection metrics, live overdue tracking table, and Reading Champions leaderboard.</div>
   </div>
 
-  <h3 class="subheading">6.1 What the Dashboard shows</h3>
+  <h3 class="subheading">6.1 Core Dashboard Components</h3>
   <ul>
-    <li><strong>Simplified View card:</strong> One-click button to launch the Simplified View.</li>
-    <li><strong>Metric Counters:</strong> Active catalogue titles, registered students, books out on loan, all-time checkout tally, overdue book count, and total unpaid fines.</li>
-    <li><strong>Overdue Items table:</strong> Lists student name, class, book title, due date, days late, and total monetary balance owed. Use this table every morning to issue reminder slips.</li>
-    <li><strong>Top 10 Borrowers:</strong> Quick ranking of your top readers this month, this year, and of all time.</li>
+    <li><strong>Simplified View Card:</strong> One-click launch button to open the distraction-free student self-checkout kiosk.</li>
+    <li><strong>Metric Counters:</strong> Real-time counts for active cataloged titles, registered students, items on loan, total checkout tally, overdue books, and outstanding unpaid fines.</li>
+    <li><strong>Live Overdue Table:</strong> Displays patron name, class, book title, due date, days overdue, and calculated fine balance. Used each morning to print overdue reminder slips.</li>
+    <li><strong>Reading Champions Leaderboard:</strong> Real-time student ranking showing books read this month, this academic year, and of all time (Nilam program tracking).</li>
   </ul>
 
   <!-- =============================================================
-       CHAPTER 7: DAILY CIRCULATION & FIGURE 2
+       CHAPTER 7: CIRCULATION DESK
        ============================================================= -->
   <div class="page-break"></div>
-  <div class="header-rule"><span>ErrinILS v1.4.2 User Manual</span><span>Chapter 7: Daily Circulation Desk</span></div>
-  <h2 class="chapter-heading">7. Circulation: Check Out, Return, Renew and Holds</h2>
+  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 7: Daily Circulation Desk</span></div>
+  <h2 class="chapter-heading">7. Daily Circulation: Check Out, Return, Renew &amp; Holds</h2>
   <p>
-    Circulation is the busiest desk in the library. Click the <strong>Circulation</strong> tab; the cursor is automatically placed in the active scan box.
+    The <strong>Circulation</strong> tab handles high-throughput front desk loan operations. When opened, keyboard focus is automatically placed in the active scan input box.
   </p>
 
   <div class="figure-box">
     <img src="screenshot-circulation.png" alt="ErrinILS Circulation Desk Screenshot" class="figure-img">
-    <div class="figure-caption">Figure 2: The Circulation Desk — Fast barcode checkout, returns/renewals box, active loans list, and holds queue.</div>
+    <div class="figure-caption">Figure 2: The Circulation Desk &mdash; High-speed barcode checkout, return/renew box, active loans list, and holds queue.</div>
   </div>
 
-  <h3 class="subheading">7.1 Checking out a book</h3>
+  <h3 class="subheading">7.1 Checking Out Items</h3>
   <ol>
-    <li>Scan the student's library card barcode into <strong>IC number</strong> (or type the 12 digits).</li>
-    <li>The cursor automatically advances to <strong>Item barcode</strong>. Scan the book's barcode.</li>
-    <li>The checkout registers immediately. Toast confirms: *"Checked out. Due [YYYY-MM-DD]"*.</li>
+    <li>Scan the student's library card barcode into <strong>IC number</strong> (or type their 12-digit Malaysian IC).</li>
+    <li>The cursor automatically jumps to <strong>Item barcode</strong>. Scan the barcode sticker on the book.</li>
+    <li>The checkout registers instantly. An audible confirmation chime sounds, and toast notification confirms: <em>"Checked out. Due: [YYYY-MM-DD]"</em>.</li>
   </ol>
 
-  <h3 class="subheading">7.2 Returning and renewing books</h3>
+  <h3 class="subheading">7.2 Returning and Renewing Items</h3>
   <ul>
-    <li><strong>Return:</strong> Scan the book barcode in <strong>Return / Renew</strong> and press Enter. If late, the fine is assessed immediately. If another student placed a hold, an alert notifies you to put the book aside.</li>
-    <li><strong>Renew:</strong> Scan the book and click <strong>Renew</strong>. Extends loan by 7 days. Blocked if overdue, renewed twice already, or on hold for another reader.</li>
+    <li><strong>Return:</strong> Scan the book barcode into <strong>Return / Renew</strong> and press Enter. If late, the fine is calculated automatically. If a reservation (hold) exists for another student, a prominent alert prompts you to put the item aside.</li>
+    <li><strong>Renew:</strong> Scan the book barcode and click <strong>Renew</strong>. This extends the loan period by 7 days. Renewal is blocked if the book is overdue, has already reached the maximum renewal limit (2 times), or is held by another patron.</li>
   </ul>
 
   <!-- =============================================================
-       CHAPTER 8: SIMPLIFIED VIEW & FIGURE 3
+       CHAPTER 8: SIMPLIFIED VIEW
        ============================================================= -->
   <div class="page-break"></div>
-  <div class="header-rule"><span>ErrinILS v1.4.2 User Manual</span><span>Chapter 8: The Simplified View</span></div>
-  <h2 class="chapter-heading">8. The Simplified View</h2>
+  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 8: The Simplified View</span></div>
+  <h2 class="chapter-heading">8. The Simplified View (Touch Self-Checkout Kiosk)</h2>
   <p>
-    A calm, high-contrast, large-print desk screen with only Check Out and Return, tailored for young students. Administrative toolbars are hidden.
+    Designed specifically for young primary school students, the Simplified View is an uncluttered, high-contrast circulation screen displaying oversized touch/mouse buttons and friendly feedback banners. Administrative menus and database settings are completely hidden.
   </p>
 
   <div class="figure-box">
     <img src="screenshot-kiosk.png" alt="ErrinILS Simplified View Screenshot" class="figure-img">
-    <div class="figure-caption">Figure 3: Simplified View — Child-friendly touch interface, large color banner, and audit transaction log.</div>
+    <div class="figure-caption">Figure 3: Simplified View &mdash; Child-friendly touch target layout, cheerful emoji badges, and real-time transaction audit log.</div>
   </div>
 
-  <h3 class="subheading">8.1 How students use the Simplified View</h3>
+  <h3 class="subheading">8.1 Student Self-Checkout Routine</h3>
   <ol>
-    <li>The screen prompts: *"Ready. Scan a library card."*</li>
-    <li>Student scans their card. The banner turns green: *"Hello, [Student Name]!"*</li>
-    <li>Student scans the book barcode. ErrinILS confirms on screen: *"Checked out: [Title]. Due back [Date]!"*</li>
-    <li>Click <strong>Next student</strong> to clear the screen for the next reader.</li>
+    <li>The screen prompts: <em>"Ready. Scan a library card."</em></li>
+    <li>The student scans their card barcode. The banner illuminates in green: <em>"Hello, [Student Name]!"</em></li>
+    <li>The student scans their chosen book barcode. ErrinILS confirms on screen: <em>"Checked out: [Book Title]. Due back [Date]!"</em></li>
+    <li>Click <strong>Next student</strong> to clear the kiosk for the next reader.</li>
   </ol>
   <div class="callout callout-important avoid-break">
     <div class="callout-header">Exiting Simplified View</div>
-    <p>Click <strong>Exit Simplified View</strong> in the bottom right corner to return to the full administrative desk.</p>
+    <p>To return to the administrative librarian interface, click the <strong>Exit Simplified View</strong> button in the bottom right corner.</p>
   </div>
 
   <!-- =============================================================
-       CHAPTER 9: THE CATALOG & FIGURE 4
+       CHAPTER 9: THE CATALOG & 31-SOURCE ISBN LOOKUP
        ============================================================= -->
   <div class="page-break"></div>
-  <div class="header-rule"><span>ErrinILS v1.4.2 User Manual</span><span>Chapter 9: Catalog &amp; Copy-Cataloguing</span></div>
-  <h2 class="chapter-heading">9. The Catalog &amp; 5-Source ISBN Copy-Cataloguing</h2>
+  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 9: The Catalog &amp; 31-Source Lookup</span></div>
+  <h2 class="chapter-heading">9. The Catalog &amp; 31-Source ISBN Union Copy-Cataloguing</h2>
   <p>
-    The Catalog tab manages all bibliographic records and physical copies.
+    The <strong>Catalog</strong> tab manages all bibliographic records, physical copies, Dewey Decimal Classification (DDC) numbers, and copy statuses.
   </p>
 
   <div class="figure-box">
     <img src="screenshot-catalog.png" alt="ErrinILS Catalog Screenshot" class="figure-img">
-    <div class="figure-caption">Figure 4: The Bibliographic Catalog — Multi-term searching, active vs weeded status filtering, and barcode generation.</div>
+    <div class="figure-caption">Figure 4: The Bibliographic Catalog &mdash; Paged record navigation, 31-source ISBN lookup, weeded copy filtering, and label printing.</div>
   </div>
 
-  <h3 class="subheading">9.1 5-Source ISBN Copy-Cataloguing</h3>
+  <h3 class="subheading">9.1 31-Source Malaysian &amp; Global Union Lookup</h3>
   <p>
-    To add a book without manual typing, click <strong>+ Add record</strong>, scan the ISBN in <strong>Copy cataloguing</strong>, and click <strong>Look up</strong>. ErrinILS queries 5 international sources simultaneously:
+    Rather than typing book details manually, click <strong>+ Add record</strong>, scan the ISBN barcode into <strong>Copy cataloguing</strong>, and click <strong>Look up</strong>. ErrinILS queries 31 national, state, academic, and global archives in parallel:
   </p>
-  <ol>
-    <li><strong>Library of Congress (Z39.50)</strong>: Direct ASN.1 BER connection (`lx2.loc.gov:210`).</li>
-    <li><strong>Open Library</strong>: REST API bibliographic repository.</li>
-    <li><strong>Google Books API</strong>: Commercial book metadata, summaries, and publication years.</li>
-    <li><strong>HathiTrust</strong>: Academic union catalogue via MARCXML.</li>
-    <li><strong>K10plus German Union</strong>: SRU MARCXML gateway.</li>
-  </ol>
-  <p>Title, author, publisher, publication year, subjects, and Dewey Decimal classification are auto-populated.</p>
+  <ul>
+    <li><strong>Malaysian National Union:</strong> Katalog Induk Kebangsaan (KIK), Perpustakaan Negara Malaysia (PNM Clarivate Discover), and u-Pustaka Consortium.</li>
+    <li><strong>State Public Libraries:</strong> PPAS (Selangor), PPAP (Penang), PPANPK (Perak), PPANK (Kedah), PPANPS (Perlis), PPANJ (Johor), PPAK (Kelantan), PPAT (Terengganu), PPAPH (Pahang), PPANS (Negeri Sembilan), PERPUSTAM (Melaka), Pustaka Negeri Sarawak, PNS (Sabah), PKL (Kuala Lumpur), PPJ (Putrajaya), and PPL (Labuan).</li>
+    <li><strong>Top Malaysian Universities &amp; Institutes:</strong> Universiti Malaya (UM Pendeta), Universiti Kebangsaan Malaysia (UKM), Universiti Teknologi MARA (UiTM PTAR), Universiti Pendidikan Sultan Idris (UPSI), Dewan Bahasa dan Pustaka (DBP Archives), and MALCat.</li>
+    <li><strong>Global Union Catalogs:</strong> Library of Congress (Z39.50), Open Library API, Google Books API, HathiTrust MARCXML, and K10plus German Union.</li>
+  </ul>
+  <p>Title, author, publisher, publication year, subjects, and Dewey Decimal call number are automatically populated in under 1 second.</p>
 
   <!-- =============================================================
-       CHAPTER 10: STUDENTS & FIGURE 5
+       CHAPTER 10: BATCH LABEL PRINTING
+       ============================================================= -->
+  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 10: Batch Label Printing</span></div>
+  <h2 class="chapter-heading">10. Batch Barcode Label Printing &amp; Spine Labels</h2>
+  <p>
+    ErrinILS generates sharp, scannable Code 128 barcode labels and call number spine tags formatted for standard A4 sticker sheets or thermal label rolls.
+  </p>
+  <ul>
+    <li><strong>Multi-Select Checkboxes:</strong> In the Catalog tab, check individual books or click <em>Select All on Page</em>.</li>
+    <li><strong>Batch Print Dialog:</strong> Click <strong>Print Barcodes</strong> to open the print preview. Customize label dimensions, font sizes, library header text, and barcode inclusion.</li>
+    <li><strong>Direct Print / PDF:</strong> Send directly to any connected printer or save as an audit-proof PDF file for later printing.</li>
+  </ul>
+
+  <!-- =============================================================
+       CHAPTER 11: PATRON MANAGEMENT
        ============================================================= -->
   <div class="page-break"></div>
-  <div class="header-rule"><span>ErrinILS v1.4.2 User Manual</span><span>Chapter 10: Student Management</span></div>
-  <h2 class="chapter-heading">10. Students &amp; Patron Management</h2>
+  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 11: Patron Management</span></div>
+  <h2 class="chapter-heading">11. Student Patrons &amp; Malaysian IC Validation</h2>
   <p>
-    Manage registered students, track class allocations, and print scannable library cards.
+    The <strong>Students</strong> tab maintains registered student and teacher records, class allocations, and scannable identity cards.
   </p>
 
   <div class="figure-box">
     <img src="screenshot-students.png" alt="ErrinILS Students Screenshot" class="figure-img">
-    <div class="figure-caption">Figure 5: Student &amp; Patron Management — Malaysian IC verification, borrowing histories, and card printing.</div>
+    <div class="figure-caption">Figure 5: Student Management &mdash; Malaysian IC/MyKid validation, class cohorts, borrowing history, and card printing.</div>
   </div>
 
-  <h3 class="subheading">10.1 Registering students &amp; Malaysian IC verification</h3>
+  <h3 class="subheading">11.1 Malaysian IC / MyKid Validation</h3>
   <p>
-    Click <strong>+ Register student</strong>. Enter the 12-digit Malaysian IC or MyKid number. ErrinILS formats the number into `YYMMDD-PB-###G` and strictly verifies that the birth month and calendar day are mathematically valid. Enter the student's full name, class (e.g. `4 Melur`), and print their scannable card (85.6 × 54 mm).
+    Click <strong>+ Register student</strong>. Enter the 12-digit Malaysian IC or MyKid number. ErrinILS automatically formats the number into <code>YYMMDD-PB-###G</code> and verifies that the birth month (01&ndash;12) and day are mathematically valid for the given calendar month. Enter the student's name and class (e.g. <code>5 Gemilang</code>), then click <strong>Print Card</strong> to produce a standard library card (85.6 &times; 54 mm).
   </p>
 
   <!-- =============================================================
-       CHAPTER 11: FINES & FIGURE 6
+       CHAPTER 12: FINES MANAGEMENT
        ============================================================= -->
-  <div class="header-rule"><span>ErrinILS v1.4.2 User Manual</span><span>Chapter 11: Fines Management</span></div>
-  <h2 class="chapter-heading">11. Fines Management &amp; Lost Books</h2>
+  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 12: Fines Management</span></div>
+  <h2 class="chapter-heading">12. Fines Management &amp; Lost Books</h2>
   <p>
-    Fines are assessed when late books are returned: <code>Days Overdue × Daily Rate (RM 0.10)</code>.
+    When overdue items are returned, ErrinILS automatically calculates the fine: <code>Days Overdue &times; Daily Rate (RM 0.10)</code>. Patrons with fines exceeding the block threshold (default RM 5.00) are blocked from borrowing until settled.
   </p>
 
   <div class="figure-box">
     <img src="screenshot-fines.png" alt="ErrinILS Fines Tracker Screenshot" class="figure-img">
-    <div class="figure-caption">Figure 6: The Fine Tracker — Real-time outstanding balances, payment recording, and fine waivers.</div>
+    <div class="figure-caption">Figure 6: The Fines Tracker &mdash; Real-time outstanding balances, cash payment receipting, and fine waivers.</div>
   </div>
 
-  <p>Select any fine record in the table and click <strong>Pay</strong> when the student pays cash, or <strong>Waive</strong> if excusing the fee. Settling fines immediately lifts the borrowing block.</p>
+  <p>
+    Select any fine record in the table and click <strong>Pay</strong> when the student pays cash, or <strong>Waive</strong> if excusing the charge. Settling fines immediately lifts the circulation block.
+  </p>
 
   <!-- =============================================================
-       CHAPTER 13: REMOTE ACCESS & FIGURE 8
+       CHAPTER 14: REMOTE ACCESS, NETWORK PORTS & OPAC
        ============================================================= -->
   <div class="page-break"></div>
-  <div class="header-rule"><span>ErrinILS v1.4.2 User Manual</span><span>Chapter 13: Remote Access, Web OPAC &amp; Settings</span></div>
-  <h2 class="chapter-heading">13. Remote Access, Web OPAC &amp; Static Hosting</h2>
+  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 14: Remote Access &amp; Port 8585</span></div>
+  <h2 class="chapter-heading">14. Remote Access, Network Ports (Port 8585) &amp; Web OPAC</h2>
   <p>
-    ErrinILS features a built-in pure C# HTTP server (`0.0.0.0`) enabling wireless access from smartphones and tablets across school Wi-Fi, LAN, and hotspots, plus a public-facing Web OPAC with 1-click GitHub Pages static hosting.
+    ErrinILS includes a built-in pure C# HTTP/HTTPS server binding to <code>0.0.0.0</code> (all network interfaces: Ethernet, Wi-Fi 2.4/5GHz, mobile hotspots, and VPNs). This allows smartphones, tablets, and other classroom laptops to interact with the library system without installing database daemons.
   </p>
 
   <div class="figure-box">
-    <img src="screenshot-settings.png" alt="ErrinILS Settings &amp; Remote Access Screenshot" class="figure-img">
-    <div class="figure-caption">Figure 8: Settings &amp; Remote Access — Fine rates, administrator password, OPAC login configuration, and wireless QR code device pairing.</div>
+    <img src="screenshot-settings.png" alt="ErrinILS Settings Screenshot" class="figure-img">
+    <div class="figure-caption">Figure 8: Settings &amp; Remote Access &mdash; Network port configuration (Port 8585), QR code device pairing, and OPAC settings.</div>
   </div>
 
-  <h3 class="subheading">13.1 Instant QR Code &amp; PIN pairing</h3>
+  <h3 class="subheading">14.1 Network Port Configuration (Default Port: 8585)</h3>
+  <p>
+    The default network port for ErrinILS desktop is <strong>8585</strong>. To verify or change the port:
+  </p>
   <ol>
-    <li>In <strong>Settings → Remote Access</strong>, click <strong>Pair New Device</strong>.</li>
-    <li>Scan the generated QR code with your smartphone camera.</li>
-    <li>The mobile browser opens the web app with the 6-digit PIN pre-filled. Tap <strong>Verify &amp; Pair</strong>.</li>
-    <li>A persistent 32-byte cryptographic token (`X-Errin-Token`) authenticates the device. Use your phone camera as a wireless shelf scanner.</li>
+    <li>Navigate to the <strong>Settings</strong> tab.</li>
+    <li>Under <strong>Remote Access</strong>, locate the <strong>Port</strong> field (set to <code>8585</code> by default).</li>
+    <li>Ensure the server switch is set to <strong>On</strong>, and click <strong>Apply</strong>.</li>
+    <li>The server will report: <em>"Remote Access server is running on port 8585"</em>. Windows Firewall is automatically configured by ErrinILS.</li>
   </ol>
 
-  <h3 class="subheading">13.2 Online Public Access Catalog (OPAC) &amp; Static Export</h3>
+  <h3 class="subheading">14.2 Web OPAC (Online Public Access Catalog)</h3>
   <ul>
-    <li><strong>School Web OPAC:</strong> Accessible at <code>http://&lt;computer-ip&gt;:8080/opac</code> with dedicated Subject Heading search, topic clouds, and optional student self-service login.</li>
-    <li><strong>1-Click GitHub Pages Export:</strong> In Settings, click <strong>Export Static OPAC (GitHub Pages)</strong> to generate an in-browser searchable bundle that can be hosted for free 24/7 on GitHub Pages without keeping a server computer running.</li>
+    <li><strong>School Network OPAC:</strong> Accessible in any web browser at <code>http://&lt;pc-ip&gt;:8585/opac</code>. Students and teachers can search books by title, author, call number, and explore dedicated subject headings without needing staff login.</li>
+    <li><strong>Patron Login:</strong> When enabled in Settings, students can log in with their Student ID or IC to view their active loans, due dates, fines, reading history, and place holds on borrowed copies.</li>
+    <li><strong>1-Click Static Export (GitHub Pages):</strong> Click <em>Export Static OPAC</em> in Settings to generate a static client-side bundle that can be hosted 24/7 on GitHub Pages for free without leaving the library PC turned on.</li>
+  </ul>
+
+  <h3 class="subheading">14.3 Paired Devices &amp; Bidirectional Desktop Operations</h3>
+  <p>
+    The <strong>Paired Devices</strong> table in Settings displays all authorized mobile scanners and remote terminals with live network attributes: <code>Device Name | IP Address | Port | Status | Paired Date | Last Active</code>. Every mobile interaction automatically updates the device's IP and active port.
+  </p>
+  <p>From the desktop circulation PC, librarians have four dedicated remote control actions:</p>
+  <ul>
+    <li><strong>Ping App:</strong> Sends a sub-second HTTP GET ping to the phone's companion listener (Port 8586). Measures and displays real-time Wi-Fi round-trip latency (e.g. <em>"Connected to ErrinILS Scanner! Latency: 12ms"</em>) or alerts if the phone is asleep.</li>
+    <li><strong>Beep Phone:</strong> Sends a remote signal to the phone, causing it to immediately play an audible notification tone and trigger a distinct haptic vibration pattern. Perfect for verifying phone audio/vibration feedback or finding a misplaced scanner phone in the library stacks.</li>
+    <li><strong>+ Connect Scanner by IP...:</strong> Opens a direct connection dialog. Librarians simply enter the phone's IP address (displayed on the phone's Settings screen). ErrinILS pushes a cryptographically secure token directly to the phone, pairing it instantly with zero PIN typing on the phone.</li>
+    <li><strong>Discover Scanners:</strong> Multithreaded subnet discovery scans the local Wi-Fi network (Port 8586) in parallel, listing all active ErrinILS Scanner phones within 1 second. Select any detected phone and click <em>Connect &amp; Pair Selected</em>.</li>
   </ul>
 
   <!-- =============================================================
-       CHAPTER 14: REPORTS & FIGURE 7
+       CHAPTER 15: ERRINILS SCANNER (ANDROID COMPANION APP)
        ============================================================= -->
   <div class="page-break"></div>
-  <div class="header-rule"><span>ErrinILS v1.4.2 User Manual</span><span>Chapter 14: Reports &amp; Analytics</span></div>
-  <h2 class="chapter-heading">14. Reports, Reading Champions &amp; Collection Analytics</h2>
+  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 15: Android Scanner App</span></div>
+  <h2 class="chapter-heading">15. ErrinILS Scanner (Android Companion Barcode Gun &amp; Port 8586)</h2>
   <p>
-    Open the <strong>Reports</strong> tab for executive library intelligence and Nilam reading program tracking.
+    <strong>ErrinILS Scanner</strong> is a native Android application engineered to eliminate the cost of commercial wireless barcode guns. Using Google ML Kit Barcode Scanning and CameraX, it converts any Android smartphone or tablet into a high-speed wireless barcode scanner, mobile cataloging terminal, and bidirectional companion device.
+  </p>
+
+  <h3 class="subheading">15.1 Core Android App Features</h3>
+  <ul>
+    <li><strong>⚡ Barcode Scanner (Virtual Wireless Barcode Gun):</strong> Point your smartphone camera at book barcodes, student cards, or spine labels. Scanned barcodes are streamed wirelessly over local Wi-Fi directly into the active text field on your desktop PC (via <code>/api/wedge</code>) with automatic Enter keystroke.</li>
+    <li><strong>📚 Add Book (Mobile ISBN Camera Cataloging):</strong> Scan the printed ISBN barcode on the back cover of any book. The app automatically fetches bibliographic details across 31 union catalogs, allows editing title, author, publisher, DDC call number, and saves the new record directly to the desktop database via <code>/api/item</code>.</li>
+    <li><strong>🔄 Embedded Companion Server (Port 8586):</strong> Hosts a lightweight, zero-dependency HTTP socket server listening on port <code>8586</code> whenever the app is running. It handles incoming pings, remote haptic/sound beeps, and push pairing directly from the desktop PC.</li>
+    <li><strong>Manual Host &amp; Port Settings:</strong> Explicitly enter the desktop PC Host / IP address, network port (default <code>8585</code>), and 6-digit pairing code.</li>
+    <li><strong>Rapid Next Book Accessioning:</strong> Tap <em>"➕ Register Next Book"</em> to instantly clear the form and reopen the camera viewfinder for rapid batch cataloging of book donations.</li>
+  </ul>
+
+  <h3 class="subheading">15.2 Four Flexible Connection &amp; Pairing Methods</h3>
+
+  <div class="callout callout-tip avoid-break">
+    <div class="callout-header">Method 1: Instant 1-Second QR Code Pairing (Recommended)</div>
+    <ol>
+      <li>On desktop ErrinILS, go to <strong>Settings</strong> and click <strong>+ Pair new device</strong>. A 6-digit pairing code and QR code appear on screen.</li>
+      <li>Open the <strong>ErrinILS Scanner</strong> app on your Android phone and select the <strong>⚡ Barcode Scanner</strong> tab.</li>
+      <li>Point your phone camera at the QR code displayed on the PC screen.</li>
+      <li>The app automatically reads the PC IP address, port (<code>8585</code>), and pairing code, completes cryptographic handshake, and flashes: <em>"✅ Successfully paired with Desktop PC!"</em>.</li>
+    </ol>
+  </div>
+
+  <div class="callout callout-note avoid-break">
+    <div class="callout-header">Method 2: Manual Host, Port (8585) &amp; Code Entry</div>
+    <ol>
+      <li>On desktop ErrinILS, go to <strong>Settings</strong> and click <strong>+ Pair new device</strong> to display the 6-digit code (e.g. <code>482 195</code>).</li>
+      <li>In the Android Scanner app, tap the <strong>Settings (gear)</strong> icon in the top right corner.</li>
+      <li>Under <strong>Desktop PC Connection</strong>, enter:
+        <ul>
+          <li><strong>Server Host / IP:</strong> The PC's local IP address (e.g. <code>192.168.1.50</code>).</li>
+          <li><strong>Port:</strong> <code>8585</code> (default).</li>
+          <li><strong>6-Digit Pairing Code:</strong> The code shown on your PC screen (e.g. <code>482195</code>).</li>
+          <li><strong>Device Name:</strong> A friendly name (e.g. <code>Librarian Samsung</code>).</li>
+        </ul>
+      </li>
+      <li>Tap <strong>Pair with PC</strong>. The app connects to <code>http://&lt;ip&gt;:8585/api/pair</code>, stores the persistent authorization token (<code>X-Errin-Token</code>), and establishes an authenticated link.</li>
+      <li>Tap <strong>Test Connection</strong> to confirm live communication.</li>
+    </ol>
+  </div>
+
+  <div class="callout callout-tip avoid-break">
+    <div class="callout-header">Method 3: Direct PC Push Pairing ("+ Connect Scanner by IP") &mdash; No PIN Entry on Phone</div>
+    <ol>
+      <li>Open the <strong>ErrinILS Scanner</strong> app on the phone, tap <strong>Settings</strong>, and observe the <strong>Phone Listener URL</strong> (e.g. <code>http://192.168.1.105:8586</code>).</li>
+      <li>On desktop ErrinILS, go to <strong>Settings &rarr; Remote Access</strong> and click <strong>+ Connect Scanner by IP...</strong>.</li>
+      <li>Type the phone's IP address (e.g. <code>192.168.1.105</code>) and port (<code>8586</code>).</li>
+      <li>Click <strong>Connect &amp; Pair Device</strong>. ErrinILS desktop connects to the phone's listener, pushes a secure token, and configures the phone automatically. The phone immediately chimes and reports: <em>"✅ Connected to ErrinILS PC!"</em>.</li>
+    </ol>
+  </div>
+
+  <div class="callout callout-note avoid-break">
+    <div class="callout-header">Method 4: Subnet Auto-Discovery ("Discover Scanners")</div>
+    <ol>
+      <li>Ensure your Android phone has the ErrinILS Scanner app open and is connected to the school Wi-Fi.</li>
+      <li>On desktop ErrinILS Settings, click <strong>Discover Scanners</strong>.</li>
+      <li>ErrinILS automatically scans the local Wi-Fi subnet across port 8586. Your phone appears in the discovered list with its device name, IP, port, and latency.</li>
+      <li>Click <strong>Connect &amp; Pair Selected</strong> to establish immediate wireless linkage.</li>
+    </ol>
+  </div>
+
+  <h3 class="subheading">15.3 Scan Feedback, Wedge Configuration &amp; Fallbacks</h3>
+  <p>
+    Inside the Android app Settings, librarians can customize operational preferences:
+  </p>
+  <ul>
+    <li><strong>Audible Beep on Scan:</strong> Plays an immediate tone upon valid barcode recognition.</li>
+    <li><strong>Vibration on Scan (Haptic):</strong> Triggers physical haptic motor vibration when a barcode is recognized.</li>
+    <li><strong>Auto-Enter Keystroke:</strong> Automatically appends an Enter key event after the barcode string is streamed to the PC, advancing the circulation workflow instantly.</li>
+    <li><strong>Torch Toggle:</strong> Activates the phone's LED camera flash for scanning in dimly lit library stacks.</li>
+    <li><strong>Manual Barcode Keyboard Fallback:</strong> If a physical barcode sticker is torn or faded, tap the keyboard icon to type the barcode number manually; it streams wirelessly to the PC exactly like a camera scan.</li>
+  </ul>
+
+  <!-- =============================================================
+       CHAPTER 16: DUAL CLOUD SYNC
+       ============================================================= -->
+  <div class="page-break"></div>
+  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 16: Dual Cloud Sync</span></div>
+  <h2 class="chapter-heading">16. Dual Cloud Sync (Google Drive &amp; GitHub)</h2>
+  <p>
+    ErrinILS features an innovative privacy-compliant dual cloud synchronization engine that allows multiple library PCs to share identical records without exposing student personal data to public repositories:
+  </p>
+  <ul>
+    <li><strong>Private Patron Data via Google Drive:</strong> Student personal data (Malaysian IC numbers, home addresses, phone numbers, loan histories, and fines) is strictly private. ErrinILS syncs patron records directly to the school's private Google Drive via REST API v3 without requiring third-party desktop software.</li>
+    <li><strong>Public Catalog Data via GitHub:</strong> Bibliographic catalog data contains no personal information. It conforms strictly to the <em>Pustaka Terbuka Data Provider Standard</em> (PPAPP model), synchronizing catalog records to GitHub (<code>catalog.json</code>, <code>catalog.mrc</code>, <code>catalog.xml</code>, single-record MARCXML shards, and holdings tables).</li>
+    <li><strong>Multi-PC Parity:</strong> Installing ErrinILS on a second library computer connects to Google Drive and pulls the GitHub catalog, achieving seamless multi-station circulation and cataloging.</li>
+  </ul>
+
+  <!-- =============================================================
+       CHAPTER 17: REPORTS & ANALYTICS
+       ============================================================= -->
+  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 17: Reports &amp; Analytics</span></div>
+  <h2 class="chapter-heading">17. Reports, Reading Champions &amp; Collection Analytics</h2>
+  <p>
+    The <strong>Reports</strong> tab provides executive collection metrics, monthly borrowing trajectories, Nilam reader rankings, and 1-click full CSV spreadsheet export.
   </p>
 
   <div class="figure-box">
     <img src="screenshot-reports.png" alt="ErrinILS Reports Screenshot" class="figure-img">
-    <div class="figure-caption">Figure 7: Reports &amp; Reading Champions — Top 25 reader leaderboard, 6-month borrowing trajectory, and Dewey 100s breakdown.</div>
+    <div class="figure-caption">Figure 7: Reports &amp; Analytics &mdash; Monthly circulation trajectory, Dewey Decimal 100s distribution, and Reading Champions.</div>
   </div>
 
   <ul>
-    <li><strong>Reading Champions Leaderboard:</strong> Top 25 student readers ranked by total books borrowed.</li>
-    <li><strong>Circulation Trajectory:</strong> Monthly borrowing trends over the last 6 calendar months.</li>
-    <li><strong>Dewey Decimal Breakdown:</strong> Collection distribution across the 10 core DDC classes.</li>
-    <li><strong>Dormant Inventory Audit:</strong> Identifies titles with zero borrowings over the past 12 months.</li>
-    <li><strong>1-Click CSV Full Report:</strong> Exports a complete spreadsheet ready for school board presentations.</li>
+    <li><strong>Executive Analytics:</strong> Active titles, active loans, overdue percentages, registered students, reader participation rates, fines assessed/collected, and weeded items.</li>
+    <li><strong>Circulation Trajectory:</strong> Monthly checkouts over the last 6 months to analyze peak borrowing periods.</li>
+    <li><strong>Dewey Decimal Breakdown:</strong> Proportional distribution of books across all 10 DDC classes (000&ndash;900) to identify collection development gaps.</li>
+    <li><strong>1-Click CSV Full Report:</strong> Exports an executive spreadsheet containing complete analytics, overdue notices, unpaid balances, and leaderboard rankings for school board presentations.</li>
   </ul>
 
   <!-- =============================================================
-       CHAPTER 15, 17, 18: BACKUP, ROUTINES, TROUBLESHOOTING
+       CHAPTER 18: BACKUP, RESTORE & OPTIMIZATION
        ============================================================= -->
   <div class="page-break"></div>
-  <div class="header-rule"><span>ErrinILS v1.4.2 User Manual</span><span>Chapter 15 &amp; 18: Backup &amp; Troubleshooting</span></div>
-  <h2 class="chapter-heading">15. Backup &amp; Disaster Recovery</h2>
-  <p>In the <strong>Backup</strong> tab, click <strong>Export Backup (ZIP)</strong>. Save the file to an external USB flash drive every Friday afternoon. To restore on a new PC, install ErrinILS, open the Backup tab, and click <strong>Restore from backup</strong>.</p>
+  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 18: Backup &amp; Recovery</span></div>
+  <h2 class="chapter-heading">18. Backup, Disaster Recovery &amp; SQLite Optimization</h2>
+  <p>
+    In the <strong>Backup</strong> tab, click <strong>Export Backup (ZIP)</strong>. ErrinILS packages the active SQLite database, configuration files, and MARC catalog into a compressed ZIP file. Save this backup to an external USB flash drive every Friday afternoon.
+  </p>
+  <ul>
+    <li><strong>Restoring from Backup:</strong> On a new or repaired computer, install ErrinILS, open the Backup tab, click <strong>Restore from backup</strong>, and select your backup ZIP file. ErrinILS restores all records instantly.</li>
+    <li><strong>Database Optimization:</strong> Under Settings or Backup, click <strong>Optimize Database</strong>. ErrinILS executes <code>PRAGMA integrity_check;</code>, <code>PRAGMA optimize;</code>, and <code>VACUUM;</code> to reclaim unused disk space, defragment tables, and verify file integrity.</li>
+  </ul>
 
-  <h2 class="chapter-heading">18. Troubleshooting Guide</h2>
+  <h2 class="chapter-heading">19. Troubleshooting Guide</h2>
   <table>
-    <thead><tr><th>Problem Encountered</th><th>Likely Root Cause</th><th>Exact Solution</th></tr></thead>
+    <thead><tr><th>Symptom / Message</th><th>Likely Cause</th><th>Exact Resolution</th></tr></thead>
     <tbody>
-      <tr><td><strong>"Windows protected your PC"</strong></td><td>Unsigned open-source installer.</td><td>Click <em>More info</em>, then click <em>Run anyway</em>.</td></tr>
-      <tr><td><strong>Setup reports missing .NET</strong></td><td>Windows 7 without .NET runtime.</td><td>Install free Microsoft .NET Framework 4.8.</td></tr>
-      <tr><td><strong>Status bar red: "NOT saving"</strong></td><td>Disk full or write-protected.</td><td>Free disk space; export emergency backup to USB.</td></tr>
-      <tr><td><strong>Scanner does not submit</strong></td><td>Scanner not sending Enter key.</td><td>Configure scanner in USB HID Keyboard mode with Enter suffix.</td></tr>
-      <tr><td><strong>Phone cannot connect to QR Web</strong></td><td>Phone on different Wi-Fi network.</td><td>Connect phone to the same Wi-Fi SSID as the PC.</td></tr>
+      <tr><td><strong>"Windows protected your PC"</strong></td><td>Unsigned open-source installer.</td><td>Click <em>More info</em>, then select <em>Run anyway</em>.</td></tr>
+      <tr><td><strong>Missing .NET Framework</strong></td><td>Windows 7 without .NET runtime.</td><td>Install free Microsoft .NET Framework 4.8.</td></tr>
+      <tr><td><strong>Android app cannot connect to PC</strong></td><td>Wrong IP or Port / Wi-Fi mismatch.</td><td>Verify phone is on same Wi-Fi subnet as PC. Ensure Desktop Port is set to <code>8585</code>. On PC, click '+ Pair new device' or '+ Connect Scanner by IP'.</td></tr>
+      <tr><td><strong>"Ping App" reports unreachable</strong></td><td>App closed or phone asleep.</td><td>Open the ErrinILS Scanner app on the phone. Ensure the phone has not entered deep sleep or Wi-Fi power-save mode. Verify Port <code>8586</code> is reachable.</td></tr>
+      <tr><td><strong>"Beep Phone" does not chime</strong></td><td>Sound or vibration disabled in app.</td><td>In the Android Scanner app, tap Settings (gear icon) and ensure <em>Audible Beep</em> and <em>Vibration (Haptic)</em> switches are toggled ON.</td></tr>
+      <tr><td><strong>Barcode app says "Not paired"</strong></td><td>Device token missing.</td><td>In Android Settings, enter the 6-digit code from PC Settings > '+ Pair new device' and tap 'Pair with PC', or use PC '+ Connect Scanner by IP'.</td></tr>
+      <tr><td><strong>Barcode scanner does not submit</strong></td><td>Scanner not sending Enter key.</td><td>Configure scanner in USB HID Keyboard mode with Enter/CR suffix, or enable Auto-Enter in Android app.</td></tr>
+      <tr><td><strong>Forgot Admin Password</strong></td><td>Password lost or forgotten.</td><td>Close ErrinILS, press Win+R, type <code>%APPDATA%\Errin</code>, and delete <code>errin-config.json</code>. Password resets to factory default: <code>admin123</code>.</td></tr>
     </tbody>
   </table>
-
-  <div class="callout callout-important avoid-break">
-    <div class="callout-header">Forgot Administrator Password?</div>
-    <p>Close ErrinILS, press <code>Win + R</code>, enter <code>%APPDATA%\Errin</code>, and rename or delete <code>errin-config.json</code>. Launch ErrinILS; the password resets to default (<code>admin123</code>). Set a new password immediately in Settings.</p>
-  </div>
 
   <!-- =============================================================
        APPENDICES
        ============================================================= -->
   <div class="page-break"></div>
-  <div class="header-rule"><span>ErrinILS v1.4.2 User Manual</span><span>Appendices</span></div>
-  <h2 class="chapter-heading">Appendix A. Quick Task Reference Guide</h2>
+  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Appendices</span></div>
+  <h2 class="chapter-heading">Appendix A. Quick Daily Task Reference</h2>
   <table>
-    <thead><tr><th>Goal</th><th>Tab</th><th>Action</th></tr></thead>
+    <thead><tr><th>Daily Task</th><th>Tab / Screen</th><th>Action to Perform</th></tr></thead>
     <tbody>
-      <tr><td><strong>Lend a book</strong></td><td>Circulation</td><td>Scan student card, scan book barcode.</td></tr>
-      <tr><td><strong>Return a book</strong></td><td>Circulation</td><td>Scan book barcode in Return box.</td></tr>
-      <tr><td><strong>Extend loan duration</strong></td><td>Circulation</td><td>Scan book barcode, click Renew.</td></tr>
+      <tr><td><strong>Lend / Checkout book</strong></td><td>Circulation</td><td>Scan student IC barcode &rarr; scan book barcode sticker.</td></tr>
+      <tr><td><strong>Return book</strong></td><td>Circulation</td><td>Scan book barcode into Return box and press Enter.</td></tr>
+      <tr><td><strong>Extend loan (Renew)</strong></td><td>Circulation</td><td>Scan book barcode, click Renew.</td></tr>
       <tr><td><strong>Add book via ISBN</strong></td><td>Catalog</td><td>Click + Add record, scan ISBN, click Look up, Save.</td></tr>
-      <tr><td><strong>Weed damaged book</strong></td><td>Catalog</td><td>Select book, click Weed Copy, choose reason, confirm.</td></tr>
-      <tr><td><strong>Register student</strong></td><td>Students</td><td>Click + Register student, enter 12-digit IC, name, class.</td></tr>
-      <tr><td><strong>Record fine payment</strong></td><td>Fines</td><td>Select fine record, click Pay.</td></tr>
-      <tr><td><strong>Pair phone via QR</strong></td><td>Settings</td><td>Click Pair New Device, scan QR with camera.</td></tr>
-      <tr><td><strong>Export backup to USB</strong></td><td>Backup</td><td>Click Export Backup (ZIP), save to flash drive.</td></tr>
+      <tr><td><strong>Print barcode labels</strong></td><td>Catalog</td><td>Select books using checkboxes, click Print Barcodes.</td></tr>
+      <tr><td><strong>Register new student</strong></td><td>Students</td><td>Click + Register student, enter 12-digit IC, name, class.</td></tr>
+      <tr><td><strong>Receive fine payment</strong></td><td>Fines</td><td>Select fine record, click Pay, enter cash amount.</td></tr>
+      <tr><td><strong>Pair mobile scanner</strong></td><td>Settings</td><td>Click + Pair new device, scan QR code with phone app.</td></tr>
+      <tr><td><strong>Export weekly backup</strong></td><td>Backup</td><td>Click Export Backup (ZIP), save to external USB drive.</td></tr>
     </tbody>
   </table>
 
-  <h2 class="chapter-heading">Appendix B. File and Directory Reference</h2>
+  <h2 class="chapter-heading">Appendix B. Glossary of Standard ILS Terms</h2>
   <table>
-    <thead><tr><th>Component</th><th>Standard File System Location</th></tr></thead>
+    <thead><tr><th>Term</th><th>Definition in ErrinILS</th></tr></thead>
     <tbody>
-      <tr><td><strong>Program Binary</strong></td><td><code>C:\Program Files (x86)\ErrinILS\ErrinILS.exe</code></td></tr>
-      <tr><td><strong>Main Database</strong></td><td><code>%APPDATA%\Errin\errin-data.db</code></td></tr>
-      <tr><td><strong>Automatic Rollback File</strong></td><td><code>%APPDATA%\Errin\errin-data.db.bak</code></td></tr>
-      <tr><td><strong>Config &amp; Auth Tokens</strong></td><td><code>%APPDATA%\Errin\errin-config.json</code></td></tr>
-      <tr><td><strong>Online Documentation</strong></td><td>https://rzsy.github.io/ErrinILS/guide.html</td></tr>
-      <tr><td><strong>Official Repository</strong></td><td>https://github.com/RZSY/ErrinILS</td></tr>
+      <tr><td><strong>Accession Number</strong></td><td>Unique inventory number assigned to each physical copy in the collection (e.g. <code>ACQ-000001</code>).</td></tr>
+      <tr><td><strong>Call Number</strong></td><td>Shelf classification mark indicating physical placement on library shelves (e.g. <code>823.914 ROW</code> or <code>F DAH</code>).</td></tr>
+      <tr><td><strong>Control Number</strong></td><td>Master bibliographic identifier stored in MARC 21 field <code>001</code> (e.g. <code>ER00000001</code>).</td></tr>
+      <tr><td><strong>Malaysian IC / MyKid</strong></td><td>12-digit identity number (<code>YYMMDD-PB-###G</code>) used as the primary patron identifier.</td></tr>
+      <tr><td><strong>MARC 21</strong></td><td>International machine-readable cataloguing standard for library bibliographic records.</td></tr>
+      <tr><td><strong>Nilam</strong></td><td>Malaysian national reading program (*Nadi Ilmu Amalan Membaca*) tracked via Reading Champions.</td></tr>
+      <tr><td><strong>Weeding</strong></td><td>Planned withdrawal of damaged, obsolete, or lost books while preserving historical circulation audit logs.</td></tr>
+      <tr><td><strong>Wedge (Barcode Gun)</strong></td><td>Direct keystroke injection streaming scanned barcodes directly into active PC input boxes.</td></tr>
     </tbody>
   </table>
 
-  <div style="text-align: center; margin-top: 30px; font-size: 8.5pt; color: #888;">
-    &copy; 2026 ErrinILS Project • Released under the MIT License • Built with sharp corners
+  <div style="text-align: center; margin-top: 28px; font-size: 8.5pt; color: #64748b; border-top: 1px solid #cbd5e1; padding-top: 10px;">
+    &copy; 2026 ErrinILS Project &bull; Released under the MIT Open Source License &bull; High-DPI Sharp Typography
   </div>
 
 </body>

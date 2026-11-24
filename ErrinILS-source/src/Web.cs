@@ -24,6 +24,8 @@ namespace Errin
             public string name = "";
             public string paired = "";
             public string seen = "";
+            public string ip = "";
+            public int port = 8586;
 
             public Dictionary<string, object> ToJ()
             {
@@ -32,19 +34,229 @@ namespace Errin
                 d["name"] = name ?? "";
                 d["paired"] = paired ?? "";
                 d["seen"] = seen ?? "";
+                d["ip"] = ip ?? "";
+                d["port"] = port;
                 return d;
             }
 
             public static Device FromJ(Dictionary<string, object> d)
             {
+                int p = 8586;
+                if (d.ContainsKey("port"))
+                {
+                    try { p = Convert.ToInt32(d["port"]); } catch { p = 8586; }
+                }
                 return new Device
                 {
                     token = Json.Str(d, "token"),
                     name = Json.Str(d, "name"),
                     paired = Json.Str(d, "paired"),
-                    seen = Json.Str(d, "seen")
+                    seen = Json.Str(d, "seen"),
+                    ip = Json.Str(d, "ip"),
+                    port = p > 0 ? p : 8586
                 };
             }
+        }
+
+        public class ScannerPingResult
+        {
+            public bool Ok;
+            public string Name = "";
+            public string App = "";
+            public string Version = "";
+            public string Status = "";
+            public string Ip = "";
+            public int Port = 8586;
+            public long LatencyMs;
+            public string Error = "";
+        }
+
+        public static ScannerPingResult PingScanner(string ip, int port = 8586, int timeoutMs = 2500)
+        {
+            if (string.IsNullOrEmpty(ip))
+                return new ScannerPingResult { Ok = false, Error = "IP address is empty" };
+
+            ip = ip.Trim().Replace("http://", "").Replace("https://", "").TrimEnd('/');
+            if (ip.Contains(":"))
+            {
+                var parts = ip.Split(':');
+                ip = parts[0];
+                int p;
+                if (int.TryParse(parts[1], out p) && p > 0) port = p;
+            }
+
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            try
+            {
+                var req = (HttpWebRequest)WebRequest.Create("http://" + ip + ":" + port + "/ping");
+                req.Timeout = timeoutMs;
+                req.ReadWriteTimeout = timeoutMs;
+                req.Method = "GET";
+                req.Accept = "application/json";
+                using (var resp = (HttpWebResponse)req.GetResponse())
+                using (var reader = new StreamReader(resp.GetResponseStream(), Encoding.UTF8))
+                {
+                    string text = reader.ReadToEnd();
+                    sw.Stop();
+                    var json = Json.Parse(text) as Dictionary<string, object>;
+                    if (json != null && Json.Bool(json, "ok"))
+                    {
+                        return new ScannerPingResult
+                        {
+                            Ok = true,
+                            Name = Json.Str(json, "name"),
+                            App = Json.Str(json, "app"),
+                            Version = Json.Str(json, "version"),
+                            Status = Json.Str(json, "status"),
+                            Ip = ip,
+                            Port = port,
+                            LatencyMs = sw.ElapsedMilliseconds
+                        };
+                    }
+                    return new ScannerPingResult { Ok = false, Ip = ip, Port = port, Error = "Invalid response from scanner", LatencyMs = sw.ElapsedMilliseconds };
+                }
+            }
+            catch (Exception ex)
+            {
+                sw.Stop();
+                return new ScannerPingResult { Ok = false, Ip = ip, Port = port, Error = ex.Message, LatencyMs = sw.ElapsedMilliseconds };
+            }
+        }
+
+        public static bool SendScannerBeep(string ip, int port, out string err, int timeoutMs = 2500)
+        {
+            err = "";
+            if (string.IsNullOrEmpty(ip)) { err = "IP address is empty"; return false; }
+            ip = ip.Trim().Replace("http://", "").Replace("https://", "").TrimEnd('/');
+            if (ip.Contains(":"))
+            {
+                var parts = ip.Split(':');
+                ip = parts[0];
+                int p;
+                if (int.TryParse(parts[1], out p) && p > 0) port = p;
+            }
+
+            try
+            {
+                var req = (HttpWebRequest)WebRequest.Create("http://" + ip + ":" + port + "/beep");
+                req.Timeout = timeoutMs;
+                req.ReadWriteTimeout = timeoutMs;
+                req.Method = "POST";
+                req.ContentType = "application/json";
+                byte[] bytes = Encoding.UTF8.GetBytes("{}");
+                req.ContentLength = bytes.Length;
+                using (var s = req.GetRequestStream()) s.Write(bytes, 0, bytes.Length);
+                using (var resp = (HttpWebResponse)req.GetResponse())
+                using (var r = new StreamReader(resp.GetResponseStream(), Encoding.UTF8))
+                {
+                    string body = r.ReadToEnd();
+                    var j = Json.Parse(body) as Dictionary<string, object>;
+                    return j != null && Json.Bool(j, "ok");
+                }
+            }
+            catch (Exception ex)
+            {
+                err = ex.Message;
+                return false;
+            }
+        }
+
+        public static bool PushPairingToScanner(string ip, int port, string serverUrl, string token, string pcName, out string scannerName, out string err, int timeoutMs = 3500)
+        {
+            scannerName = "";
+            err = "";
+            if (string.IsNullOrEmpty(ip)) { err = "IP address is empty"; return false; }
+            ip = ip.Trim().Replace("http://", "").Replace("https://", "").TrimEnd('/');
+            if (ip.Contains(":"))
+            {
+                var parts = ip.Split(':');
+                ip = parts[0];
+                int p;
+                if (int.TryParse(parts[1], out p) && p > 0) port = p;
+            }
+
+            try
+            {
+                var req = (HttpWebRequest)WebRequest.Create("http://" + ip + ":" + port + "/pair");
+                req.Timeout = timeoutMs;
+                req.ReadWriteTimeout = timeoutMs;
+                req.Method = "POST";
+                req.ContentType = "application/json";
+                var payload = new Dictionary<string, object>
+                {
+                    { "serverUrl", serverUrl },
+                    { "token", token },
+                    { "serverName", pcName ?? "ErrinILS PC" }
+                };
+                byte[] bytes = Encoding.UTF8.GetBytes(Json.Write(payload));
+                req.ContentLength = bytes.Length;
+                using (var s = req.GetRequestStream()) s.Write(bytes, 0, bytes.Length);
+                using (var resp = (HttpWebResponse)req.GetResponse())
+                using (var r = new StreamReader(resp.GetResponseStream(), Encoding.UTF8))
+                {
+                    string body = r.ReadToEnd();
+                    var j = Json.Parse(body) as Dictionary<string, object>;
+                    if (j != null && Json.Bool(j, "ok"))
+                    {
+                        scannerName = Json.Str(j, "name");
+                        return true;
+                    }
+                    err = j != null ? Json.Str(j, "error") : "Pairing rejected by device";
+                    return false;
+                }
+            }
+            catch (Exception ex)
+            {
+                err = ex.Message;
+                return false;
+            }
+        }
+
+        public static List<ScannerPingResult> DiscoverScannerApps(int port = 8586, int timeoutMs = 800)
+        {
+            var discovered = new List<ScannerPingResult>();
+            var lanIps = NetHelper.GetReachableIpAddresses();
+            var prefixes = new HashSet<string>();
+            foreach (var lip in lanIps)
+            {
+                int lastDot = lip.LastIndexOf('.');
+                if (lastDot > 0) prefixes.Add(lip.Substring(0, lastDot + 1));
+            }
+            if (prefixes.Count == 0) prefixes.Add("192.168.1.");
+
+            var candidates = new List<string>();
+            foreach (var pfx in prefixes)
+            {
+                for (int i = 1; i <= 254; i++)
+                {
+                    candidates.Add(pfx + i);
+                }
+            }
+
+            var sync = new object();
+            System.Threading.Tasks.Parallel.ForEach(candidates, new System.Threading.Tasks.ParallelOptions { MaxDegreeOfParallelism = 40 }, ip =>
+            {
+                try
+                {
+                    using (var tcp = new TcpClient())
+                    {
+                        var ar = tcp.BeginConnect(ip, port, null, null);
+                        bool ok = ar.AsyncWaitHandle.WaitOne(300, false);
+                        if (ok && tcp.Connected)
+                        {
+                            tcp.EndConnect(ar);
+                            var ping = PingScanner(ip, port, timeoutMs);
+                            if (ping.Ok)
+                            {
+                                lock (sync) { discovered.Add(ping); }
+                            }
+                        }
+                    }
+                }
+                catch { }
+            });
+
+            return discovered;
         }
 
                 public class PairSession
@@ -295,7 +507,14 @@ namespace Errin
                         // API Routes
                         if (path.StartsWith("/api/"))
                         {
-                            HandleApi(stream, method, path, qParams, headers, body);
+                            string clientIp = "";
+                            try
+                            {
+                                var ep = client.Client.RemoteEndPoint as IPEndPoint;
+                                if (ep != null) clientIp = ep.Address.ToString();
+                            }
+                            catch { }
+                            HandleApi(stream, method, path, qParams, headers, body, clientIp);
                             return;
                         }
 
@@ -305,7 +524,7 @@ namespace Errin
                 }
             }
 
-            void HandleApi(Stream stream, string method, string path, Dictionary<string, string> query, Dictionary<string, string> headers, string body)
+            void HandleApi(Stream stream, string method, string path, Dictionary<string, string> query, Dictionary<string, string> headers, string body, string clientIp)
             {
                 // QR code image endpoint (no token required)
                 if (path == "/api/qr" || path == "/qr.png")
@@ -332,7 +551,7 @@ namespace Errin
                 // Pairing endpoint (no token required)
                 if (path == "/api/pair" && method == "POST")
                 {
-                    HandlePair(stream, body);
+                    HandlePair(stream, body, clientIp, headers);
                     return;
                 }
 
@@ -396,8 +615,15 @@ namespace Errin
                     return;
                 }
 
-                // Update device seen timestamp
+                // Update device seen timestamp and IP/port
                 dev.seen = DateTime.Now.ToString("yyyy-MM-dd HH:mm");
+                if (!string.IsNullOrEmpty(clientIp) && clientIp != "127.0.0.1" && clientIp != "::1") dev.ip = clientIp;
+                if (headers.ContainsKey("X-Scanner-Port"))
+                {
+                    int sp;
+                    if (int.TryParse(headers["X-Scanner-Port"], out sp) && sp > 0)
+                        dev.port = sp;
+                }
 
                 // Authenticated routes
                 try
@@ -533,7 +759,7 @@ namespace Errin
                 SendJson(stream, 200, new Dictionary<string, object> { { "ok", true }, { "barcode", barcode } });
             }
 
-            void HandlePair(Stream stream, string body)
+            void HandlePair(Stream stream, string body, string clientIp, Dictionary<string, string> headers)
             {
                 Dictionary<string, object> json = null;
                 try { json = Json.Parse(body) as Dictionary<string, object>; } catch { }
@@ -546,6 +772,10 @@ namespace Errin
                 string code = Regex.Replace(Json.Str(json, "code"), @"[\s-]", "");
                 string name = Json.Str(json, "name").Trim();
                 if (string.IsNullOrEmpty(name)) name = "Remote Device";
+
+                int sPort = 8586;
+                if (json.ContainsKey("scannerPort")) { try { sPort = Convert.ToInt32(json["scannerPort"]); } catch { } }
+                else if (headers != null && headers.ContainsKey("X-Scanner-Port")) { int.TryParse(headers["X-Scanner-Port"], out sPort); }
 
                 lock (syncLock)
                 {
@@ -597,7 +827,9 @@ namespace Errin
                         token = token,
                         name = name,
                         paired = Lib.Today(),
-                        seen = DateTime.Now.ToString("yyyy-MM-dd HH:mm")
+                        seen = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+                        ip = (!string.IsNullOrEmpty(clientIp) && clientIp != "127.0.0.1" && clientIp != "::1") ? clientIp : "",
+                        port = sPort > 0 ? sPort : 8586
                     };
                     Devices.Add(dev);
                     LastPairedDevice = dev;

@@ -78,7 +78,7 @@ data class IsbnLookupResult(
             if (!ok) {
                 return IsbnLookupResult(
                     ok = false,
-                    error = json.optString("error", "Pencarian gagal")
+                    error = json.optString("error", "Lookup search failed")
                 )
             }
             val found = json.optBoolean("found", false)
@@ -86,7 +86,7 @@ data class IsbnLookupResult(
                 return IsbnLookupResult(
                     ok = true,
                     found = false,
-                    error = json.optString("message", "Tiada rekod bibliografi dijumpai untuk ISBN ini")
+                    error = json.optString("message", "No bibliographic record found for this ISBN")
                 )
             }
             val data = json.optJSONObject("data") ?: JSONObject()
@@ -100,7 +100,7 @@ data class IsbnLookupResult(
                 isbn = data.optString("isbn", ""),
                 call = data.optString("call", ""),
                 subject = data.optString("subject", ""),
-                source = json.optString("source", "Katalog Perpustakaan"),
+                source = json.optString("source", "Library Catalog"),
                 alreadyExists = json.optBoolean("alreadyExists", false)
             )
         }
@@ -108,8 +108,8 @@ data class IsbnLookupResult(
 }
 
 enum class AppTab(val title: String, val badge: String, val description: String) {
-    SCANNER("Pengimbas Kod Bar", "⚡", "Hantar kod bar terus ke PC seperti pengimbas tanpa wayar"),
-    ADD_CATALOG("Daftar Buku Baharu", "📚", "Imbas ISBN & tambah rekod katalog baharu")
+    SCANNER("Barcode Scanner", "⚡", "Stream barcodes directly to PC like a wireless scanner gun"),
+    ADD_CATALOG("Add Book (ISBN)", "📚", "Scan ISBN barcode & create new catalog records")
 }
 
 data class ScanHistoryEntry(

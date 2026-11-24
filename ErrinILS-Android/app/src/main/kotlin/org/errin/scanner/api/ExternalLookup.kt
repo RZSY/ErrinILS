@@ -17,7 +17,7 @@ object ExternalLookup {
     suspend fun lookupIsbnOnline(isbnRaw: String): IsbnLookupResult = withContext(Dispatchers.IO) {
         val clean = isbnRaw.replace(Regex("[^0-9X]"), "")
         if (clean.length < 10) {
-            return@withContext IsbnLookupResult(ok = false, error = "ISBN tidak sah: $isbnRaw")
+            return@withContext IsbnLookupResult(ok = false, error = "Invalid ISBN: $isbnRaw")
         }
 
         // 1. Try Google Books API
@@ -92,6 +92,6 @@ object ExternalLookup {
             }
         } catch (_: Exception) {}
 
-        IsbnLookupResult(ok = true, found = false, error = "Tiada rekod bibliografi dijumpai untuk ISBN: $clean")
+        IsbnLookupResult(ok = true, found = false, error = "No bibliographic record found for ISBN: $clean")
     }
 }
