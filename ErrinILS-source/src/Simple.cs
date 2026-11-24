@@ -49,17 +49,19 @@ namespace Errin
             tl.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             tl.Controls.Add(hBox, 0, 0);
 
-            if (height > 0) { tl.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); body.Dock = DockStyle.Fill; p.Height = Ui.S(height); }
+            if (height > 0) { tl.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); body.Dock = DockStyle.Fill; p.Height = Ui.S(height); p.MinimumSize = new Size(0, Ui.S(height)); }
             else { tl.RowStyles.Add(new RowStyle(SizeType.AutoSize)); body.Dock = DockStyle.Top; p.AutoSize = true; p.AutoSizeMode = AutoSizeMode.GrowAndShrink; tl.AutoSize = true; tl.Dock = DockStyle.Top; }
             tl.Controls.Add(body, 0, 1);
             p.Controls.Add(tl);
             p.Controls.Add(bar);
+            Ui.EnableDoubleBuffering(p);
+            Ui.EnableDoubleBuffering(tl);
             return p;
         }
 
         Control SimplePage()
         {
-            Func<TextBox> big = () => { var t = Ui.Txt(330); t.Font = new Font("Segoe UI", 15f); return t; };
+            Func<TextBox> big = () => { var t = Ui.Txt(330); t.Font = new Font("Segoe UI", 15f); t.MaximumSize = new Size(Ui.S(540), 0); return t; };
             sIc = big(); sBc = big(); sRb = big();
 
             Action doCard = () =>
@@ -125,6 +127,18 @@ namespace Errin
                 Vbox(Ui.Caption("\uD83C\uDF92 Library card (IC number)"), sIc, Ui.Caption("\uD83D\uDCDA Book barcode"), sBc, coBtns));
             var c2 = ChildCard("Return", "\uD83C\uDF81", Color.FromArgb(0x34, 0xd3, 0x99),
                 Vbox(Ui.Caption("\uD83D\uDD16 Book barcode"), sRb, retBtn));
+
+            c1.Resize += (s, e) =>
+            {
+                int w = Math.Min(Ui.S(500), Math.Max(Ui.S(220), c1.ClientSize.Width - Ui.S(48)));
+                if (sIc != null && !sIc.IsDisposed) sIc.Width = w;
+                if (sBc != null && !sBc.IsDisposed) sBc.Width = w;
+            };
+            c2.Resize += (s, e) =>
+            {
+                int w = Math.Min(Ui.S(500), Math.Max(Ui.S(220), c2.ClientSize.Width - Ui.S(48)));
+                if (sRb != null && !sRb.IsDisposed) sRb.Width = w;
+            };
 
             sBanner = new Label { UseMnemonic = false, Font = new Font("Segoe UI", 15f, FontStyle.Bold), Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, Padding = Ui.S(new Padding(18, 0, 18, 0)) };
             sBannerBox = new Panel { Height = Ui.S(86), Margin = Ui.S(new Padding(0, 0, 0, 14)) }; sBannerBox.Controls.Add(sBanner);

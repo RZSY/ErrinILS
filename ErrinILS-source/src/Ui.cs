@@ -58,6 +58,25 @@ namespace Errin
         public static Point S(Point p) { return new Point(S(p.X), S(p.Y)); }
         public static Padding S(Padding p) { return new Padding(S(p.Left), S(p.Top), S(p.Right), S(p.Bottom)); }
 
+        public static void EnableDoubleBuffering(Control c)
+        {
+            if (c == null) return;
+            try
+            {
+                var prop = typeof(Control).GetProperty("DoubleBuffered", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                if (prop != null) prop.SetValue(c, true, null);
+            }
+            catch { }
+            try
+            {
+                foreach (Control child in c.Controls)
+                {
+                    EnableDoubleBuffering(child);
+                }
+            }
+            catch { }
+        }
+
         public static Label Lbl(string t, bool muted = false, Font f = null)
         {
             return new Label { UseMnemonic = false, Text = t, AutoSize = true, ForeColor = muted ? Th.Mut : Th.Ink, BackColor = Color.Transparent, Font = f ?? Th.F, Margin = S(new Padding(0, 2, 0, 2)) };
@@ -117,10 +136,11 @@ namespace Errin
             tl.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             if (title != null) { tl.RowStyles.Add(new RowStyle(SizeType.AutoSize)); var t = new Label { UseMnemonic = false, Text = title.ToLowerInvariant(), Font = Th.FT, ForeColor = Th.Ink, AutoSize = true, Margin = S(new Padding(0, 0, 0, 8)) }; tl.Controls.Add(t, 0, 0); }
             else tl.RowStyles.Add(new RowStyle(SizeType.Absolute, 0));
-            if (height > 0) { tl.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); body.Dock = DockStyle.Fill; p.Height = S(height); }
+            if (height > 0) { tl.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); body.Dock = DockStyle.Fill; p.Height = S(height); p.MinimumSize = new Size(0, S(height)); }
             else { tl.RowStyles.Add(new RowStyle(SizeType.AutoSize)); body.Dock = DockStyle.Top; p.AutoSize = true; p.AutoSizeMode = AutoSizeMode.GrowAndShrink; tl.AutoSize = true; tl.Dock = DockStyle.Top; }
             tl.Controls.Add(body, 0, 1);
             p.Controls.Add(tl); p.Controls.Add(bar);
+            EnableDoubleBuffering(p);
             tl.ResumeLayout(false);
             p.ResumeLayout(false);
             return p;
@@ -144,7 +164,7 @@ namespace Errin
             p.Controls.Add(h); p.Controls.Add(dot);
             int tw = TextRenderer.MeasureText(h.Text, Th.FH, new Size(2000, S(60)), TextFormatFlags.NoPadding).Width;
             dot.Location = new Point(tw - 2, 0);
-            p.Controls.Add(new Label { UseMnemonic = false, Text = sub, Font = Th.FSub, ForeColor = Th.Mut, AutoSize = false, Location = new Point(S(2), S(40)), Size = new Size(S(1100), S(24)), Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right });
+            p.Controls.Add(new Label { UseMnemonic = false, Text = sub, Font = Th.FSub, ForeColor = Th.Mut, AutoSize = true, Location = new Point(S(2), S(40)), MaximumSize = new Size(S(1600), 0) });
             return p;
         }
         public static Panel Stat(string value, string label, Color accent)
@@ -237,7 +257,7 @@ namespace Errin
         }
 
         /* ---------- dialogs ---------- */
-        public static Form Dlg(string title, int w, int h)
+        public static Form Dlg(string title, int w, int h, bool sizable = true)
         {
             Rectangle wa = Screen.PrimaryScreen.WorkingArea;
             try
@@ -264,14 +284,17 @@ namespace Errin
                 Text = title,
                 ClientSize = new Size(sw, sh),
                 StartPosition = FormStartPosition.CenterParent,
-                FormBorderStyle = FormBorderStyle.FixedDialog,
-                MaximizeBox = false,
+                FormBorderStyle = sizable ? FormBorderStyle.Sizable : FormBorderStyle.FixedDialog,
+                MaximizeBox = sizable,
                 MinimizeBox = false,
                 ShowInTaskbar = false,
                 BackColor = Th.Card,
                 ForeColor = Th.Ink,
-                Font = Th.F
+                Font = Th.F,
+                AutoScroll = true,
+                MinimumSize = new Size(Math.Min(sw, S(380)), Math.Min(sh, S(280)))
             };
+            EnableDoubleBuffering(f);
 
             f.Load += (s, e) =>
             {

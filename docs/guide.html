@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ErrinILS User Manual - Comprehensive Operating Guidelines</title>
-  <meta name="description" content="Official, exhaustive user manual and operating handbook for ErrinILS version 1.5.0. Covers installation, circulation, 31-source cataloguing, custom accession & barcode numbering formats, redesigned barcode labels, overdue holding loan tracking, batch label printing, Android companion scanner, cloud sync, student management, fines, weeding, QR remote pairing, analytics, and administration.">
+  <meta name="description" content="Official, exhaustive user manual and operating handbook for ErrinILS version 1.5.1. Covers installation, universal screen fluidity, responsive mobile &amp; tablet Remote Access, circulation, 31-source cataloguing, custom accession &amp; barcode numbering formats, redesigned barcode labels, overdue holding loan tracking, batch label printing, Android companion scanner, cloud sync, student management, fines, weeding, QR remote pairing, analytics, and administration.">
   <link rel="icon" type="image/png" href="assets/icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,7 +28,7 @@
       <a href="index.html" class="brand-link">
         <img src="assets/icon.png" alt="ErrinILS Logo" class="brand-icon">
         <span>ErrinILS</span>
-        <span class="brand-badge">v1.5.0</span>
+        <span class="brand-badge">v1.5.1</span>
         <span class="brand-school-pill"><span class="school-dot"></span>School Edition</span>
       </a>
 
@@ -44,7 +44,7 @@
 
       <div class="nav-actions">
         <button class="theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme"></button>
-        <a href="download.html" class="btn btn-primary btn-sm">Download v1.5.0</a>
+        <a href="download.html" class="btn btn-primary btn-sm">Download v1.5.1</a>
       </div>
     </div>
   </header>
@@ -57,14 +57,14 @@
       <span class="section-eyebrow">Official School Library Handbook (PSS Manual)</span>
       <h1 class="section-title" style="font-size: 2.5rem;">ErrinILS User Manual &amp; Guidelines</h1>
       <p class="section-subtitle">
-        Exhaustive step-by-step operating guidelines for school librarians, administrators, IT staff, and student helpers. Covers daily circulation, simplified kiosk view, 31-source automated copy-cataloguing, custom accession and barcode numbering templates, redesigned wide barcode labels with optional parallel call numbers, comprehensive fines and active overdue holding tracking, batch label printing, Android companion scanner app, dual cloud sync, Malaysian IC student management, weeding, remote QR access, and disaster recovery.
+        Exhaustive step-by-step operating guidelines for school librarians, administrators, IT staff, and student helpers. Covers daily circulation, simplified kiosk view, 31-source automated copy-cataloguing, custom accession and barcode numbering templates, redesigned wide barcode labels with optional parallel call numbers, comprehensive fines and active overdue holding tracking, batch label printing, Android companion scanner app, dual cloud sync, Malaysian IC student management, weeding, remote QR access, universal screen fluidity, and disaster recovery.
       </p>
     </div>
 
     <!-- Download / Print Action Bar -->
     <div class="guide-actions-bar">
       <div class="guide-actions-left">
-        <a href="assets/ErrinILS-User-Guide.pdf" download="ErrinILS-User-Guide-v1.5.0.pdf" id="btn-download-guide-pdf" class="btn btn-primary btn-sm">
+        <a href="assets/ErrinILS-User-Guide.pdf" download="ErrinILS-User-Guide-v1.5.1.pdf" id="btn-download-guide-pdf" class="btn btn-primary btn-sm">
           Download PDF Manual
         </a>
         <button id="btn-download-guide-md" class="btn btn-secondary btn-sm">
@@ -78,7 +78,7 @@
         </button>
       </div>
       <div>
-        <span class="badge badge-gold">Official Manual v1.5.0</span>
+        <span class="badge badge-gold">Official Manual v1.5.1</span>
       </div>
     </div>
 
@@ -287,7 +287,7 @@
           <div class="chapter-body">
             <h4 style="color: var(--accent-gold); margin: 16px 0 8px 0;">3.1 Installing with the Setup program</h4>
             <ol class="step-list">
-              <li>Download <code>ErrinILS-Setup-1.5.0.exe</code> from the official website or GitHub release.</li>
+              <li>Download <code>ErrinILS-Setup-1.5.1.exe</code> from the official website or GitHub release.</li>
               <li>Double-click the installer. If Windows UAC prompts *"Do you want to allow this app to make changes?"*, click <strong>Yes</strong>.</li>
               <li>If a blue *"Windows protected your PC"* box appears, click <strong>More info</strong> and then <strong>Run anyway</strong>. This occurs because open-source educational software is released without costly commercial certificates.</li>
               <li>Follow the setup wizard, keep the default directory (<code>C:\Program Files (x86)\ErrinILS</code>), click <strong>Install</strong>, and click <strong>Finish</strong>.</li>
@@ -296,7 +296,7 @@
 
             <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">3.2 Running without installing (portable copy &amp; USB drives)</h4>
             <p>
-              If you do not have administrator permissions, extract <code>ErrinILS-Windows-v1.5.0.zip</code> to any folder or USB flash drive (e.g. <code>E:\ErrinILS\</code>) and double-click <code>ErrinILS.exe</code>. The portable version works identically and stores data in the same location.
+              If you do not have administrator permissions, extract <code>ErrinILS-Windows-v1.5.1.zip</code> to any folder or USB flash drive (e.g. <code>E:\ErrinILS\</code>) and double-click <code>ErrinILS.exe</code>. The portable version works identically and stores data in the same location.
             </p>
 
             <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">3.3 Upgrading to a newer version</h4>
@@ -442,7 +442,7 @@
 
             <h4 style="color: var(--accent-gold); margin: 24px 0 8px 0;">5.4 Custom Acquisition &amp; Barcode Numbering Engine</h4>
             <p>
-              In ErrinILS v1.5.0, both the <strong>Acquisition Number</strong> (Accession ID) and <strong>Barcode Number</strong> format structures are completely customizable in <strong>Settings &rarr; Item numbering &amp; barcodes</strong>. Libraries can configure exact school accessioning schemes, year-prefixed sequences, zero-padded serial numbers, and custom starting offsets without database conflicts.
+              In ErrinILS v1.5.1, both the <strong>Acquisition Number</strong> (Accession ID) and <strong>Barcode Number</strong> format structures are completely customizable in <strong>Settings &rarr; Item numbering &amp; barcodes</strong>. Libraries can configure exact school accessioning schemes, year-prefixed sequences, zero-padded serial numbers, and custom starting offsets without database conflicts.
             </p>
             <div class="table-container">
               <table class="data-table">
@@ -1139,7 +1139,7 @@
               <div class="figure-caption">Figure 6: The Fine Tracker — Real-time outstanding balances, active overdue holding loans, payment recording, and fine waivers.</div>
             </div>
             <p>
-              In ErrinILS v1.5.0, the Fines Management module tracks both <strong>assessed unpaid fines</strong> (from books returned late) and <strong>active unreturned loans</strong> currently held by students past their due dates. This provides librarians with complete monetary oversight without having to cross-reference multiple screens.
+              In ErrinILS v1.5.1, the Fines Management module tracks both <strong>assessed unpaid fines</strong> (from books returned late) and <strong>active unreturned loans</strong> currently held by students past their due dates. This provides librarians with complete monetary oversight without having to cross-reference multiple screens.
             </p>
             <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">11.2 Live Overdue Holdings &amp; Accrued Fines</h4>
             <p>
@@ -1814,7 +1814,7 @@
             <p><strong>What is the default administrator password?</strong><br>The factory default administrator password is <code>admin123</code>. You can change it to any password of 4 or more characters in <strong>Settings → Admin Password</strong>.</p>
             <p style="margin-top: 12px;"><strong>Can multiple devices access the system at once?</strong><br>Yes. Enable the built-in Remote Web Server in Settings to let smartphones and tablets perform circulation and cataloguing over school Wi-Fi.</p>
             <p style="margin-top: 12px;"><strong>Are student records private?</strong><br>Yes. All database files remain strictly on your local PC. ErrinILS transmits no personal student data over the internet.</p>
-            <p style="margin-top: 12px;"><strong>Can we change the 7-day loan duration?</strong><br>In ErrinILS (v1.5.0), the loan duration is fixed at 7 days with up to 2 renewals (21 days max). Fine rates, custom numbering templates, barcode label designs, and block thresholds can be customized at any time in Settings.</p>
+            <p style="margin-top: 12px;"><strong>Can we change the 7-day loan duration?</strong><br>In ErrinILS (v1.5.1), the loan duration is fixed at 7 days with up to 2 renewals (21 days max). Fine rates, custom numbering templates, barcode label designs, and block thresholds can be customized at any time in Settings.</p>
           </div>
         </article>
 
@@ -1984,7 +1984,7 @@
             <li><a href="download.html#requirements">System Requirements</a></li>
             <li><a href="guide.html#circ">Circulation Desk Guide</a></li>
             <li><a href="guide.html#simple">Simplified View Setup</a></li>
-            <li><a href="assets/ErrinILS-User-Guide.pdf" download="ErrinILS-User-Guide-v1.5.0.pdf">Official Manual (PDF)</a></li>
+            <li><a href="assets/ErrinILS-User-Guide.pdf" download="ErrinILS-User-Guide-v1.5.1.pdf">Official Manual (PDF)</a></li>
             <li><a href="assets/ErrinILS-User-Guide.md" download>Download Manual (.md)</a></li>
           </ul>
         </div>
@@ -1992,9 +1992,9 @@
         <div>
           <div class="footer-col-title">Releases</div>
           <ul class="footer-links">
-            <li><a href="https://github.com/RZSY/ErrinILS/releases/tag/v1.5.0" target="_blank" rel="noopener">ErrinILS v1.5.0 on GitHub</a></li>
-            <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.5.0/ErrinILS-Setup-1.5.0.exe">Setup Installer (.exe)</a></li>
-            <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.5.0/ErrinILS-Windows-v1.5.0.zip">Portable Package (.zip)</a></li>
+            <li><a href="https://github.com/RZSY/ErrinILS/releases/tag/v1.5.1" target="_blank" rel="noopener">ErrinILS v1.5.1 on GitHub</a></li>
+            <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.5.1/ErrinILS-Setup-1.5.1.exe">Setup Installer (.exe)</a></li>
+            <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.5.1/ErrinILS-Windows-v1.5.1.zip">Portable Package (.zip)</a></li>
             <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.4.3/ErrinILS-Scanner-v1.4.3.apk">Android Scanner APK (.apk)</a></li>
             <li><a href="https://github.com/RZSY/ErrinILS" target="_blank" rel="noopener">GitHub Repository</a></li>
           </ul>

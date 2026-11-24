@@ -2790,7 +2790,7 @@ namespace Errin
 <html lang=""en"">
 <head>
 <meta charset=""utf-8"">
-<meta name=""viewport"" content=""width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"">
+<meta name=""viewport"" content=""width=device-width, initial-scale=1.0, viewport-fit=cover"">
 <title>__TITLE__</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -2799,11 +2799,11 @@ button, input, select, textarea { font-family: inherit; font-size: 15px; }
 a { color: #f6c61b; text-decoration: none; }
 
 /* Top Header */
-.top-header { background: #232427; border-bottom: 2px solid #33343a; display: flex; align-items: stretch; justify-content: space-between; height: 62px; position: sticky; top: 0; z-index: 100; }
+.top-header { background: #232427; border-bottom: 2px solid #33343a; display: flex; align-items: stretch; justify-content: space-between; min-height: 62px; height: auto; position: sticky; top: 0; z-index: 100; flex-wrap: wrap; }
 .logo-box { background: #2f6bff; padding: 8px 20px; display: flex; flex-direction: column; justify-content: center; min-width: 170px; cursor: pointer; }
 .logo-title { font-size: 26px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; line-height: 1; }
 .logo-sub { font-size: 11px; color: rgba(255,255,255,0.85); font-weight: 600; margin-top: 2px; }
-.header-right { display: flex; align-items: center; gap: 10px; padding-right: 16px; flex-wrap: wrap; }
+.header-right { display: flex; align-items: center; gap: 10px; padding: 8px 16px; flex-wrap: wrap; }
 .mode-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: #9a9a94; background: #1c1d20; padding: 5px 10px; border-radius: 4px; border: 1px solid #38393e; }
 .dot-green { width: 8px; height: 8px; border-radius: 50%; background: #2fb36b; display: inline-block; }
 .dot-yel { width: 8px; height: 8px; border-radius: 50%; background: #f6c61b; display: inline-block; }
@@ -2820,7 +2820,7 @@ a { color: #f6c61b; text-decoration: none; }
 
 /* Search Inputs & Field Group */
 .search-bar-wrap { display: flex; gap: 8px; margin-bottom: 12px; }
-.search-input { flex: 1; background: #1b1b1b; border: 1px solid #52545c; color: #f1efe8; padding: 12px 14px; border-radius: 6px; font-size: 16px; outline: none; }
+.search-input { flex: 1; background: #1b1b1b; border: 1px solid #52545c; color: #f1efe8; padding: 12px 14px; border-radius: 6px; font-size: 16px; outline: none; min-width: 0; }
 .search-input:focus { border-color: #f6c61b; }
 .btn-clear { background: #44454a; color: #f1efe8; border: none; padding: 0 16px; border-radius: 6px; cursor: pointer; font-weight: 600; display: none; }
 .btn-clear:hover { background: #52545c; }
@@ -2856,7 +2856,7 @@ a { color: #f6c61b; text-decoration: none; }
 .view-btn.active { background: #f6c61b; color: #1b1b1b; border-color: #f6c61b; }
 
 /* Grid view book cards */
-.books-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; margin-bottom: 24px; }
+.books-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(280px, 100%), 1fr)); gap: 14px; margin-bottom: 24px; }
 .book-card { background: #2c2d31; border: 1px solid #44454a; border-left: 3px solid #2f6bff; border-radius: 6px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.1s, border-color 0.15s; }
 .book-card:hover { border-color: #52545c; transform: translateY(-2px); }
 .book-title { font-size: 16px; font-weight: 700; color: #f1efe8; margin-bottom: 4px; line-height: 1.3; cursor: pointer; }
@@ -2913,6 +2913,31 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .acc-tab-bar { display: flex; gap: 6px; border-bottom: 1px solid #44454a; margin-bottom: 14px; }
 .acc-tab-btn { background: transparent; border: none; color: #9a9a94; padding: 8px 12px; font-weight: 600; font-size: 13px; cursor: pointer; border-bottom: 2px solid transparent; }
 .acc-tab-btn.active { color: #f6c61b; border-bottom-color: #f6c61b; }
+
+/* Responsive Media Queries */
+@media (max-width: 768px) {
+  button, input, select, textarea { font-size: 16px !important; }
+  .btn { min-height: 44px; touch-action: manipulation; }
+  .top-header { flex-direction: column; height: auto; padding-bottom: 6px; }
+  .logo-box { min-width: auto; padding: 10px 16px; }
+  .header-right { padding: 6px 14px; justify-content: flex-start; gap: 8px; }
+  .container { padding: 14px 10px; padding-bottom: 80px; }
+  .page-heading { font-size: 22px; }
+  .search-bar-wrap { flex-wrap: wrap; }
+  .search-bar-wrap .btn { width: 100%; margin-top: 4px; padding: 12px; }
+  .filter-row { flex-direction: column; align-items: stretch; gap: 8px; }
+  .select-filter { width: 100%; min-height: 44px; }
+  .books-grid { grid-template-columns: 1fr; gap: 10px; }
+  .detail-grid { grid-template-columns: 1fr; gap: 4px; }
+  .detail-label { margin-top: 6px; }
+  .modal-content { padding: 16px 14px; max-width: 95vw; }
+  .bottom-sbar { font-size: 11px; padding: 8px 12px; flex-wrap: wrap; gap: 6px; }
+  .sbar-left { font-size: 11px; }
+}
+@media (min-width: 1400px) {
+  .container { max-width: 1300px; padding: 28px 24px; }
+  .books-grid { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; }
+}
 </style>
 <!--__CONFIG_SCRIPT__-->
 </head>
@@ -3877,43 +3902,46 @@ window.addEventListener('DOMContentLoaded', init);
 <html lang=""en"">
 <head>
 <meta charset=""utf-8"">
-<meta name=""viewport"" content=""width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"">
+<meta name=""viewport"" content=""width=device-width, initial-scale=1.0, viewport-fit=cover"">
 <title>ErrinILS Remote Access</title>
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, ""Segoe UI"", Roboto, Helvetica, Arial, sans-serif; background: #232427; color: #f1efe8; line-height: 1.4; -webkit-font-smoothing: antialiased; }
+html, body { width: 100%; min-height: 100%; -webkit-text-size-adjust: 100%; }
+body { font-family: -apple-system, BlinkMacSystemFont, ""Segoe UI"", Roboto, Helvetica, Arial, sans-serif; background: #232427; color: #f1efe8; line-height: 1.45; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
 button, input, select, textarea { font-family: inherit; font-size: 15px; }
 a { color: #f6c61b; text-decoration: none; }
 
 /* Top Header */
-.top-header { background: #232427; border-bottom: 2px solid #33343a; display: flex; align-items: stretch; justify-content: space-between; height: 62px; position: sticky; top: 0; z-index: 100; }
-.logo-box { background: #2f6bff; padding: 8px 20px; display: flex; flex-direction: column; justify-content: center; min-width: 170px; }
-.logo-title { font-size: 26px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; line-height: 1; }
+.top-header { background: #232427; border-bottom: 2px solid #33343a; display: flex; align-items: center; justify-content: space-between; min-height: 60px; height: auto; position: sticky; top: 0; z-index: 100; padding: 0 16px 0 0; padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+.header-left { display: flex; align-items: center; gap: 16px; }
+.logo-box { background: #2f6bff; padding: 10px 20px; display: flex; flex-direction: column; justify-content: center; min-width: 160px; user-select: none; }
+.logo-title { font-size: 25px; font-weight: 800; color: #ffffff; letter-spacing: -0.5px; line-height: 1; }
 .logo-sub { font-size: 11px; color: rgba(255,255,255,0.85); font-weight: 600; margin-top: 2px; }
-.header-right { display: flex; align-items: center; gap: 12px; padding-right: 16px; }
-.btn-opac-link { background: #2c2d31; border: 1px solid #52545c; color: #f6c61b; font-weight: 700; font-size: 12px; padding: 6px 12px; border-radius: 4px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+.header-title-badge { font-size: 16px; font-weight: 700; color: #f6c61b; display: flex; align-items: center; }
+.header-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.btn-opac-link { background: #2c2d31; border: 1px solid #52545c; color: #f6c61b; font-weight: 700; font-size: 12px; padding: 6px 12px; border-radius: 4px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; touch-action: manipulation; }
 .btn-opac-link:hover { background: #f6c61b; color: #1b1b1b; }
-.device-badge { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #9a9a94; }
-.dot-green { width: 8px; height: 8px; border-radius: 50%; background: #2fb36b; display: inline-block; }
-.btn-unpair { background: transparent; border: 1px solid #52545c; color: #9a9a94; border-radius: 4px; padding: 4px 8px; font-size: 11px; cursor: pointer; }
+.device-badge { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #9a9a94; white-space: nowrap; }
+.dot-green { width: 8px; height: 8px; border-radius: 50%; background: #2fb36b; display: inline-block; flex-shrink: 0; }
+.btn-unpair { background: transparent; border: 1px solid #52545c; color: #9a9a94; border-radius: 4px; padding: 4px 8px; font-size: 11px; cursor: pointer; touch-action: manipulation; }
 .btn-unpair:hover { background: #3d1b1b; color: #e8392f; border-color: #e8392f; }
 
 /* Navigation Tab Bar */
-.tab-bar { display: flex; overflow-x: auto; background: #232427; border-bottom: 2px solid #33343a; padding: 0; scrollbar-width: none; }
+.tab-bar { display: flex; overflow-x: auto; background: #232427; border-bottom: 2px solid #33343a; padding: 0; scrollbar-width: none; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
 .tab-bar::-webkit-scrollbar { display: none; }
-.tab-btn { background: #232427; border: none; border-right: 2px solid #52545c; color: #f1efe8; padding: 14px 20px; font-weight: 700; font-size: 14px; cursor: pointer; white-space: nowrap; transition: background 0.15s, color 0.15s; }
+.tab-btn { background: #232427; border: none; border-right: 2px solid #52545c; color: #f1efe8; padding: 13px 20px; min-height: 46px; font-weight: 700; font-size: 14px; cursor: pointer; white-space: nowrap; transition: background 0.15s, color 0.15s; touch-action: manipulation; display: inline-flex; align-items: center; justify-content: center; }
 .tab-btn:hover { background: #44454a; }
 .tab-btn.active { background: #f6c61b; color: #1b1b1b; }
 
 /* Content Layout */
-.container { max-width: 1000px; margin: 0 auto; padding: 16px; padding-bottom: 60px; }
+.container { max-width: 1040px; margin: 0 auto; padding: 16px; padding-bottom: 70px; padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
 .card { background: #2c2d31; border: 1px solid #44454a; border-left: 3px solid #f6c61b; border-radius: 6px; padding: 18px; margin-bottom: 16px; box-shadow: 0 2px 6px rgba(0,0,0,0.25); }
 .card-title { font-size: 17px; font-weight: 700; color: #f1efe8; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
 .card-desc { font-size: 13px; color: #9a9a94; margin-bottom: 14px; }
 
 /* Metrics Grid */
-.metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 16px; }
-.metric-box { background: #2c2d31; border: 1px solid #44454a; border-radius: 6px; padding: 14px 12px; text-align: center; }
+.metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(130px, 100%), 1fr)); gap: 12px; margin-bottom: 16px; }
+.metric-box { background: #2c2d31; border: 1px solid #44454a; border-radius: 6px; padding: 14px 10px; text-align: center; }
 .metric-box:nth-child(1) { border-left: 6px solid #2f6bff; }
 .metric-box:nth-child(2) { border-left: 6px solid #2fb36b; }
 .metric-box:nth-child(3) { border-left: 6px solid #f6c61b; }
@@ -3921,27 +3949,28 @@ a { color: #f6c61b; text-decoration: none; }
 .metric-box:nth-child(5) { border-left: 6px solid #e8392f; }
 .metric-box:nth-child(6) { border-left: 6px solid #06b6d4; }
 .metric-val { font-size: 26px; font-weight: 800; color: #f6c61b; line-height: 1.1; margin-bottom: 4px; }
-.metric-lbl { font-size: 12px; font-weight: 600; color: #9a9a94; text-transform: uppercase; letter-spacing: 0.5px; }
+.metric-lbl { font-size: 11.5px; font-weight: 600; color: #9a9a94; text-transform: uppercase; letter-spacing: 0.5px; }
 
 /* Buttons & Inputs */
-.btn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; border: none; transition: background 0.15s; }
+.btn { display: inline-flex; align-items: center; justify-content: center; padding: 10px 16px; min-height: 40px; border-radius: 6px; font-weight: 600; cursor: pointer; border: none; transition: background 0.15s, transform 0.05s; touch-action: manipulation; white-space: nowrap; }
+.btn:active { transform: scale(0.98); }
 .btn-primary { background: #f6c61b; color: #1b1b1b; }
 .btn-primary:hover { background: #e5b610; }
 .btn-sec { background: #44454a; color: #f1efe8; }
 .btn-sec:hover { background: #52545c; }
 .btn-danger { background: #e8392f; color: #ffffff; }
 .btn-danger:hover { background: #cc2f26; }
-.btn-sm { padding: 6px 10px; font-size: 12px; border-radius: 4px; }
+.btn-sm { padding: 6px 10px; min-height: 32px; font-size: 12px; border-radius: 4px; }
 
-.input-text, .select-box { width: 100%; background: #1b1b1b; border: 1px solid #52545c; color: #f1efe8; padding: 10px 12px; border-radius: 6px; outline: none; }
+.input-text, .select-box { width: 100%; min-height: 40px; background: #1b1b1b; border: 1px solid #52545c; color: #f1efe8; padding: 8px 12px; border-radius: 6px; outline: none; }
 .input-text:focus, .select-box:focus { border-color: #f6c61b; }
 .field-group { margin-bottom: 12px; }
 .field-label { display: block; font-size: 12px; font-weight: 600; color: #9a9a94; margin-bottom: 4px; text-transform: uppercase; }
 
 /* Tables */
-.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
-th { background: #232427; color: #9a9a94; font-size: 12px; font-weight: 600; text-transform: uppercase; padding: 10px 12px; border-bottom: 1px solid #44454a; }
+.table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; position: relative; }
+table { width: 100%; min-width: 580px; border-collapse: collapse; text-align: left; font-size: 14px; }
+th { background: #232427; color: #9a9a94; font-size: 12px; font-weight: 600; text-transform: uppercase; padding: 10px 12px; border-bottom: 1px solid #44454a; white-space: nowrap; }
 td { padding: 10px 12px; border-bottom: 1px solid #38393e; color: #f1efe8; vertical-align: middle; }
 tr:hover td { background: rgba(255,255,255,0.02); }
 
@@ -3951,6 +3980,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .badge-err { background: #4a1d1d; color: #fca5a5; border: 1px solid #ef4444; }
 .badge-warn { background: #453512; color: #fde047; border: 1px solid #eab308; }
 .badge-dim { background: #33343a; color: #b0b0a8; border: 1px solid #52545c; }
+.badge-gold { background: #3d3000; color: #f6c61b; border: 1px solid #f6c61b; }
 
 /* Banners / Notifications */
 .notice { padding: 12px 16px; border-radius: 6px; font-size: 14px; font-weight: 600; margin-bottom: 14px; }
@@ -3958,7 +3988,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .notice-err { background: #3d1b1b; border: 1px solid #e8392f; color: #e8392f; }
 
 /* Pairing Card View */
-.pairing-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.pairing-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; padding-left: max(20px, env(safe-area-inset-left)); padding-right: max(20px, env(safe-area-inset-right)); }
 .pair-box { background: #2c2d31; border: 1px solid #44454a; border-radius: 12px; padding: 32px 24px; max-width: 440px; width: 100%; text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
 .pair-logo { font-size: 44px; font-weight: 900; color: #2f6bff; margin-bottom: 12px; }
 .pair-heading { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
@@ -3967,15 +3997,95 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 .code-box:focus { border-color: #f6c61b; }
 
 /* Sub-nav buttons for Circulation */
-.mode-bar { display: flex; gap: 8px; margin-bottom: 16px; overflow-x: auto; }
-.mode-btn { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #44454a; background: #232427; color: #f1efe8; font-weight: 600; font-size: 13px; cursor: pointer; text-align: center; white-space: nowrap; }
-.mode-btn.active { background: #f6c61b; color: #1b1b1b; border-color: #f6c61b; }
+.mode-bar { display: flex; gap: 8px; margin-bottom: 16px; }
+.mode-btn { flex: 1; padding: 11px 12px; min-height: 44px; border-radius: 6px; border: 1px solid #44454a; background: #232427; color: #f1efe8; font-weight: 600; font-size: 13.5px; cursor: pointer; text-align: center; white-space: nowrap; touch-action: manipulation; display: inline-flex; align-items: center; justify-content: center; transition: all 0.15s; }
+.mode-btn.active { background: #f6c61b; color: #1b1b1b; border-color: #f6c61b; font-weight: 700; }
+
+/* Responsive Form Grid & Toolbars */
+.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.filter-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.toolbar-search-row { display: flex; gap: 8px; flex: 1 1 340px; }
+.toolbar-search-row #catQ { flex: 2; min-width: 170px; }
+.toolbar-search-row #catSubj { flex: 1; min-width: 130px; }
+.toolbar-filter-row { display: flex; gap: 8px; }
+.toolbar-filter-row #catStatus { width: 115px; }
+.toolbar-filter-row #catSort { width: 140px; }
+.toolbar-actions-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn-cc { color: #58a6ff; border: 1px solid #58a6ff; font-weight: 700; }
+.btn-batch { color: #f6c61b; border: 1px solid #f6c61b; font-weight: 700; }
+
+.patron-toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+.patron-toolbar #patQ { flex: 1 1 240px; min-width: 180px; }
+.patron-toolbar-right { display: flex; gap: 8px; align-items: center; }
+.fines-toolbar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
 
 /* Modal overlay */
-.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 16px; }
-.modal-content { background: #2c2d31; border: 1px solid #52545c; border-radius: 8px; padding: 20px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
+.modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.75); display: flex; align-items: center; justify-content: center; z-index: 200; padding: 16px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.modal-content { background: #2c2d31; border: 1px solid #52545c; border-radius: 8px; padding: 20px; width: 100%; max-width: 520px; max-height: calc(100vh - 32px); overflow-y: auto; box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
 .modal-title { font-size: 18px; font-weight: 700; margin-bottom: 14px; }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 18px; }
+
+/* Responsive Media Queries */
+@media (max-width: 840px) {
+  .filter-toolbar { flex-direction: column; align-items: stretch; }
+  .toolbar-search-row { width: 100%; }
+  .toolbar-filter-row { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .toolbar-filter-row select { width: 100% !important; }
+  .toolbar-actions-row { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .toolbar-actions-row .btn-add { grid-column: span 2; }
+}
+
+@media (max-width: 768px) {
+  input, select, textarea, button { font-size: 16px !important; }
+  .top-header { flex-direction: row; flex-wrap: wrap; min-height: auto; padding: 0; }
+  .header-left { flex: 1; gap: 10px; }
+  .logo-box { min-width: auto; padding: 8px 14px; }
+  .logo-title { font-size: 20px; }
+  .logo-sub { display: none; }
+  .header-title-badge { font-size: 14px; }
+  .header-right { padding: 6px 12px; gap: 8px; justify-content: flex-end; }
+  .btn-opac-link { padding: 6px 9px; font-size: 11px; }
+  .device-badge { font-size: 11px; gap: 6px; }
+  .btn-unpair { padding: 4px 7px; font-size: 10px; }
+  .tab-btn { padding: 12px 16px; font-size: 13px; min-height: 44px; }
+  .container { padding: 12px 10px; padding-bottom: 70px; }
+  .card { padding: 14px 12px; }
+  .btn, .input-text, .select-box { min-height: 44px; }
+  .modal-content { max-width: 96vw; max-height: calc(100vh - 16px); padding: 16px 14px; }
+  .pair-box { padding: 24px 16px; margin: 10px; }
+  .code-box { font-size: clamp(22px, 6vw, 30px); letter-spacing: clamp(3px, 1.5vw, 6px); padding: 10px; }
+}
+
+@media (max-width: 600px) {
+  .patron-toolbar { flex-direction: column; align-items: stretch; }
+  .patron-toolbar #patQ { width: 100%; }
+  .patron-toolbar-right { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .patron-toolbar-right select, .patron-toolbar-right button { width: 100% !important; }
+  .fines-toolbar { flex-direction: column; align-items: stretch; }
+  .fines-toolbar select { width: 100% !important; }
+}
+
+@media (max-width: 540px) {
+  .header-title-badge { display: none; }
+  .mode-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .mode-btn { white-space: normal; padding: 10px 6px; font-size: 13px; }
+  .form-grid-2 { grid-template-columns: 1fr; gap: 0; }
+  .modal-overlay { align-items: flex-start; padding: 8px; }
+  .modal-actions { flex-direction: column-reverse; }
+  .modal-actions .btn { width: 100%; }
+  .toolbar-search-row { flex-direction: column; }
+  .toolbar-search-row input { width: 100% !important; min-width: 0; }
+  .toolbar-actions-row { grid-template-columns: 1fr; }
+  .toolbar-actions-row .btn-add { grid-column: span 1; }
+  .metrics-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .metric-box { padding: 10px 6px; }
+  .metric-val { font-size: 22px; }
+  .metric-lbl { font-size: 10px; }
+}
+
+@media (min-width: 1400px) {
+  .container { max-width: 1280px; padding: 24px 20px; }
+}
 </style>
 </head>
 <body>
@@ -4000,12 +4110,14 @@ tr:hover td { background: rgba(255,255,255,0.02); }
 
 <div id=""appView"" style=""display: none;"">
   <header class=""top-header"">
-    <div class=""logo-box"">
-      <span class=""logo-title"">errin.</span>
-      <span class=""logo-sub"">A school library system.</span>
-    </div>
-    <div style=""display: flex; align-items: center; margin-left: 16px;"">
-      <span id=""viewTitle"" style=""font-size: 16px; font-weight: 700; color: #f6c61b;"">Dashboard</span>
+    <div class=""header-left"">
+      <div class=""logo-box"">
+        <span class=""logo-title"">errin.</span>
+        <span class=""logo-sub"">A school library system.</span>
+      </div>
+      <div class=""header-title-badge"">
+        <span id=""viewTitle"">Dashboard</span>
+      </div>
     </div>
     <div class=""header-right"">
       <a href=""/opac"" target=""_blank"" class=""btn-opac-link"">Open OPAC &#x2197;</a>
@@ -4079,9 +4191,9 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       </div>
 
       <div class=""card"">
-        <div class=""card-title"">
+        <div class=""card-title"" style=""flex-wrap: wrap; gap: 8px;"">
           <span>Active Loans</span>
-          <input type=""text"" id=""loanFilter"" class=""input-text"" style=""width: 200px; padding: 6px 10px; font-size: 13px;"" placeholder=""Filter loans..."" oninput=""loadLoans()"" />
+          <input type=""text"" id=""loanFilter"" class=""input-text"" style=""width: 220px; max-width: 100%; padding: 6px 10px; font-size: 13px;"" placeholder=""Filter loans..."" oninput=""loadLoans()"" />
         </div>
         <div class=""table-wrap"">
           <table id=""loansTable"">
@@ -4097,17 +4209,19 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     <!-- CATALOG VIEW -->
     <div id=""tab-cat"" class=""tab-pane"" style=""display: none;"">
       <div class=""card"">
-        <div style=""display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: space-between;"">
-          <div style=""display: flex; gap: 8px; flex: 1; min-width: 260px; flex-wrap: wrap;"">
-            <input type=""text"" id=""catQ"" class=""input-text"" style=""flex: 1; min-width: 180px;"" placeholder=""Search titles, authors, barcode, ISBN..."" oninput=""debouncedLoadCat()"" />
-            <input type=""text"" id=""catSubj"" class=""input-text"" style=""width: 160px;"" placeholder=""Subject Heading..."" oninput=""debouncedLoadCat()"" />
-            <select id=""catStatus"" class=""select-box"" style=""width: 120px;"" onchange=""loadCatalog()"">
+        <div class=""filter-toolbar"">
+          <div class=""toolbar-search-row"">
+            <input type=""text"" id=""catQ"" class=""input-text"" placeholder=""Search titles, authors, barcode, ISBN..."" oninput=""debouncedLoadCat()"" />
+            <input type=""text"" id=""catSubj"" class=""input-text"" placeholder=""Subject Heading..."" oninput=""debouncedLoadCat()"" />
+          </div>
+          <div class=""toolbar-filter-row"">
+            <select id=""catStatus"" class=""select-box"" onchange=""loadCatalog()"">
               <option value=""active"">Active</option>
               <option value=""weeded"">Weeded</option>
               <option value=""onloan"">On Loan</option>
               <option value=""all"">All</option>
             </select>
-            <select id=""catSort"" class=""select-box"" style=""width: 135px;"" onchange=""loadCatalog()"">
+            <select id=""catSort"" class=""select-box"" onchange=""loadCatalog()"">
               <option value=""title"">Sort: Title (A-Z)</option>
               <option value=""title_desc"">Sort: Title (Z-A)</option>
               <option value=""author"">Sort: Author</option>
@@ -4117,10 +4231,10 @@ tr:hover td { background: rgba(255,255,255,0.02); }
               <option value=""newest"">Sort: Newest</option>
             </select>
           </div>
-          <div style=""display: flex; gap: 8px;"">
-            <button class=""btn btn-sec"" style=""color: #58a6ff; border-color: #58a6ff; font-weight: 700;"" onclick=""openCopyCatalogModal()"">&#x1F4D6; Copy-Cataloging</button>
-            <button class=""btn btn-sec"" style=""color: #f6c61b; border-color: #f6c61b; font-weight: 700;"" onclick=""openBatchIsbnModal()"">&#x26A1; Batch ISBN</button>
-            <button class=""btn btn-primary"" onclick=""openItemModal()"">+ Add Book</button>
+          <div class=""toolbar-actions-row"">
+            <button class=""btn btn-sec btn-cc"" onclick=""openCopyCatalogModal()"">&#x1F4D6; Copy-Cataloging</button>
+            <button class=""btn btn-sec btn-batch"" onclick=""openBatchIsbnModal()"">&#x26A1; Batch ISBN</button>
+            <button class=""btn btn-primary btn-add"" onclick=""openItemModal()"">+ Add Book</button>
           </div>
         </div>
       </div>
@@ -4140,16 +4254,18 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     <!-- STUDENTS VIEW -->
     <div id=""tab-pat"" class=""tab-pane"" style=""display: none;"">
       <div class=""card"">
-        <div style=""display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: space-between;"">
-          <input type=""text"" id=""patQ"" class=""input-text"" style=""flex: 1; min-width: 200px;"" placeholder=""Search students by name, IC/ID, class..."" oninput=""debouncedLoadPatrons()"" />
-          <select id=""patSort"" class=""select-box"" style=""width: 135px;"" onchange=""loadPatrons()"">
-            <option value=""name"">Sort: Name (A-Z)</option>
-            <option value=""name_desc"">Sort: Name (Z-A)</option>
-            <option value=""cls"">Sort: Class</option>
-            <option value=""id"">Sort: IC / ID</option>
-            <option value=""reg"">Sort: Newest</option>
-          </select>
-          <button class=""btn btn-primary"" onclick=""openPatronModal()"">+ Add Student</button>
+        <div class=""patron-toolbar"">
+          <input type=""text"" id=""patQ"" class=""input-text"" placeholder=""Search students by name, IC/ID, class..."" oninput=""debouncedLoadPatrons()"" />
+          <div class=""patron-toolbar-right"">
+            <select id=""patSort"" class=""select-box"" onchange=""loadPatrons()"">
+              <option value=""name"">Sort: Name (A-Z)</option>
+              <option value=""name_desc"">Sort: Name (Z-A)</option>
+              <option value=""cls"">Sort: Class</option>
+              <option value=""id"">Sort: IC / ID</option>
+              <option value=""reg"">Sort: Newest</option>
+            </select>
+            <button class=""btn btn-primary"" onclick=""openPatronModal()"">+ Add Student</button>
+          </div>
         </div>
       </div>
 
@@ -4168,11 +4284,11 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     <!-- FINES VIEW -->
     <div id=""tab-fine"" class=""tab-pane"" style=""display: none;"">
       <div class=""card"">
-        <div style=""display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;"">
-          <div class=""card-title"" style=""margin: 0;"">Fines & Penalties</div>
+        <div class=""fines-toolbar"">
+          <div class=""card-title"" style=""margin: 0;"">Fines &amp; Penalties</div>
           <select id=""fineStatus"" class=""select-box"" style=""width: 180px;"" onchange=""loadFines()"">
-            <option value=""all"">All Fines & Overdue</option>
-            <option value=""unpaid"" selected>Unpaid & Overdue</option>
+            <option value=""all"">All Fines &amp; Overdue</option>
+            <option value=""unpaid"" selected>Unpaid &amp; Overdue</option>
             <option value=""holding"">Holding Overdue Only</option>
             <option value=""paid"">Paid / Waived</option>
           </select>
@@ -4213,7 +4329,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         <div id=""monthlyChart"" style=""display: flex; align-items: flex-end; justify-content: space-around; height: 130px; padding: 12px 8px 0; border-bottom: 2px solid #44454a;""></div>
       </div>
 
-      <div style=""display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-top: 16px;"">
+      <div style=""display: grid; grid-template-columns: repeat(auto-fit, minmax(min(290px, 100%), 1fr)); gap: 16px; margin-top: 16px;"">
         <div class=""card"">
           <div class=""card-title"">Top 10 Borrowed Titles</div>
           <table id=""topBooksTable""><thead><tr><th>Title</th><th style=""text-align: right;"">Loans</th></tr></thead><tbody></tbody></table>
@@ -4224,7 +4340,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
         </div>
       </div>
 
-      <div style=""display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-top: 16px;"">
+      <div style=""display: grid; grid-template-columns: repeat(auto-fit, minmax(min(290px, 100%), 1fr)); gap: 16px; margin-top: 16px;"">
         <div class=""card"">
           <div class=""card-title"">Collection by Subject / Dewey Range</div>
           <table id=""deweyTable""><thead><tr><th>Category</th><th style=""text-align: right;"">Titles</th></tr></thead><tbody></tbody></table>
@@ -4336,8 +4452,8 @@ tr:hover td { background: rgba(255,255,255,0.02); }
     <p style=""color: #9a9a94; font-size: 13px; margin: -6px 0 14px 0;"">
       Query 31 national, state public, academic union, and international catalogs instantly to fetch full MARC bibliographic records by ISBN.
     </p>
-    <div style=""display: flex; gap: 8px; margin-bottom: 12px;"">
-      <input type=""text"" id=""ccIsbnInput"" class=""input-text"" style=""flex: 1; font-size: 15px; font-family: monospace;"" placeholder=""Enter or scan ISBN (e.g. 9789670000000)..."" onkeydown=""if(event.key==='Enter'){event.preventDefault();searchCopyCatalog();}"" />
+    <div style=""display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;"">
+      <input type=""text"" id=""ccIsbnInput"" class=""input-text"" style=""flex: 1; min-width: 200px; font-size: 15px; font-family: monospace;"" placeholder=""Enter or scan ISBN (e.g. 9789670000000)..."" onkeydown=""if(event.key==='Enter'){event.preventDefault();searchCopyCatalog();}"" />
       <button id=""btnCcSearch"" type=""button"" class=""btn btn-primary"" onclick=""searchCopyCatalog()"">&#x1F50D; Fetch Metadata</button>
     </div>
     <div style=""display: flex; gap: 8px; align-items: center; margin-bottom: 14px;"">
@@ -4360,7 +4476,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       </div>
       <h3 id=""ccTitle"" style=""margin: 0 0 4px 0; color: #ffffff; font-size: 17px; line-height: 1.3;"">Book Title</h3>
       <div id=""ccSub"" style=""color: #9a9a94; font-size: 13px; margin-bottom: 8px;"">Subtitle</div>
-      <div style=""display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px; margin-bottom: 10px;"">
+      <div class=""form-grid-2"" style=""font-size: 13px; margin-bottom: 10px;"">
         <div><span style=""color: #9a9a94;"">Author:</span> <strong id=""ccAuthor"" style=""color: #f1efe8;""></strong></div>
         <div><span style=""color: #9a9a94;"">Publisher:</span> <strong id=""ccPub"" style=""color: #f1efe8;""></strong></div>
         <div><span style=""color: #9a9a94;"">Year:</span> <strong id=""ccYear"" style=""color: #f1efe8;""></strong></div>
@@ -4372,19 +4488,19 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       </div>
 
       <!-- Shelf Barcode Input Row -->
-      <div style=""background: #1e1f23; padding: 10px; border-radius: 4px; border: 1px solid #33343a; display: flex; gap: 8px; align-items: center;"">
+      <div style=""background: #1e1f23; padding: 10px; border-radius: 4px; border: 1px solid #33343a; display: flex; gap: 8px; align-items: center; flex-wrap: wrap;"">
         <label style=""font-size: 12px; color: #f1efe8; font-weight: 600; white-space: nowrap;"">Shelf Barcode:</label>
-        <input type=""text"" id=""ccBarcode"" class=""input-text"" style=""flex: 1; font-family: monospace; font-size: 14px;"" placeholder=""Scan or auto-generate"" />
+        <input type=""text"" id=""ccBarcode"" class=""input-text"" style=""flex: 1; min-width: 140px; font-family: monospace; font-size: 14px;"" placeholder=""Scan or auto-generate"" />
         <button type=""button"" class=""btn btn-sec btn-sm"" onclick=""generateCcBarcode()"">New Barcode</button>
       </div>
     </div>
 
     <!-- Modal Actions -->
-    <div class=""modal-actions"" style=""display: flex; justify-content: space-between; align-items: center;"">
+    <div class=""modal-actions"" style=""display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;"">
       <div>
         <button type=""button"" class=""btn btn-sec"" onclick=""closeCopyCatalogModal()"">Close</button>
       </div>
-      <div style=""display: flex; gap: 8px;"">
+      <div style=""display: flex; gap: 8px; flex-wrap: wrap;"">
         <button id=""btnCcEdit"" type=""button"" class=""btn btn-sec"" style=""display: none;"" onclick=""editCcInFullModal()"">&#x270F;&#xFE0F; Edit in Full Form</button>
         <button id=""btnCcSave"" type=""button"" class=""btn btn-primary"" style=""display: none;"" onclick=""saveCcDirectly()"">+ Save to Catalog</button>
       </div>
@@ -4401,7 +4517,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       <div class=""field-group""><label class=""field-label"">Title *</label><input type=""text"" id=""itTitle"" class=""input-text"" required /></div>
       <div class=""field-group""><label class=""field-label"">Subtitle</label><input type=""text"" id=""itSub"" class=""input-text"" /></div>
       <div class=""field-group""><label class=""field-label"">Author</label><input type=""text"" id=""itAuthor"" class=""input-text"" /></div>
-      <div style=""display: grid; grid-template-columns: 1fr 1fr; gap: 8px;"">
+      <div class=""form-grid-2"">
         <div class=""field-group""><label class=""field-label"">Barcode</label><input type=""text"" id=""itBarcode"" class=""input-text"" placeholder=""Auto-generated"" /></div>
         <div class=""field-group"">
           <label class=""field-label"" style=""display: flex; justify-content: space-between;"">
@@ -4414,7 +4530,7 @@ tr:hover td { background: rgba(255,255,255,0.02); }
           </div>
         </div>
       </div>
-      <div style=""display: grid; grid-template-columns: 1fr 1fr; gap: 8px;"">
+      <div class=""form-grid-2"">
         <div class=""field-group""><label class=""field-label"">Call Number</label><input type=""text"" id=""itCall"" class=""input-text"" /></div>
         <div class=""field-group""><label class=""field-label"">Year</label><input type=""text"" id=""itYear"" class=""input-text"" /></div>
       </div>
@@ -4564,10 +4680,14 @@ function switchTab(tab) {
     const oc = b.getAttribute('onclick') || '';
     return oc.indexOf(tab) >= 0;
   });
-  if (btn) btn.classList.add('active');
+  if (btn) {
+    btn.classList.add('active');
+    try { btn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' }); } catch (e) {}
+  }
 
   const pane = document.getElementById('tab-' + tab);
   if (pane) pane.style.display = 'block';
+  try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) {}
 
   if (tab === 'dash') loadDashboard();
   else if (tab === 'circ') { loadLoans(); document.getElementById('circBarcode').focus(); }
@@ -5609,15 +5729,19 @@ document.getElementById('pairCode').addEventListener('input', function(e) {
   this.value = val;
 });
 
-// Auto-suggest device name based on user agent
+// Auto-suggest device name based on user agent and device profile
 (function() {
   const ua = navigator.userAgent;
   let def = 'Remote Device';
-  if (/iPad/i.test(ua)) def = 'Library iPad';
+  if (/iPad/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) def = 'Library iPad';
   else if (/iPhone/i.test(ua)) def = 'iPhone';
-  else if (/Android/i.test(ua)) def = 'Android Device';
+  else if (/Android/i.test(ua)) {
+    def = /Mobile/i.test(ua) ? 'Android Phone' : 'Android Tablet';
+  }
+  else if (/CrOS/i.test(ua)) def = 'Chromebook';
   else if (/Macintosh/i.test(ua)) def = 'Mac Laptop';
   else if (/Windows/i.test(ua)) def = 'Staff PC';
+  else if (/Linux/i.test(ua)) def = 'Linux Workstation';
   const nameIn = document.getElementById('pairName');
   if (nameIn && !nameIn.value) nameIn.value = def;
 })();

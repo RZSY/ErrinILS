@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/RZSY/ErrinILS/releases"><img src="https://img.shields.io/badge/version-1.5.0-blue.svg?style=flat-square" height="20" alt="Version 1.5.0" /></a>
+  <a href="https://github.com/RZSY/ErrinILS/releases"><img src="https://img.shields.io/badge/version-1.5.1-blue.svg?style=flat-square" height="20" alt="Version 1.5.1" /></a>
   <a href="#system-requirements"><img src="https://img.shields.io/badge/platform-Windows%207%20|%208%20|%2010%20|%2011%20|%20Android-0078D6.svg?style=flat-square&logo=windows" height="20" alt="Platform: Windows & Android" /></a>
   <a href="#system-requirements"><img src="https://img.shields.io/badge/runtime-.NET%20Framework%204.0%2B-512BD4.svg?style=flat-square&logo=dotnet" height="20" alt=".NET 4.0+" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg?style=flat-square" height="20" alt="MIT License" /></a>

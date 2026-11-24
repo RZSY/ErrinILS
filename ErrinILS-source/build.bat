@@ -114,13 +114,13 @@ if not exist "!MAKENSIS!" (
 )
 pushd "%ROOT%\ErrinILS-source"
 echo Building installer with !MAKENSIS!...
-"!MAKENSIS!" -V2 -DVERSION=1.5.0 installer.nsi
+"!MAKENSIS!" -V2 -DVERSION=1.5.1 installer.nsi
 set NSIS_ERR=!errorlevel!
 popd
 if !NSIS_ERR! neq 0 exit /b !NSIS_ERR!
-if exist "%ROOT%\ErrinILS-source\dist\ErrinILS-Setup-1.5.0.exe" (
-    copy /y "%ROOT%\ErrinILS-source\dist\ErrinILS-Setup-1.5.0.exe" "%ROOT%\dist\ErrinILS-Setup-1.5.0.exe" >nul
-    copy /y "%ROOT%\ErrinILS-source\dist\ErrinILS-Setup-1.5.0.exe" "%ROOT%\dist\ErrinILS-Setup.exe" >nul
-    copy /y "%ROOT%\ErrinILS-source\dist\ErrinILS-Setup-1.5.0.exe" "%ROOT%\ErrinILS-Windows\ErrinILS-Setup-1.5.0.exe" >nul
+if exist "%ROOT%\ErrinILS-source\dist\ErrinILS-Setup-1.5.1.exe" (
+    copy /y "%ROOT%\ErrinILS-source\dist\ErrinILS-Setup-1.5.1.exe" "%ROOT%\dist\ErrinILS-Setup-1.5.1.exe" >nul
+    copy /y "%ROOT%\ErrinILS-source\dist\ErrinILS-Setup-1.5.1.exe" "%ROOT%\dist\ErrinILS-Setup.exe" >nul
+    copy /y "%ROOT%\ErrinILS-source\dist\ErrinILS-Setup-1.5.1.exe" "%ROOT%\ErrinILS-Windows\ErrinILS-Setup-1.5.1.exe" >nul
 )
 exit /b 0

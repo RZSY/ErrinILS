@@ -23,6 +23,7 @@ namespace Errin
         const int LIM = 200;
         readonly Store store; Db db; Lib lib; string view = "dash"; bool unlocked;
         Panel host; Label sbar, toast; Timer toastT, debT; FlowLayoutPanel tabBar;
+        Panel headPanel, logoPanel; Label logoTitleLbl, logoSubLbl;
         string pwSalt = "", pwHash = ""; int pwIter = Auth.Iterations;
         readonly Dictionary<string, Button> tabs = new Dictionary<string, Button>();
         string catQ = "", catSubj = "", patQ = "", catFilter = "active", repSubTab = "analytics";
@@ -34,14 +35,26 @@ namespace Errin
         public MainForm(Store customStore)
         {
             store = customStore ?? new Store(null);
+            DoubleBuffered = true;
+            SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
             Text = "ErrinILS"; Font = Th.F; BackColor = Th.Bg; ForeColor = Th.Ink;
             var screen = Screen.FromControl(this).WorkingArea;
-            int initW = Math.Min(Ui.S(1240), Math.Max(Ui.S(850), screen.Width - Ui.S(40)));
-            int initH = Math.Min(Ui.S(800), Math.Max(Ui.S(580), screen.Height - Ui.S(40)));
+            int minW = Math.Min(screen.Width, Ui.S(750));
+            int minH = Math.Min(screen.Height, Ui.S(480));
+            int initW = Math.Min(Ui.S(1240), Math.Max(minW, screen.Width - Ui.S(40)));
+            int initH = Math.Min(Ui.S(800), Math.Max(minH, screen.Height - Ui.S(40)));
             ClientSize = new Size(initW, initH);
-            MinimumSize = new Size(Math.Min(initW, Ui.S(900)), Math.Min(initH, Ui.S(600)));
+            MinimumSize = new Size(minW, minH);
             StartPosition = FormStartPosition.CenterScreen; AllowDrop = true;
             WindowState = FormWindowState.Maximized;
+            Resize += (s, e) =>
+            {
+                UpdateHeaderLayout();
+                if (toast != null && toast.Visible)
+                {
+                    toast.Location = new Point(Math.Max(10, (ClientSize.Width - toast.Width) / 2), ClientSize.Height - Ui.S(90));
+                }
+            };
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
             db = store.Load();
             bool fresh = db == null;
@@ -173,6 +186,16 @@ namespace Errin
             Close();
         }
 
+        protected override CreateParams CreateParams
+        {
+            get
+            {
+                var cp = base.CreateParams;
+                cp.ExStyle |= 0x02000000; // WS_EX_COMPOSITED
+                return cp;
+            }
+        }
+
         void BuildFrame()
         {
             var main = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3, BackColor = Th.Bg, Margin = new Padding(0) };
@@ -180,10 +203,12 @@ namespace Errin
             main.RowStyles.Add(new RowStyle(SizeType.Absolute, Ui.S(74)));
             main.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
             main.RowStyles.Add(new RowStyle(SizeType.Absolute, Ui.S(26)));
-            var head = new Panel { Dock = DockStyle.Fill, BackColor = Th.Bg, Margin = new Padding(0) };
-            var logo = new Panel { Dock = DockStyle.Left, Width = Ui.S(250), BackColor = Th.Blue };
-            logo.Controls.Add(new Label { UseMnemonic = false, Text = "errin.", Font = Th.FLogo, ForeColor = Color.White, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(2)), BackColor = Color.Transparent });
-            logo.Controls.Add(new Label { UseMnemonic = false, Text = "A school library system.", Font = Th.FS, ForeColor = Color.White, AutoSize = true, Location = new Point(Ui.S(24), Ui.S(50)), BackColor = Color.Transparent });
+            headPanel = new Panel { Dock = DockStyle.Fill, BackColor = Th.Bg, Margin = new Padding(0) };
+            logoPanel = new Panel { Dock = DockStyle.Left, Width = Ui.S(230), BackColor = Th.Blue };
+            logoTitleLbl = new Label { UseMnemonic = false, Text = "errin.", Font = Th.FLogo, ForeColor = Color.White, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(2)), BackColor = Color.Transparent };
+            logoSubLbl = new Label { UseMnemonic = false, Text = "A school library system.", Font = Th.FS, ForeColor = Color.White, AutoSize = true, Location = new Point(Ui.S(24), Ui.S(50)), BackColor = Color.Transparent };
+            logoPanel.Controls.Add(logoTitleLbl);
+            logoPanel.Controls.Add(logoSubLbl);
             var tb = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false, BackColor = Th.Bg, Padding = new Padding(0), AutoScroll = false };
             foreach (var n in NAV)
             {
@@ -192,15 +217,50 @@ namespace Errin
                 b.FlatAppearance.BorderSize = 0; b.FlatAppearance.MouseOverBackColor = Th.Dim; b.Click += (s, e) => Go(key); tabs[key] = b;
                 tb.Controls.Add(new Panel { Width = Math.Max(1, Ui.S(2)), Height = Ui.S(74), BackColor = Th.Ink, Margin = new Padding(0) }); tb.Controls.Add(b);
             }
-            tabBar = tb; head.Controls.Add(tb); head.Controls.Add(logo);
+            tabBar = tb; headPanel.Controls.Add(tb); headPanel.Controls.Add(logoPanel);
+            headPanel.Resize += (s, e) => UpdateHeaderLayout();
             host = new Panel { Dock = DockStyle.Fill, Padding = Ui.S(new Padding(28, 22, 28, 6)), BackColor = Th.Bg, Margin = new Padding(0) };
             sbar = new Label { UseMnemonic = false, Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft, Font = new Font("Segoe UI", 8.5f, FontStyle.Bold), Padding = Ui.S(new Padding(10, 0, 0, 0)), Margin = new Padding(0) };
-            main.Controls.Add(head, 0, 0); main.Controls.Add(host, 0, 1); main.Controls.Add(sbar, 0, 2);
+            main.Controls.Add(headPanel, 0, 0); main.Controls.Add(host, 0, 1); main.Controls.Add(sbar, 0, 2);
             Controls.Add(main);
+            Ui.EnableDoubleBuffering(main);
+            Ui.EnableDoubleBuffering(headPanel);
+            Ui.EnableDoubleBuffering(host);
             toast = new Label { UseMnemonic = false, AutoSize = true, BackColor = Th.Yel, ForeColor = Th.Dark, Font = new Font("Segoe UI", 10.5f, FontStyle.Bold), Padding = Ui.S(new Padding(16, 10, 16, 10)), Visible = false };
             Controls.Add(toast); toast.BringToFront();
             toastT = new Timer { Interval = 3300 }; toastT.Tick += (s, e) => { toastT.Stop(); toast.Visible = false; };
             debT = new Timer { Interval = 150 }; debT.Tick += (s, e) => { debT.Stop(); if (view == "cat") { if (catPager != null) catPager.ResetPage(); FilterCat(); } else if (view == "pat") { if (patPager != null) patPager.ResetPage(); FilterPat(); } };
+            UpdateHeaderLayout();
+        }
+
+        void UpdateHeaderLayout()
+        {
+            if (headPanel == null || tabBar == null || logoPanel == null) return;
+            int totalW = headPanel.ClientSize.Width;
+            if (totalW <= 0) return;
+
+            bool compact = totalW < Ui.S(1050);
+            bool ultraCompact = totalW < Ui.S(820);
+
+            logoPanel.Width = ultraCompact ? Ui.S(96) : (compact ? Ui.S(135) : Ui.S(230));
+            if (logoSubLbl != null) logoSubLbl.Visible = !compact;
+            if (logoTitleLbl != null)
+            {
+                logoTitleLbl.Font = ultraCompact ? new Font("Segoe UI", 18f, FontStyle.Bold) : Th.FLogo;
+                logoTitleLbl.Location = new Point(ultraCompact ? Ui.S(8) : Ui.S(20), Ui.S(ultraCompact ? 18 : 2));
+            }
+
+            int availW = totalW - logoPanel.Width - Ui.S(12);
+            int divTotal = Ui.S(2) * NAV.Length;
+            int btnSpace = availW - divTotal;
+            int btnW = Math.Max(Ui.S(64), Math.Min(Ui.S(115), btnSpace / NAV.Length));
+
+            foreach (var kv in tabs)
+            {
+                kv.Value.Width = btnW;
+                kv.Value.Font = btnW < Ui.S(88) ? Th.FS : Th.FB;
+            }
+            tabBar.AutoScroll = (btnW * NAV.Length + divTotal) > availW;
         }
 
         /* ---------- state helpers ---------- */
@@ -273,22 +333,42 @@ namespace Errin
         }
         static Control ScrollPage(params Control[] rows)
         {
-            var p = new Panel { AutoScroll = true, BackColor = Th.Bg };
+            var p = new Panel { AutoScroll = true, BackColor = Th.Bg, Dock = DockStyle.Fill };
             var t = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, ColumnCount = 1, BackColor = Th.Bg, Margin = new Padding(0), Padding = Ui.S(new Padding(0, 0, 18, 0)) };
             p.SuspendLayout();
             t.SuspendLayout();
             t.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
             for (int k = 0; k < rows.Length; k++) { t.RowStyles.Add(new RowStyle(SizeType.AutoSize)); rows[k].Dock = DockStyle.Fill; t.Controls.Add(rows[k], 0, k); }
             p.Controls.Add(t);
+            Ui.EnableDoubleBuffering(p);
+            Ui.EnableDoubleBuffering(t);
             t.ResumeLayout(false);
             p.ResumeLayout(false);
             return p;
         }
         static Control Cols(int h, params Control[] cells)
         {
-            var t = new TableLayoutPanel { Height = Ui.S(h), ColumnCount = cells.Length, RowCount = 1, BackColor = Color.Transparent, Margin = new Padding(0) };
-            for (int k = 0; k < cells.Length; k++) { t.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f / cells.Length)); cells[k].Margin = Ui.S(new Padding(0, 0, k < cells.Length - 1 ? 14 : 0, 14)); cells[k].Dock = DockStyle.Fill; t.Controls.Add(cells[k], k, 0); }
-            t.RowStyles.Add(new RowStyle(SizeType.Percent, 100)); return t;
+            var t = new TableLayoutPanel
+            {
+                MinimumSize = new Size(0, Ui.S(h)),
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                ColumnCount = cells.Length,
+                RowCount = 1,
+                BackColor = Color.Transparent,
+                Margin = new Padding(0),
+                Dock = DockStyle.Top
+            };
+            for (int k = 0; k < cells.Length; k++)
+            {
+                t.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100f / cells.Length));
+                cells[k].Margin = Ui.S(new Padding(0, 0, k < cells.Length - 1 ? 14 : 0, 14));
+                cells[k].Dock = DockStyle.Fill;
+                t.Controls.Add(cells[k], k, 0);
+            }
+            t.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            Ui.EnableDoubleBuffering(t);
+            return t;
         }
         static Control Spacer(int h) { return new Panel { Height = Ui.S(h), BackColor = Color.Transparent, Margin = new Padding(0) }; }
         static DataGridView MakeGrid(string[] h, List<string[]> rows, List<object> tags, string empty) { var g = Ui.Grid(); Ui.Fill(g, h, rows, tags, empty); return g; }
@@ -352,7 +432,7 @@ namespace Errin
                 var g = MakeGrid(new[] { "#", "Student", "Class", "Books" }, r, null, "No borrowing yet"); g.Columns[0].FillWeight = 20; return g;
             };
             string t = Lib.Today();
-            var kt = new Label { UseMnemonic = false, Text = "A simpler circulation screen with just Check out and Return, for quick use at the library desk. The other tabs are hidden while it is open.", AutoSize = false, Size = new Size(Ui.S(760), Ui.S(44)), ForeColor = Th.Ink };
+            var kt = new Label { UseMnemonic = false, Text = "A simpler circulation screen with just Check out and Return, for quick use at the library desk. The other tabs are hidden while it is open.", AutoSize = true, MaximumSize = new Size(Ui.S(760), 0), ForeColor = Th.Ink };
             var kb = Ui.Btn("Open Simplified View", 0, (s, e) => Go("simple")); kb.Margin = Ui.S(new Padding(0, 6, 0, 0));
             var kcard = Ui.Card("Simplified View", Vbox(kt, kb));
             return ScrollPage(Ui.Heading("Welcome to Errin", "Library overview for " + DateTime.Now.ToString("ddd MMM dd yyyy", CultureInfo.InvariantCulture)), kcard, stats,
@@ -1779,7 +1859,7 @@ namespace Errin
         /* ---------- Backup ---------- */
         Control BakPage()
         {
-            var info = new Label { UseMnemonic = false, Text = "Download a backup of everything (students, loans, holds, fines, catalog), or restore from one. Keep a copy on a USB drive or cloud storage.", AutoSize = false, Size = new Size(Ui.S(760), Ui.S(44)), ForeColor = Th.Ink };
+            var info = new Label { UseMnemonic = false, Text = "Download a backup of everything (students, loans, holds, fines, catalog), or restore from one. Keep a copy on a USB drive or cloud storage.", AutoSize = true, MaximumSize = new Size(Ui.S(760), 0), ForeColor = Th.Ink };
             var row = Ui.Flow(false); row.Controls.Add(Ui.Btn("Download backup", 0, (s, e) => Backup())); row.Controls.Add(Ui.Btn("Restore from backup (password)", 1, (s, e) => { if (AskPw()) Restore(); })); row.Controls.Add(Ui.Btn("Optimize database", 1, (s, e) => DoOptimizeDb()));
 
             var storDesc = new Label
@@ -1788,8 +1868,8 @@ namespace Errin
                 Text = store.IsPortable
                     ? "ErrinILS is currently running in Portable Mode. All database files and configuration are stored relatively inside the application directory (under \\data). You can copy or move this entire folder to any USB drive or another PC."
                     : "ErrinILS is currently storing data in your Windows User Profile (%APPDATA%\\Errin). You can switch to Portable Mode to save the database inside the application folder so you can copy the whole folder to a USB drive.",
-                AutoSize = false,
-                Size = new Size(Ui.S(760), Ui.S(44)),
+                AutoSize = true,
+                MaximumSize = new Size(Ui.S(760), 0),
                 ForeColor = Th.Ink
             };
             var storPath = new Label
@@ -3191,15 +3271,19 @@ namespace Errin
                     Margin = Ui.S(new Padding(0, 0, 0, 8))
                 });
 
+                var qrContainer = new Panel { Width = Ui.S(420), Height = Ui.S(176), BackColor = Color.Transparent, Margin = Ui.S(new Padding(0, 4, 0, 8)) };
                 var qrBox = new PictureBox
                 {
                     Size = new Size(Ui.S(160), Ui.S(160)),
                     SizeMode = PictureBoxSizeMode.CenterImage,
                     BackColor = Color.White,
-                    Margin = Ui.S(new Padding(125, 0, 0, 8))
+                    Location = new Point((Ui.S(420) - Ui.S(160)) / 2, 0)
                 };
+                qrContainer.Resize += (s, e) => { qrBox.Location = new Point(Math.Max(0, (qrContainer.ClientSize.Width - qrBox.Width) / 2), 0); };
                 qrBox.Image = Qr.ToBitmap(getPairUrl(selectedIp), 4, 3);
-                fl.Controls.Add(qrBox);
+                qrContainer.Controls.Add(qrBox);
+                fl.Controls.Add(qrContainer);
+                fl.Resize += (s, e) => { qrContainer.Width = Math.Max(Ui.S(200), fl.ClientSize.Width - Ui.S(30)); };
 
                 var urlLabel = new Label
                 {

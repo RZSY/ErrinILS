@@ -1,7 +1,7 @@
 # ErrinILS School Library System
 ## User Manual and Operating Guidelines
 **Installation, daily circulation, cataloguing, custom numbering, barcode labels, students, fines, weeding, remote access, reports, backup, Android scanner, and administration**  
-**Software Version 1.5.0 (Windows Edition &amp; Android Companion)**  
+**Software Version 1.5.1 (Windows Edition &amp; Android Companion)**  
 *For Windows 7, 8, 8.1, 10 and 11 (32-bit and 64-bit) &amp; Android 7.0+*  
 *Official Repository: https://github.com/RZSY/ErrinILS*  
 *Online Portal: https://rzsy.github.io/ErrinILS/*
@@ -225,10 +225,14 @@ ErrinILS is designed to run efficiently on low-resource hardware:
 > [!NOTE]
 > Windows 8, 8.1, 10, and 11 include .NET Framework 4.5+ natively; ErrinILS will run immediately without extra downloads. On older **Windows 7** machines, install the free Microsoft .NET Framework 4.8 runtime once before running Setup.
 
-### 2.2 Display Resolution & High-DPI Sharpness
-On high-resolution modern laptops (1080p, 2K, and 4K displays), Windows applies display scaling (125%, 150%, or 200%). Many older applications become blurry due to Desktop Window Manager (DWM) bitmap stretching.
+### 2.2 Display Resolution, Screen Fluidity & High-DPI Sharpness
+On high-resolution modern laptops (1080p, 2K, and 4K displays), Windows applies display scaling (125%, 150%, or 200%). Many older applications become blurry due to Desktop Window Manager (DWM) bitmap stretching, or suffer from flicker and clipped layouts.
 
-ErrinILS incorporates native **PerMonitorV2 High-DPI awareness** in its core manifest. All fonts, tables, barcode graphics, and flat controls scale crisply using sub-pixel ClearType font rendering with zero GPU overhead.
+ErrinILS incorporates:
+- **PerMonitorV2 High-DPI Awareness**: Manifest-level native scaling rendering ultra-sharp ClearType typography, vector graphics, and proportional UI elements with zero GPU overhead.
+- **Universal Screen Fluidity**: Double buffering (`Ui.EnableDoubleBuffering`) and `WS_EX_COMPOSITED` on the main application form eliminate flicker during resizing.
+- **Adaptive Layout Engine**: Catalog and patron grids dynamically expand with automatic column weight distribution, minimum sizing safety limits, and intelligent responsive header compacting.
+- **Fluid Simplified View & Dialogs**: The touch-friendly Simplified View kiosk (`Simple.cs`), Batch ISBN Lookup, Item History, and Patron records smoothly adapt from compact 1024 × 600 netbooks to 4K multi-monitor workstations.
 
 ### 2.3 Barcode Scanners & Wedge Input
 ErrinILS is engineered to work out of the box with any **USB Keyboard Wedge Barcode Scanner**. These scanners emulate rapid keyboard typing followed by an Enter keypress (`\r\n` carriage return).
@@ -245,8 +249,8 @@ ErrinILS is engineered to work out of the box with any **USB Keyboard Wedge Barc
 ## 3. Installing, Updating and Starting ErrinILS
 
 ### 3.1 Installing with the Setup program
-1. Download `ErrinILS-Setup-1.5.0.exe` from the official release page: `https://github.com/RZSY/ErrinILS/releases/tag/v1.5.0`.
-2. Double-click `ErrinILS-Setup-1.5.0.exe`.
+1. Download `ErrinILS-Setup-1.5.1.exe` from the official release page: `https://github.com/RZSY/ErrinILS/releases/tag/v1.5.1`.
+2. Double-click `ErrinILS-Setup-1.5.1.exe`.
 3. If Windows User Account Control (UAC) prompts *"Do you want to allow this app to make changes?"*, click **Yes**.
 4. If a blue **Windows protected your PC** (SmartScreen) notification appears, click **More info**, then click **Run anyway**. *(This appears on open-source releases that do not have costly commercial signing certificates).*
 5. The setup wizard opens. Click **Next**, keep the default destination directory (`C:\Program Files (x86)\ErrinILS` or `C:\Program Files\ErrinILS`), click **Install**, then click **Finish**.
@@ -982,7 +986,17 @@ Librarians cataloging books away from the main circulation desk can use the brow
 5. Click **Search**. ErrinILS fetches the full bibliographic card (Title, Subtitle, Author, Publisher, Year, DDC, Subjects).
 6. Tap **+ Save to Catalog** for instant addition or **✏️ Edit in Full Form** to customize call numbers and barcode tags.
 
-### 13.12 Dual Cloud Synchronization Architecture
+### 13.12 Universal Mobile & Tablet Fluidity (v1.5.1 Overhaul)
+ErrinILS v1.5.1 features a comprehensive responsive overhaul for Remote Access (`/`) and Web OPAC (`/opac`), delivering a native-app feel on smartphones, iPads, Android tablets, laptops, and ultra-wide screens:
+- **Zero iOS Viewport Zoom**: All inputs, selects, and textareas enforce 16px font sizing on mobile screens ($\le$ 768px), completely eliminating iOS Safari's jarring automatic zoom on focus.
+- **Touch-First Target Sizing**: All interactive buttons, tabs, and action items feature minimum 44px touch targets (`touch-action: manipulation;`), complying with modern ergonomic touch standards.
+- **Adaptive 2 × 2 Circulation Grid**: On phone screens ($\le$ 540px), the 4 circulation actions (*Check Out*, *Return*, *Renew*, *Place Hold*) automatically reorganize into a clean 2 × 2 thumb grid.
+- **Fluid Filter Toolbars**: Catalog and student filters adapt dynamically—full-width search on mobile, side-by-side dropdowns on tablets, and unified single-row controls on desktops.
+- **Single-Column Collapsible Modals**: Multi-column form fields (*Add Book*, *Add Student*, *Copy-Cataloging*) automatically collapse into single-column layouts (`.form-grid-2`) on small screens, preventing squished inputs.
+- **Auto-Centering Momentum Tab Bar**: Navigating tabs smoothly auto-scrolls the selected button into the viewport center with native momentum scrolling.
+- **Smart Device Recognition**: Automatically distinguishes and auto-names paired devices (Library iPad, iPhone, Android Phone, Android Tablet, Chromebook, Mac, Staff PC, Linux Workstation).
+
+### 13.13 Dual Cloud Synchronization Architecture
 ErrinILS features an enterprise-grade dual-cloud architecture separating private student data from open catalog records with zero third-party software:
 1. **Private Student & Circulation Records (Google Drive Cloud)**:
    - Student records contain sensitive personal identifiable information (MyKid/IC numbers, birthdates, addresses, parent contacts, active loans, and fines).

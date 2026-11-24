@@ -974,9 +974,16 @@ namespace Errin
                 var fs = db.Fines.Where(f => f.pid == p.id && f.paid == "").ToList();
                 string later = Lib.AddD(string.CompareOrdinal(p.reg, p.last) > 0 ? p.reg : p.last, 365 * Lib.RET_YEARS);
 
-                int curY = Ui.S(16);
-                int leftX = Ui.S(20);
-                int contentW = d.ClientSize.Width - leftX * 2;
+                var topPanel = new FlowLayoutPanel
+                {
+                    Dock = DockStyle.Top,
+                    AutoSize = true,
+                    AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                    FlowDirection = FlowDirection.TopDown,
+                    WrapContents = false,
+                    Padding = Ui.S(new Padding(20, 14, 20, 8)),
+                    BackColor = Th.Card
+                };
 
                 // 1. Student Name
                 var lblName = new Label
@@ -986,10 +993,9 @@ namespace Errin
                     Font = Th.FT,
                     ForeColor = Th.Ink,
                     AutoSize = true,
-                    Location = new Point(leftX, curY)
+                    Margin = Ui.S(new Padding(0, 0, 0, 4))
                 };
-                d.Controls.Add(lblName);
-                curY += lblName.PreferredHeight + Ui.S(4);
+                topPanel.Controls.Add(lblName);
 
                 // 2. Student Identifiers & Profile line
                 var pInfo = new List<string>();
@@ -1011,10 +1017,9 @@ namespace Errin
                         ForeColor = Th.Ink,
                         Font = Th.F,
                         AutoSize = true,
-                        Location = new Point(leftX, curY)
+                        Margin = Ui.S(new Padding(0, 0, 0, 4))
                     };
-                    d.Controls.Add(lblProf);
-                    curY += lblProf.PreferredHeight + Ui.S(4);
+                    topPanel.Controls.Add(lblProf);
                 }
 
                 // 3. Guardians Line (Penjaga 1 & Penjaga 2)
@@ -1047,10 +1052,9 @@ namespace Errin
                         ForeColor = Th.Mut,
                         Font = Th.F,
                         AutoSize = true,
-                        Location = new Point(leftX, curY)
+                        Margin = Ui.S(new Padding(0, 0, 0, 4))
                     };
-                    d.Controls.Add(lblG);
-                    curY += lblG.PreferredHeight + Ui.S(4);
+                    topPanel.Controls.Add(lblG);
                 }
 
                 // 4. Address (if present)
@@ -1071,10 +1075,9 @@ namespace Errin
                         ForeColor = Th.Mut,
                         Font = Th.FS,
                         AutoSize = true,
-                        Location = new Point(leftX, curY)
+                        Margin = Ui.S(new Padding(0, 0, 0, 4))
                     };
-                    d.Controls.Add(lblAddr);
-                    curY += lblAddr.PreferredHeight + Ui.S(4);
+                    topPanel.Controls.Add(lblAddr);
                 }
 
                 // 5. Registration & Data Retention Info
@@ -1085,10 +1088,9 @@ namespace Errin
                     ForeColor = Th.Mut,
                     Font = Th.FS,
                     AutoSize = true,
-                    Location = new Point(leftX, curY)
+                    Margin = Ui.S(new Padding(0, 0, 0, 6))
                 };
-                d.Controls.Add(lblReg);
-                curY += lblReg.PreferredHeight + Ui.S(6);
+                topPanel.Controls.Add(lblReg);
 
                 // 6. Unpaid fines status
                 double totalFines = fs.Sum(f => f.amt);
@@ -1099,39 +1101,52 @@ namespace Errin
                     Font = Th.FB,
                     ForeColor = totalFines > 0 ? Th.Red : Th.Green,
                     AutoSize = true,
-                    Location = new Point(leftX, curY)
+                    Margin = Ui.S(new Padding(0, 0, 0, 8))
                 };
-                d.Controls.Add(lblFines);
-                curY += lblFines.PreferredHeight + Ui.S(10);
+                topPanel.Controls.Add(lblFines);
 
                 // Bottom Buttons
-                int btnH = Ui.S(34);
-                int btnY = d.ClientSize.Height - btnH - Ui.S(16);
+                var bottomBar = new Panel
+                {
+                    Dock = DockStyle.Bottom,
+                    Height = Ui.S(54),
+                    BackColor = Th.Bg,
+                    Padding = Ui.S(new Padding(20, 10, 20, 10))
+                };
 
                 var c = Ui.Btn("Close", 1);
-                c.Location = new Point(leftX, btnY);
                 c.Click += (s, e) => d.Close();
-                d.Controls.Add(c);
 
                 var pc = Ui.Btn("Print library card", 0);
-                pc.Location = new Point(c.Right + Ui.S(8), btnY);
                 pc.Click += (s, e) => CardDialog(p);
-                d.Controls.Add(pc);
 
                 var pe = Ui.Btn("Edit student", 1);
-                pe.Location = new Point(pc.Right + Ui.S(8), btnY);
                 pe.Click += (s, e) => { d.Close(); PatForm(p); };
-                d.Controls.Add(pe);
+
+                var btnFlow = Ui.Flow(false);
+                btnFlow.Dock = DockStyle.Fill;
+                btnFlow.Controls.Add(c);
+                btnFlow.Controls.Add(pc);
+                btnFlow.Controls.Add(pe);
+                bottomBar.Controls.Add(btnFlow);
 
                 // Borrowing History Grid
                 var ls = db.Loans.Where(l => l.pid == p.id).Reverse().ToList();
                 var g = MakeGrid(new[] { "Title", "Out", "Due", "Returned" }, ls.Select(l => new[] { lib.Title(l.iid), l.@out, l.due, l.ret ?? "\u2014" }).ToList(), null, "No borrowing history");
-                g.Location = new Point(leftX, curY);
-                int gridH = btnY - curY - Ui.S(12);
-                if (gridH < Ui.S(160)) gridH = Ui.S(160);
-                g.Size = new Size(contentW, gridH);
-                g.Dock = DockStyle.None;
-                d.Controls.Add(g);
+                g.Dock = DockStyle.Fill;
+
+                var gridPanel = new Panel
+                {
+                    Dock = DockStyle.Fill,
+                    Padding = Ui.S(new Padding(20, 0, 20, 8)),
+                    BackColor = Th.Card
+                };
+                gridPanel.Controls.Add(g);
+
+                d.Controls.Add(gridPanel);
+                d.Controls.Add(topPanel);
+                d.Controls.Add(bottomBar);
+                Ui.EnableDoubleBuffering(d);
 
                 d.ShowDialog(this);
             }
@@ -1296,26 +1311,30 @@ namespace Errin
 
             using (var d = Ui.Dlg("Item circulation history \u00B7 " + item.barcode, 800, 560))
             {
-                int curY = Ui.S(14);
-                int leftX = Ui.S(20);
-                int contentW = d.ClientSize.Width - leftX * 2;
+                var topPanel = new FlowLayoutPanel
+                {
+                    Dock = DockStyle.Top,
+                    AutoSize = true,
+                    AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                    FlowDirection = FlowDirection.TopDown,
+                    WrapContents = false,
+                    Padding = Ui.S(new Padding(20, 14, 20, 8)),
+                    BackColor = Th.Card
+                };
 
-                var lblHead = new Label { UseMnemonic = false, Text = "item circulation history", Font = Th.FT, AutoSize = true, Location = new Point(leftX, curY), ForeColor = Th.Ink };
-                d.Controls.Add(lblHead);
-                curY += lblHead.PreferredHeight + Ui.S(4);
+                var lblHead = new Label { UseMnemonic = false, Text = "item circulation history", Font = Th.FT, AutoSize = true, Margin = Ui.S(new Padding(0, 0, 0, 4)), ForeColor = Th.Ink };
+                topPanel.Controls.Add(lblHead);
 
                 var lblDesc = new Label { UseMnemonic = false, Text = item.title + (string.IsNullOrEmpty(item.author) ? "" : " \u00B7 " + item.author) +
                     "\nBarcode: " + item.barcode + " \u00B7 Call no: " + (string.IsNullOrEmpty(item.call) ? "(none)" : item.call) + " \u00B7 " + statusDesc,
-                    Font = Th.FB, AutoSize = true, ForeColor = Th.Mut, Location = new Point(leftX, curY) };
-                d.Controls.Add(lblDesc);
-                curY += lblDesc.PreferredHeight + Ui.S(6);
+                    Font = Th.FB, AutoSize = true, ForeColor = Th.Mut, Margin = Ui.S(new Padding(0, 0, 0, 6)) };
+                topPanel.Controls.Add(lblDesc);
 
                 int lateCount = loans.Count(l => l.ret != null && string.CompareOrdinal(l.ret, l.due) > 0);
                 string statSummary = string.Format("Total checkouts: {0} time(s) \u00B7 Returned late: {1} time(s) \u00B7 Currently active: {2}",
                     loans.Count, lateCount, open != null ? "Yes" : "No");
-                var lblStat = new Label { UseMnemonic = false, Text = statSummary, Font = Th.FB, AutoSize = true, ForeColor = Th.Yel, Location = new Point(leftX, curY) };
-                d.Controls.Add(lblStat);
-                curY += lblStat.PreferredHeight + Ui.S(10);
+                var lblStat = new Label { UseMnemonic = false, Text = statSummary, Font = Th.FB, AutoSize = true, ForeColor = Th.Yel, Margin = Ui.S(new Padding(0, 0, 0, 8)) };
+                topPanel.Controls.Add(lblStat);
 
                 var rows = loans.Select(l =>
                 {
@@ -1323,16 +1342,9 @@ namespace Errin
                     return new[] { lib.PName(l.pid), l.pid, lib.PClass(l.pid), l.@out, l.due, retStr, l.ren.ToString() };
                 }).ToList();
 
-                int btnH = Ui.S(34);
-                int btnY = d.ClientSize.Height - btnH - Ui.S(16);
-
                 var g = MakeGrid(new[] { "Student", "IC / ID", "Class", "Checked Out", "Due Date", "Returned", "Renewals" },
                     rows, loans.Cast<object>().ToList(), "This item has no circulation history yet.");
-                g.Location = new Point(leftX, curY);
-                int gridH = btnY - curY - Ui.S(12);
-                if (gridH < Ui.S(160)) gridH = Ui.S(160);
-                g.Size = new Size(contentW, gridH);
-                g.Dock = DockStyle.None;
+                g.Dock = DockStyle.Fill;
                 g.CellDoubleClick += (s, e) =>
                 {
                     var l = Ui.Sel<Loan>(g);
@@ -1343,10 +1355,17 @@ namespace Errin
                         else Toast("Student record not found or was deleted");
                     }
                 };
-                d.Controls.Add(g);
+
+                var bottomBar = new Panel
+                {
+                    Dock = DockStyle.Bottom,
+                    Height = Ui.S(54),
+                    BackColor = Th.Bg,
+                    Padding = Ui.S(new Padding(20, 10, 20, 10))
+                };
 
                 var btnRow = Ui.Flow(false);
-                btnRow.Location = new Point(leftX, btnY);
+                btnRow.Dock = DockStyle.Fill;
                 var btnClose = Ui.Btn("Close", 1, (s, e) => d.Close());
                 var btnExport = Ui.Btn("Export history (CSV)", 1, (s, e) =>
                 {
@@ -1379,7 +1398,20 @@ namespace Errin
                 btnRow.Controls.Add(btnClose);
                 btnRow.Controls.Add(btnExport);
                 btnRow.Controls.Add(btnPat);
-                d.Controls.Add(btnRow);
+                bottomBar.Controls.Add(btnRow);
+
+                var gridPanel = new Panel
+                {
+                    Dock = DockStyle.Fill,
+                    Padding = Ui.S(new Padding(20, 0, 20, 8)),
+                    BackColor = Th.Card
+                };
+                gridPanel.Controls.Add(g);
+
+                d.Controls.Add(gridPanel);
+                d.Controls.Add(topPanel);
+                d.Controls.Add(bottomBar);
+                Ui.EnableDoubleBuffering(d);
 
                 d.ShowDialog(this);
             }
@@ -1390,15 +1422,26 @@ namespace Errin
         {
             using (var d = Ui.Dlg("Batch ISBN lookup (Book donations & bulk cataloguing)", 860, 680))
             {
-                d.Controls.Add(new Label { UseMnemonic = false, Text = "batch isbn copy-cataloguing", Font = Th.FT, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(14)), ForeColor = Th.Ink });
-                d.Controls.Add(new Label { UseMnemonic = false, Text = "Quickly catalogue donated or newly acquired books by ISBN. Paste multiple ISBNs, scan with a barcode scanner, or load a text file.",
-                    Font = Th.F, ForeColor = Th.Mut, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(40)) });
+                var topPanel = new Panel
+                {
+                    Dock = DockStyle.Top,
+                    Height = Ui.S(236),
+                    Padding = Ui.S(new Padding(20, 14, 20, 4)),
+                    BackColor = Th.Card
+                };
 
-                var tbIsbns = new TextBox { Multiline = true, ScrollBars = ScrollBars.Vertical, Font = new Font("Consolas", 10.5f), BackColor = Th.Bg, ForeColor = Th.Ink, BorderStyle = BorderStyle.FixedSingle, Location = new Point(Ui.S(20), Ui.S(68)), Size = new Size(Ui.S(815), Ui.S(95)) };
-                d.Controls.Add(tbIsbns);
+                var lblTitle = new Label { UseMnemonic = false, Text = "batch isbn copy-cataloguing", Font = Th.FT, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(10)), ForeColor = Th.Ink };
+                var lblSub = new Label { UseMnemonic = false, Text = "Quickly catalogue donated or newly acquired books by ISBN. Paste multiple ISBNs, scan with a barcode scanner, or load a text file.",
+                    Font = Th.F, ForeColor = Th.Mut, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(34)) };
+                topPanel.Controls.Add(lblTitle);
+                topPanel.Controls.Add(lblSub);
+
+                var tbIsbns = new TextBox { Multiline = true, ScrollBars = ScrollBars.Vertical, Font = new Font("Consolas", 10.5f), BackColor = Th.Bg, ForeColor = Th.Ink, BorderStyle = BorderStyle.FixedSingle, Location = new Point(Ui.S(20), Ui.S(58)), Size = new Size(d.ClientSize.Width - Ui.S(40), Ui.S(86)), Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right };
+                topPanel.Controls.Add(tbIsbns);
 
                 var topFlow = Ui.Flow(false);
-                topFlow.Location = new Point(Ui.S(20), Ui.S(172));
+                topFlow.Location = new Point(Ui.S(20), Ui.S(150));
+                topFlow.Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right;
                 var lkSrc = Ui.Combo(240, new[] { "All sources (best match)" }.Concat(Lookup.SourceNames).ToArray());
                 lkSrc.DropDownWidth = Ui.S(420);
                 topFlow.Controls.Add(Ui.Field("Search in", lkSrc, 250));
@@ -1432,22 +1475,21 @@ namespace Errin
                 btnStop.Enabled = false;
                 topFlow.Controls.Add(btnStart);
                 topFlow.Controls.Add(btnStop);
-                d.Controls.Add(topFlow);
+                topPanel.Controls.Add(topFlow);
 
                 var stLbl = new Label { UseMnemonic = false, Text = "Ready. Enter ISBNs above (one per line, comma or space separated) and click 'Start lookup'.",
-                    Font = Th.FB, ForeColor = Th.Yel, AutoSize = false, Size = new Size(Ui.S(815), Ui.S(22)), Location = new Point(Ui.S(20), Ui.S(232)) };
-                d.Controls.Add(stLbl);
+                    Font = Th.FB, ForeColor = Th.Yel, AutoSize = false, Location = new Point(Ui.S(20), Ui.S(210)), Size = new Size(d.ClientSize.Width - Ui.S(40), Ui.S(22)), Anchor = AnchorStyles.Left | AnchorStyles.Top | AnchorStyles.Right };
+                topPanel.Controls.Add(stLbl);
 
-                int botY = d.ClientSize.Height - Ui.S(54);
-                var grid = Ui.Grid();
-                grid.Location = new Point(Ui.S(20), Ui.S(258));
-                grid.Size = new Size(Ui.S(815), Math.Max(Ui.S(140), botY - Ui.S(270)));
-                grid.Dock = DockStyle.None;
-                Ui.Fill(grid, new[] { "ISBN", "Title", "Author", "Publisher", "Year", "Call no.", "Status / Source" }, new List<string[]>(), null, "No ISBNs searched yet");
-                d.Controls.Add(grid);
-
+                var botPanel = new Panel
+                {
+                    Dock = DockStyle.Bottom,
+                    Height = Ui.S(54),
+                    BackColor = Th.Bg,
+                    Padding = Ui.S(new Padding(20, 10, 20, 10))
+                };
                 var botFlow = Ui.Flow(false);
-                botFlow.Location = new Point(Ui.S(20), botY);
+                botFlow.Dock = DockStyle.Fill;
                 var btnAddAll = Ui.Btn("Add items to catalog", 0);
                 btnAddAll.Enabled = false;
                 var btnExportCsv = Ui.Btn("Export results (CSV)", 1);
@@ -1455,7 +1497,24 @@ namespace Errin
                 botFlow.Controls.Add(btnAddAll);
                 botFlow.Controls.Add(btnExportCsv);
                 botFlow.Controls.Add(btnClose);
-                d.Controls.Add(botFlow);
+                botPanel.Controls.Add(botFlow);
+
+                var grid = Ui.Grid();
+                grid.Dock = DockStyle.Fill;
+                Ui.Fill(grid, new[] { "ISBN", "Title", "Author", "Publisher", "Year", "Call no.", "Status / Source" }, new List<string[]>(), null, "No ISBNs searched yet");
+
+                var gridPanel = new Panel
+                {
+                    Dock = DockStyle.Fill,
+                    Padding = Ui.S(new Padding(20, 4, 20, 8)),
+                    BackColor = Th.Card
+                };
+                gridPanel.Controls.Add(grid);
+
+                d.Controls.Add(gridPanel);
+                d.Controls.Add(topPanel);
+                d.Controls.Add(botPanel);
+                Ui.EnableDoubleBuffering(d);
 
                 var foundItems = new List<Item>();
                 var displayRows = new List<string[]>();
