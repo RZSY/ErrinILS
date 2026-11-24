@@ -1,7 +1,7 @@
-; ErrinILS installer (NSIS). Built by build.sh:  makensis -DVERSION=1.4.3 installer.nsi
+; ErrinILS installer (NSIS). Built by build.sh:  makensis -DVERSION=1.5.0 installer.nsi
 Unicode true
 !ifndef VERSION
-  !define VERSION "1.4.3"
+  !define VERSION "1.5.0"
 !endif
 !define APP "ErrinILS"
 !define UNKEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\ErrinILS"

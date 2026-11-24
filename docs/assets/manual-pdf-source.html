@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ErrinILS School Library System - Official User Manual & Operating Guidelines (v1.4.3)</title>
+  <title>ErrinILS School Library System - Official User Manual &amp; Operating Guidelines (v1.5.0)</title>
   <style>
     /* Professional Publication & Print Typography */
     *, *::before, *::after {
@@ -394,13 +394,13 @@
       <h1 class="cover-title">ErrinILS</h1>
       <div class="cover-subtitle">School Integrated Library System</div>
       <p class="cover-desc">
-        Complete step-by-step operating guidelines for school librarians, administrators, and student helpers. Covers daily circulation desk operations, 31-source automated ISBN copy-cataloguing, batch label printing, the wireless Android companion scanner app, dual cloud sync, Malaysian IC patron management, simplified circulation, weeding, and disaster recovery.
+        Complete step-by-step operating guidelines for school librarians, administrators, and student helpers. Covers daily circulation desk operations, simplified touch kiosk, 31-source automated copy-cataloguing, custom accession &amp; barcode numbering templates, redesigned wide barcode labels with optional parallel call numbers, comprehensive fines and overdue holding tracking, wireless Android companion scanner app, dual cloud sync, Malaysian IC patron management, weeding, and disaster recovery.
       </p>
     </div>
 
     <div class="cover-center">
       <img src="icon.png" alt="ErrinILS Logo" class="cover-logo">
-      <div class="cover-version">Version 1.4.3 (Windows &amp; Companion Android Editions)</div>
+      <div class="cover-version">Version 1.5.0 (Windows &amp; Companion Android Editions)</div>
       <div class="cover-arch">Zero-Dependency C# Architecture &bull; Standalone Executable &bull; High-DPI Sharp</div>
     </div>
 
@@ -410,8 +410,8 @@
         <div class="cover-meta-item"><strong>Companion App:</strong> Android 8.0+ (ErrinILS Scanner)</div>
         <div class="cover-meta-item"><strong>Desktop Runtime:</strong> Microsoft .NET Framework 4.0+</div>
         <div class="cover-meta-item"><strong>Database Engine:</strong> SQLite WAL (<code>errin-data.db</code>)</div>
-        <div class="cover-meta-item"><strong>Default Port:</strong> 8585 (HTTP / TLS HTTPS)</div>
-        <div class="cover-meta-item"><strong>License:</strong> MIT Open Source License</div>
+        <div class="cover-meta-item"><strong>Desktop Port:</strong> 8585 (HTTP / TLS HTTPS)</div>
+        <div class="cover-meta-item"><strong>Scanner Port:</strong> 8586 (Bidirectional Companion)</div>
         <div class="cover-meta-item"><strong>Documentation:</strong> https://rzsy.github.io/ErrinILS/</div>
         <div class="cover-meta-item"><strong>Release Date:</strong> November 2026</div>
       </div>
@@ -423,7 +423,7 @@
        ============================================================= -->
   <div class="toc-container page-break">
     <div class="header-rule">
-      <span>ErrinILS v1.4.3 Official Manual</span>
+      <span>ErrinILS v1.5.0 Official Manual</span>
       <span>Contents Overview</span>
     </div>
 
@@ -435,22 +435,22 @@
         <div class="toc-item"><span>2. System Requirements &amp; Hardware Specs</span> <strong>3</strong></div>
         <div class="toc-item"><span>3. Installing &amp; Standalone Portable Copy</span> <strong>4</strong></div>
         <div class="toc-item"><span>4. Initial Setup &amp; Security Configuration</span> <strong>4</strong></div>
-        <div class="toc-item"><span>5. School Rules &amp; Policy Parameters</span> <strong>5</strong></div>
+        <div class="toc-item"><span>5. School Rules, Policy &amp; Numbering Engine (Flowchart 4)</span> <strong>5</strong></div>
         <div class="toc-item"><span>6. The Dashboard &amp; Daily Overview</span> <strong>6</strong></div>
-        <div class="toc-item"><span>7. Daily Circulation Desk Operations</span> <strong>7</strong></div>
-        <div class="toc-item"><span>8. The Simplified View (Touch Kiosk)</span> <strong>9</strong></div>
-        <div class="toc-item"><span>9. The Catalog &amp; 31-Source ISBN Lookup</span> <strong>10</strong></div>
-        <div class="toc-item"><span>10. Batch Label Printing &amp; Accessioning</span> <strong>11</strong></div>
+        <div class="toc-item"><span>7. Daily Circulation Desk Operations (Flowchart 1)</span> <strong>7</strong></div>
+        <div class="toc-item"><span>8. The Simplified View Touch Kiosk (Flowchart 2)</span> <strong>9</strong></div>
+        <div class="toc-item"><span>9. The Catalog &amp; 31-Source ISBN Lookup (Flowchart 3)</span> <strong>10</strong></div>
+        <div class="toc-item"><span>10. Redesigned Barcode Labels &amp; Batch Printing (Flowchart 5)</span> <strong>11</strong></div>
       </div>
       <div>
-        <div class="toc-item"><span>11. Student Patrons &amp; Malaysian IC Verification</span> <strong>12</strong></div>
-        <div class="toc-item"><span>12. Fines Management &amp; Lost Books</span> <strong>13</strong></div>
-        <div class="toc-item"><span>13. Collection Weeding &amp; Maintenance</span> <strong>13</strong></div>
-        <div class="toc-item"><span>14. Remote Access, Network Ports (8585) &amp; Web OPAC</span> <strong>15</strong></div>
-        <div class="toc-item"><span>15. ErrinILS Scanner &amp; Bidirectional Operations (8586)</span> <strong>17</strong></div>
-        <div class="toc-item"><span>16. Dual Cloud Sync (Google Drive &amp; GitHub)</span> <strong>20</strong></div>
-        <div class="toc-item"><span>17. Reports, Reading Champions &amp; Analytics</span> <strong>20</strong></div>
-        <div class="toc-item"><span>18. Backup, Restore &amp; Database Optimization</span> <strong>22</strong></div>
+        <div class="toc-item"><span>11. Student Patrons &amp; Malaysian IC Verification (Flowchart 6)</span> <strong>12</strong></div>
+        <div class="toc-item"><span>12. Fines Management &amp; Overdue Holdings (Flowchart 7)</span> <strong>13</strong></div>
+        <div class="toc-item"><span>13. Collection Weeding &amp; Maintenance (Flowchart 8)</span> <strong>14</strong></div>
+        <div class="toc-item"><span>14. Remote Access, Network Ports (8585) &amp; Web OPAC (Flowchart 9)</span> <strong>15</strong></div>
+        <div class="toc-item"><span>15. ErrinILS Scanner &amp; Dual-Port Architecture (8586) (Flowchart 10)</span> <strong>17</strong></div>
+        <div class="toc-item"><span>16. Dual Cloud Sync (Google Drive &amp; GitHub) (Flowchart 11)</span> <strong>20</strong></div>
+        <div class="toc-item"><span>17. Reports, Reading Champions &amp; Analytics</span> <strong>21</strong></div>
+        <div class="toc-item"><span>18. Backup, Restore &amp; Database Optimization (Flowchart 12)</span> <strong>22</strong></div>
         <div class="toc-item"><span>19. Troubleshooting Guide &amp; Administration</span> <strong>23</strong></div>
         <div class="toc-item"><span>Appendices: Quick Task Guide &amp; Glossary</span> <strong>24</strong></div>
       </div>
@@ -467,7 +467,7 @@
   <!-- =============================================================
        CHAPTER 1: ABOUT ERRINILS
        ============================================================= -->
-  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 1: About ErrinILS</span></div>
+  <div class="header-rule"><span>ErrinILS v1.5.0 User Manual</span><span>Chapter 1: About ErrinILS</span></div>
   <h2 class="chapter-heading">1. About ErrinILS</h2>
   
   <h3 class="subheading">1.1 What ErrinILS is</h3>
@@ -491,7 +491,7 @@
   <!-- =============================================================
        CHAPTER 2: SYSTEM REQUIREMENTS
        ============================================================= -->
-  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 2: System Requirements</span></div>
+  <div class="header-rule"><span>ErrinILS v1.5.0 User Manual</span><span>Chapter 2: System Requirements</span></div>
   <h2 class="chapter-heading">2. System Requirements &amp; Hardware Guidelines</h2>
   <p>ErrinILS is engineered for school hardware, functioning smoothly on older classroom netbooks and desktop PCs.</p>
 
@@ -514,12 +514,12 @@
   <!-- =============================================================
        CHAPTER 3: INSTALLING & STARTING
        ============================================================= -->
-  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 3: Installation &amp; Storage</span></div>
+  <div class="header-rule"><span>ErrinILS v1.5.0 User Manual</span><span>Chapter 3: Installation &amp; Storage</span></div>
   <h2 class="chapter-heading">3. Installing, Updating and Starting ErrinILS</h2>
 
   <h3 class="subheading">3.1 Standard Windows Setup</h3>
   <p>
-    Download <code>ErrinILS-Setup-1.4.3.exe</code>. Double-click the installer, click <strong>Yes</strong> at the Windows UAC security prompt. If Windows SmartScreen appears ("Windows protected your PC"), click <strong>More info</strong> and select <strong>Run anyway</strong>. Follow the setup wizard and click <strong>Finish</strong>. An application shortcut will be created on the Desktop and Start Menu.
+    Download <code>ErrinILS-Setup-1.5.0.exe</code>. Double-click the installer, click <strong>Yes</strong> at the Windows UAC security prompt. If Windows SmartScreen appears ("Windows protected your PC"), click <strong>More info</strong> and select <strong>Run anyway</strong>. Follow the setup wizard and click <strong>Finish</strong>. An application shortcut will be created on the Desktop and Start Menu.
   </p>
 
   <h3 class="subheading">3.2 Portable Standalone Execution</h3>
@@ -542,7 +542,7 @@
   <!-- =============================================================
        CHAPTER 4 & 5: INITIAL SETUP & SCHOOL RULES
        ============================================================= -->
-  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapters 4 &amp; 5: Setup &amp; Rules</span></div>
+  <div class="header-rule"><span>ErrinILS v1.5.0 User Manual</span><span>Chapters 4 &amp; 5: Setup &amp; Rules</span></div>
   <h2 class="chapter-heading">4. Initial Setup &amp; Security Configuration</h2>
   <p>
     Upon first launch, ErrinILS automatically provisions the SQLite database engine (<code>errin-data.db</code>) with Write-Ahead Logging (WAL) and creates the configuration keystore (<code>errin-config.json</code>). Administrative functions—including system settings, database restoration, record deletion, and cloud sync credentials—are secured with salted PBKDF2/SHA-256 encryption.
@@ -553,7 +553,7 @@
     <li><strong>Emergency Password Recovery:</strong> If the administrative password is ever lost or forgotten, close ErrinILS, press <code>Win + R</code>, enter <code>%APPDATA%\Errin</code>, and delete <code>errin-config.json</code>. Upon restarting the system, the password resets to factory default (<code>admin123</code>) while 100% of your student and catalog data remains completely intact.</li>
   </ul>
 
-  <h2 class="chapter-heading">5. School Circulation Rules &amp; Policy Parameters</h2>
+  <h2 class="chapter-heading">5. School Circulation Rules, Policy &amp; Numbering Engine</h2>
   <p>
     Every school library operates under specific lending guidelines. In the <strong>Settings</strong> tab, librarians can configure school-wide circulation rules to match institutional policy:
   </p>
@@ -568,11 +568,77 @@
     </tbody>
   </table>
 
+  <h3 class="subheading">5.1 Custom Acquisition &amp; Barcode Numbering Engine</h3>
+  <p>
+    In ErrinILS v1.5.0, both the <strong>Acquisition Number</strong> (Accession ID) and <strong>Barcode Number</strong> format structures are completely formattable in <strong>Settings &rarr; Item numbering &amp; barcodes</strong>. The engine supports semantic tokens, date variables, zero-padded formats, and custom starting numbers:
+  </p>
+  <table>
+    <thead><tr><th>Token Placeholder</th><th>Format Template</th><th>Evaluated Output (Index = 42)</th></tr></thead>
+    <tbody>
+      <tr><td><code>{0:D6}</code> or <code>######</code> or <code>000000</code></td><td><code>ACQ-######</code></td><td><code>ACQ-000042</code></td></tr>
+      <tr><td><code>{NUMBER:5}</code> or <code>{NUMBER}</code></td><td><code>LIB-{NUMBER:5}</code></td><td><code>LIB-00042</code></td></tr>
+      <tr><td><code>{YEAR}</code> or <code>{YYYY}</code></td><td><code>{YEAR}-######</code></td><td><code>2026-000042</code></td></tr>
+      <tr><td><code>{YY}</code> &amp; <code>{MM}</code></td><td><code>B{YY}{MM}-000000</code></td><td><code>B2611-000042</code></td></tr>
+      <tr><td>Raw Digits (Default)</td><td><code>{0}</code> (Start: 1000)</td><td><code>1042</code></td></tr>
+    </tbody>
+  </table>
+  <p>
+    The sequence generator inspects all existing catalog records using dynamically compiled regular expressions, determining the highest existing sequence number matching the pattern to assign the next number without collisions.
+  </p>
+
+  <div class="flowchart-box">
+  <svg class="flowchart-svg" viewBox="0 0 680 200" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="2" width="676" height="196" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+
+    <rect x="15" y="20" width="145" height="55" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="87" y="42" font-family="-apple-system,sans-serif" font-size="11" font-weight="700" fill="#1e3a8a" text-anchor="middle">1. Format Template</text>
+    <text x="87" y="58" font-family="-apple-system,sans-serif" font-size="9" fill="#3b82f6" text-anchor="middle">ACQ-###### / Start: 1001</text>
+
+    <line x1="160" y1="47" x2="195" y2="47" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <rect x="195" y="20" width="145" height="55" rx="6" fill="#fefce8" stroke="#ca8a04" stroke-width="1.5"/>
+    <text x="267" y="42" font-family="-apple-system,sans-serif" font-size="11" font-weight="700" fill="#854d0e" text-anchor="middle">2. Token Normalization</text>
+    <text x="267" y="58" font-family="-apple-system,sans-serif" font-size="9" fill="#a16207" text-anchor="middle">{YEAR}&rarr;2026, ######&rarr;{0:D6}</text>
+
+    <line x1="340" y1="47" x2="375" y2="47" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <rect x="375" y="20" width="145" height="55" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="447" y="42" font-family="-apple-system,sans-serif" font-size="11" font-weight="700" fill="#1e3a8a" text-anchor="middle">3. Regex DB Scan</text>
+    <text x="447" y="58" font-family="-apple-system,sans-serif" font-size="9" fill="#3b82f6" text-anchor="middle">Locates highest sequence</text>
+
+    <line x1="520" y1="47" x2="555" y2="47" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <rect x="555" y="20" width="110" height="55" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="610" y="42" font-family="-apple-system,sans-serif" font-size="11" font-weight="700" fill="#166534" text-anchor="middle">4. Next Number</text>
+    <text x="610" y="58" font-family="-apple-system,sans-serif" font-size="9" fill="#15803d" text-anchor="middle">Assigns: ACQ-001042</text>
+
+    <!-- Lower summary cards -->
+    <rect x="15" y="95" width="205" height="85" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="25" y="115" font-family="-apple-system,sans-serif" font-size="10.5" font-weight="700" fill="#0f172a">Acquisition Numbering</text>
+    <text x="25" y="133" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Configured in Settings</text>
+    <text x="25" y="148" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Auto-assigned during ISBN lookup</text>
+    <text x="25" y="163" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Preserved across Google Drive sync</text>
+
+    <rect x="235" y="95" width="205" height="85" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="245" y="115" font-family="-apple-system,sans-serif" font-size="10.5" font-weight="700" fill="#0f172a">Barcode Sequence</text>
+    <text x="245" y="133" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Code 128 high density barcode</text>
+    <text x="245" y="148" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Custom branch / school prefixes</text>
+    <text x="245" y="163" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Auto-increments sequentially</text>
+
+    <rect x="455" y="95" width="210" height="85" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="465" y="115" font-family="-apple-system,sans-serif" font-size="10.5" font-weight="700" fill="#0f172a">Live Dynamic Preview</text>
+    <text x="465" y="133" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Instant rendered preview badges</text>
+    <text x="465" y="148" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Preset format buttons</text>
+    <text x="465" y="163" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Zero SQLite migration conflicts</text>
+  </svg>
+  <div class="flowchart-caption">Flowchart 4: Custom Item Numbering Engine &amp; Sequence Generation Pipeline</div>
+  </div>
+
   <!-- =============================================================
        CHAPTER 6: THE DASHBOARD & FIGURE 1
        ============================================================= -->
   <div class="page-break"></div>
-  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 6: The Dashboard</span></div>
+  <div class="header-rule"><span>ErrinILS v1.5.0 User Manual</span><span>Chapter 6: The Dashboard</span></div>
   <h2 class="chapter-heading">6. The Dashboard &amp; Daily Overview</h2>
   <p>
     The Dashboard is the executive command screen presented upon launching ErrinILS. It summarizes real-time library operations without requiring manual reporting queries.
@@ -595,7 +661,7 @@
        CHAPTER 7: CIRCULATION DESK
        ============================================================= -->
   <div class="page-break"></div>
-  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 7: Daily Circulation Desk</span></div>
+  <div class="header-rule"><span>ErrinILS v1.5.0 User Manual</span><span>Chapter 7: Daily Circulation Desk</span></div>
   <h2 class="chapter-heading">7. Daily Circulation: Check Out, Return, Renew &amp; Holds</h2>
   <p>
     The <strong>Circulation</strong> tab handles high-throughput front desk loan operations. When opened, keyboard focus is automatically placed in the active scan input box.
@@ -714,7 +780,7 @@
        CHAPTER 8: SIMPLIFIED VIEW
        ============================================================= -->
   <div class="page-break"></div>
-  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 8: The Simplified View</span></div>
+  <div class="header-rule"><span>ErrinILS v1.5.0 User Manual</span><span>Chapter 8: The Simplified View</span></div>
   <h2 class="chapter-heading">8. The Simplified View (Touch Self-Checkout Kiosk)</h2>
   <p>
     Designed specifically for young primary school students, the Simplified View is an uncluttered, high-contrast circulation screen displaying oversized touch/mouse buttons and friendly feedback banners. Administrative menus and database settings are completely hidden.
@@ -737,11 +803,59 @@
     <p>To return to the administrative librarian interface, click the <strong>Exit Simplified View</strong> button in the bottom right corner.</p>
   </div>
 
+  <div class="flowchart-box">
+  <svg class="flowchart-svg" viewBox="0 0 680 190" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="2" width="676" height="186" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+
+    <rect x="15" y="20" width="145" height="50" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="87" y="40" font-family="-apple-system,sans-serif" font-size="11" font-weight="700" fill="#1e3a8a" text-anchor="middle">1. Welcome Kiosk</text>
+    <text x="87" y="55" font-family="-apple-system,sans-serif" font-size="9" fill="#3b82f6" text-anchor="middle">"Ready. Scan Card"</text>
+
+    <line x1="160" y1="45" x2="195" y2="45" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <rect x="195" y="20" width="145" height="50" rx="6" fill="#fefce8" stroke="#ca8a04" stroke-width="1.5"/>
+    <text x="267" y="40" font-family="-apple-system,sans-serif" font-size="11" font-weight="700" fill="#854d0e" text-anchor="middle">2. Card Verification</text>
+    <text x="267" y="55" font-family="-apple-system,sans-serif" font-size="9" fill="#a16207" text-anchor="middle">Greets: "Hello [Name]!"</text>
+
+    <line x1="340" y1="45" x2="375" y2="45" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <rect x="375" y="20" width="145" height="50" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="447" y="40" font-family="-apple-system,sans-serif" font-size="11" font-weight="700" fill="#1e3a8a" text-anchor="middle">3. Scan Book Barcode</text>
+    <text x="447" y="55" font-family="-apple-system,sans-serif" font-size="9" fill="#3b82f6" text-anchor="middle">Laser or Touch input</text>
+
+    <line x1="520" y1="45" x2="555" y2="45" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <rect x="555" y="20" width="110" height="50" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="610" y="40" font-family="-apple-system,sans-serif" font-size="11" font-weight="700" fill="#166534" text-anchor="middle">4. Success Banner</text>
+    <text x="610" y="55" font-family="-apple-system,sans-serif" font-size="9" fill="#15803d" text-anchor="middle">Checked Out / Audio Chime</text>
+
+    <!-- Lower summary cards -->
+    <rect x="15" y="85" width="205" height="85" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="25" y="105" font-family="-apple-system,sans-serif" font-size="10.5" font-weight="700" fill="#0f172a">Touch Kiosk Interface</text>
+    <text x="25" y="123" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Large 28pt touch targets</text>
+    <text x="25" y="138" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; High-contrast banners</text>
+    <text x="25" y="153" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Gentle polite wording</text>
+
+    <rect x="235" y="85" width="205" height="85" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="245" y="105" font-family="-apple-system,sans-serif" font-size="10.5" font-weight="700" fill="#0f172a">Audible Chimes</text>
+    <text x="245" y="123" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Cheerful chime on loan</text>
+    <text x="245" y="138" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Double tone on return</text>
+    <text x="245" y="153" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Warning buzz on block</text>
+
+    <rect x="455" y="85" width="210" height="85" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="465" y="105" font-family="-apple-system,sans-serif" font-size="10.5" font-weight="700" fill="#0f172a">Session Security</text>
+    <text x="465" y="123" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Hidden admin menu</text>
+    <text x="465" y="138" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; "Next student" reset</text>
+    <text x="465" y="153" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Real-time audit log</text>
+  </svg>
+  <div class="flowchart-caption">Flowchart 2: Simplified Touch Kiosk (Self-Checkout &amp; Return) Workflow</div>
+  </div>
+
   <!-- =============================================================
        CHAPTER 9: THE CATALOG & 31-SOURCE ISBN LOOKUP
        ============================================================= -->
   <div class="page-break"></div>
-  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 9: The Catalog &amp; 31-Source Lookup</span></div>
+  <div class="header-rule"><span>ErrinILS v1.5.0 User Manual</span><span>Chapter 9: The Catalog &amp; 31-Source Lookup</span></div>
   <h2 class="chapter-heading">9. The Catalog &amp; 31-Source ISBN Union Copy-Cataloguing</h2>
   <p>
     The <strong>Catalog</strong> tab manages all bibliographic records, physical copies, Dewey Decimal Classification (DDC) numbers, and copy statuses.
@@ -831,28 +945,77 @@
       <text x="610" y="132" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8" fill="#15803d" text-anchor="middle">Print Code 128 / Spine</text>
     </g>
   </svg>
-  <div class="flowchart-caption">Flowchart 2: 31-Source Parallel Copy-Cataloguing &amp; Accessioning Workflow</div>
+  <div class="flowchart-caption">Flowchart 3: 31-Source Parallel Copy-Cataloguing &amp; Accessioning Workflow</div>
 </div>
 
   <!-- =============================================================
        CHAPTER 10: BATCH LABEL PRINTING
        ============================================================= -->
-  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 10: Batch Label Printing</span></div>
-  <h2 class="chapter-heading">10. Batch Barcode Label Printing &amp; Spine Labels</h2>
+  <div class="header-rule"><span>ErrinILS v1.5.0 User Manual</span><span>Chapter 10: Barcode Labels</span></div>
+  <h2 class="chapter-heading">10. Redesigned Barcode Labels &amp; Batch Printing</h2>
   <p>
-    ErrinILS generates sharp, scannable Code 128 barcode labels and call number spine tags formatted for standard A4 sticker sheets or thermal label rolls.
+    In ErrinILS v1.5.0, barcode labels have been completely redesigned for superior laser scanning performance. Barcodes now span the full label width (240 units wide by 54 units high) centered on the sticker, preventing small, squeezed barcodes.
   </p>
   <ul>
-    <li><strong>Multi-Select Checkboxes:</strong> In the Catalog tab, check individual books or click <em>Select All on Page</em>.</li>
-    <li><strong>Batch Print Dialog:</strong> Click <strong>Print Barcodes</strong> to open the print preview. Customize label dimensions, font sizes, library header text, and barcode inclusion.</li>
-    <li><strong>Direct Print / PDF:</strong> Send directly to any connected printer or save as an audit-proof PDF file for later printing.</li>
+    <li><strong>Full-Width Centered Layout:</strong> Displays the complete book title across the top, the wide Code 128 barcode centered, and clear human-readable accession/barcode numbers below.</li>
+    <li><strong>Optional Parallel Call Number:</strong> Configurable in Settings (<em>"Include Call Number on barcode labels (parallel layout)"</em>). When enabled, the Dewey Call Number is positioned as a dedicated horizontal line parallel between the title and the barcode across the full label width.</li>
+    <li><strong>Spine Labels (1" &times; 1.5"):</strong> Formats multi-line Dewey call numbers specifically for shelf spine tags. Automatically adjusts typography size and skips books without call numbers.</li>
+    <li><strong>Batch Printing Workflow:</strong> Multi-select books in the Catalog grid (Ctrl+Click, Shift+Click, Ctrl+A) and launch batch printing with live millimeter-accurate preview.</li>
   </ul>
+
+  <div class="flowchart-box">
+  <svg class="flowchart-svg" viewBox="0 0 680 190" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="2" width="676" height="186" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+
+    <rect x="15" y="20" width="145" height="50" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="87" y="40" font-family="-apple-system,sans-serif" font-size="11" font-weight="700" fill="#1e3a8a" text-anchor="middle">1. Multi-Selection</text>
+    <text x="87" y="55" font-family="-apple-system,sans-serif" font-size="9" fill="#3b82f6" text-anchor="middle">Ctrl+Click &bull; Select All</text>
+
+    <line x1="160" y1="45" x2="195" y2="45" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <rect x="195" y="20" width="145" height="50" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="267" y="40" font-family="-apple-system,sans-serif" font-size="11" font-weight="700" fill="#1e3a8a" text-anchor="middle">2. Batch Dialog</text>
+    <text x="267" y="55" font-family="-apple-system,sans-serif" font-size="9" fill="#3b82f6" text-anchor="middle">Scope &amp; Label Format</text>
+
+    <line x1="340" y1="45" x2="375" y2="45" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <rect x="375" y="20" width="145" height="50" rx="6" fill="#fefce8" stroke="#ca8a04" stroke-width="1.5"/>
+    <text x="447" y="40" font-family="-apple-system,sans-serif" font-size="11" font-weight="700" fill="#854d0e" text-anchor="middle">3. Wide Layout Engine</text>
+    <text x="447" y="55" font-family="-apple-system,sans-serif" font-size="9" fill="#a16207" text-anchor="middle">Full-Width &bull; Parallel Call No</text>
+
+    <line x1="520" y1="45" x2="555" y2="45" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <rect x="555" y="20" width="110" height="50" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="610" y="40" font-family="-apple-system,sans-serif" font-size="11" font-weight="700" fill="#166534" text-anchor="middle">4. Spool &amp; Print</text>
+    <text x="610" y="55" font-family="-apple-system,sans-serif" font-size="9" fill="#15803d" text-anchor="middle">A4 Sticker Sheets</text>
+
+    <!-- Lower summary cards -->
+    <rect x="15" y="85" width="205" height="85" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="25" y="105" font-family="-apple-system,sans-serif" font-size="10.5" font-weight="700" fill="#0f172a">Centered Wide Barcode</text>
+    <text x="25" y="123" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; 240 units wide &times; 54 units high</text>
+    <text x="25" y="138" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Full-width title across top</text>
+    <text x="25" y="153" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Centered human-readable text</text>
+
+    <rect x="235" y="85" width="205" height="85" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="245" y="105" font-family="-apple-system,sans-serif" font-size="10.5" font-weight="700" fill="#0f172a">Parallel Call Number</text>
+    <text x="245" y="123" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Optional in Settings</text>
+    <text x="245" y="138" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Full-width row below title</text>
+    <text x="245" y="153" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Eliminates column squishing</text>
+
+    <rect x="455" y="85" width="210" height="85" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="465" y="105" font-family="-apple-system,sans-serif" font-size="10.5" font-weight="700" fill="#0f172a">Spine &amp; Student Cards</text>
+    <text x="465" y="123" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; 1" &times; 1.5" shelf spine labels</text>
+    <text x="465" y="138" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; CR80 credit card student IDs</text>
+    <text x="465" y="153" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Live millimeter-accurate preview</text>
+  </svg>
+  <div class="flowchart-caption">Flowchart 5: Redesigned Barcode Label Printing &amp; Parallel Call Number Workflow</div>
+  </div>
 
   <!-- =============================================================
        CHAPTER 11: PATRON MANAGEMENT
        ============================================================= -->
   <div class="page-break"></div>
-  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 11: Patron Management</span></div>
+  <div class="header-rule"><span>ErrinILS v1.5.0 User Manual</span><span>Chapter 11: Patron Management</span></div>
   <h2 class="chapter-heading">11. Student Patrons &amp; Malaysian IC Validation</h2>
   <p>
     The <strong>Students</strong> tab maintains registered student and teacher records, class allocations, and scannable identity cards.
@@ -935,31 +1098,85 @@
     <rect x="15" y="172" width="650" height="18" rx="3" fill="#f1f5f9"/>
     <text x="340" y="184" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8" fill="#475569" text-anchor="middle">Privacy Guarantee: Archived student records retain borrowing &amp; fine histories permanently, but are excluded from active leaderboards.</text>
   </svg>
-  <div class="flowchart-caption">Flowchart 3: Patron Registration, Malaysian IC Validation &amp; Student Retention Lifecycle</div>
+  <div class="flowchart-caption">Flowchart 6: Patron Registration, Malaysian IC Validation &amp; Student Retention Lifecycle</div>
 </div>
 
   <!-- =============================================================
-       CHAPTER 12: FINES MANAGEMENT
+       CHAPTER 12: FINES MANAGEMENT & OVERDUE HOLDINGS
        ============================================================= -->
-  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 12: Fines Management</span></div>
-  <h2 class="chapter-heading">12. Fines Management &amp; Lost Books</h2>
+  <div class="header-rule"><span>ErrinILS v1.5.0 User Manual</span><span>Chapter 12: Fines &amp; Overdue Holdings</span></div>
+  <h2 class="chapter-heading">12. Fines Management &amp; Active Overdue Holdings</h2>
   <p>
-    When overdue items are returned, ErrinILS automatically calculates the fine: <code>Days Overdue &times; Daily Rate (RM 0.10)</code>. Patrons with fines exceeding the block threshold (default RM 5.00) are blocked from borrowing until settled.
+    In ErrinILS v1.5.0, the Fines section unifies both <strong>assessed unpaid fines</strong> (from books returned late) and <strong>active unreturned loans</strong> currently held past their due dates. This provides librarians with complete monetary oversight without navigating multiple screens.
   </p>
 
   <div class="figure-box">
     <img src="screenshot-fines.png" alt="ErrinILS Fines Tracker Screenshot" class="figure-img">
-    <div class="figure-caption">Figure 6: The Fines Tracker &mdash; Real-time outstanding balances, cash payment receipting, and fine waivers.</div>
+    <div class="figure-caption">Figure 6: The Fines Tracker &mdash; Real-time outstanding balances, active overdue holding loans, cash payment receipting, and fine waivers.</div>
   </div>
 
+  <h3 class="subheading">12.1 Real-Time Overdue Holdings &amp; Accrued Fines</h3>
   <p>
-    Select any fine record in the table and click <strong>Pay</strong> when the student pays cash, or <strong>Waive</strong> if excusing the charge. Settling fines immediately lifts the circulation block.
+    Students holding overdue items are highlighted with a distinct crimson <strong>Holding (Overdue)</strong> badge showing real-time accrued calculations (<code>Days Overdue &times; Daily Rate RM 0.10</code>). Librarians have three one-click actions:
   </p>
+  <ul>
+    <li><strong>Pay:</strong> When a student returns the book and pays cash, click <strong>Pay</strong>. The system records the payment, automatically returns the book, and checks it back into stock in a single transaction.</li>
+    <li><strong>Waive:</strong> If the library excuses the fine (e.g. documented illness), click <strong>Waive</strong>. The book is checked in and the accrued fine is forgiven.</li>
+    <li><strong>Return (Check In):</strong> If the student returns the book without cash, click <strong>Return</strong>. The book is checked into stock, and the fine remains on their account as an assessed unpaid balance.</li>
+  </ul>
+
+  <div class="flowchart-box">
+  <svg class="flowchart-svg" viewBox="0 0 680 190" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="2" width="676" height="186" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+
+    <rect x="15" y="20" width="145" height="50" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="87" y="40" font-family="-apple-system,sans-serif" font-size="11" font-weight="700" fill="#1e3a8a" text-anchor="middle">1. Active Loan Audit</text>
+    <text x="87" y="55" font-family="-apple-system,sans-serif" font-size="9" fill="#3b82f6" text-anchor="middle">Today &gt; Due Date</text>
+
+    <line x1="160" y1="45" x2="195" y2="45" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <rect x="195" y="20" width="145" height="50" rx="6" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+    <text x="267" y="40" font-family="-apple-system,sans-serif" font-size="11" font-weight="700" fill="#991b1b" text-anchor="middle">2. Holding (Overdue)</text>
+    <text x="267" y="55" font-family="-apple-system,sans-serif" font-size="9" fill="#b91c1c" text-anchor="middle">Days &times; Daily Rate (RM)</text>
+
+    <line x1="340" y1="45" x2="375" y2="45" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <rect x="375" y="20" width="145" height="50" rx="6" fill="#fefce8" stroke="#ca8a04" stroke-width="1.5"/>
+    <text x="447" y="40" font-family="-apple-system,sans-serif" font-size="11" font-weight="700" fill="#854d0e" text-anchor="middle">3. 1-Click Triage</text>
+    <text x="447" y="55" font-family="-apple-system,sans-serif" font-size="9" fill="#a16207" text-anchor="middle">[Pay] &bull; [Waive] &bull; [Return]</text>
+
+    <line x1="520" y1="45" x2="555" y2="45" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <rect x="555" y="20" width="110" height="50" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="610" y="40" font-family="-apple-system,sans-serif" font-size="11" font-weight="700" fill="#166534" text-anchor="middle">4. Book Checked In</text>
+    <text x="610" y="55" font-family="-apple-system,sans-serif" font-size="9" fill="#15803d" text-anchor="middle">Loan blocks lifted</text>
+
+    <!-- Lower summary cards -->
+    <rect x="15" y="85" width="205" height="85" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="25" y="105" font-family="-apple-system,sans-serif" font-size="10.5" font-weight="700" fill="#0f172a">Action: [Pay]</text>
+    <text x="25" y="123" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Cash received at desk</text>
+    <text x="25" y="138" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Marks fine paid (RM)</text>
+    <text x="25" y="153" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Returns book to stock</text>
+
+    <rect x="235" y="85" width="205" height="85" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="245" y="105" font-family="-apple-system,sans-serif" font-size="10.5" font-weight="700" fill="#0f172a">Action: [Waive]</text>
+    <text x="245" y="123" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Excuses late fee</text>
+    <text x="245" y="138" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Logs waiver in audit</text>
+    <text x="245" y="153" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Returns book to stock</text>
+
+    <rect x="455" y="85" width="210" height="85" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="465" y="105" font-family="-apple-system,sans-serif" font-size="10.5" font-weight="700" fill="#0f172a">Action: [Return]</text>
+    <text x="465" y="123" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Checks in book to shelf</text>
+    <text x="465" y="138" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Assesses fine for future</text>
+    <text x="465" y="153" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Blocks if &ge; RM 5.00</text>
+  </svg>
+  <div class="flowchart-caption">Flowchart 7: Fines Management &amp; Active Overdue Holding Lifecycle</div>
+  </div>
 
   <!-- =============================================================
        CHAPTER 13: COLLECTION WEEDING & MAINTENANCE
        ============================================================= -->
-  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 13: Collection Weeding</span></div>
+  <div class="header-rule"><span>ErrinILS v1.5.0 User Manual</span><span>Chapter 13: Collection Weeding</span></div>
   <h2 class="chapter-heading">13. Collection Weeding &amp; Inventory Maintenance</h2>
   <p>
     Maintaining a healthy, relevant school library collection requires periodic planned withdrawal (weeding) of damaged, obsolete, or missing materials. ErrinILS provides a structured, audit-proof weeding workflow that preserves historical circulation logs for administrative reporting.
@@ -977,11 +1194,59 @@
     <li><strong>Restoring Withdrawn Copies:</strong> If a missing book is recovered, switch the Catalog filter from <em>Active Copies</em> to <em>Weeded Copies</em>, select the title, and click <strong>Restore to Active</strong> to return the copy to the active shelves.</li>
   </ul>
 
+  <div class="flowchart-box">
+  <svg class="flowchart-svg" viewBox="0 0 680 190" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="2" width="676" height="186" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+
+    <rect x="15" y="20" width="145" height="50" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="87" y="40" font-family="-apple-system,sans-serif" font-size="11" font-weight="700" fill="#1e3a8a" text-anchor="middle">1. Collection Audit</text>
+    <text x="87" y="55" font-family="-apple-system,sans-serif" font-size="9" fill="#3b82f6" text-anchor="middle">Identify candidates</text>
+
+    <line x1="160" y1="45" x2="195" y2="45" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <rect x="195" y="20" width="145" height="50" rx="6" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+    <text x="267" y="40" font-family="-apple-system,sans-serif" font-size="11" font-weight="700" fill="#991b1b" text-anchor="middle">2. Mark Weeded</text>
+    <text x="267" y="55" font-family="-apple-system,sans-serif" font-size="9" fill="#b91c1c" text-anchor="middle">Select Reason &amp; Date</text>
+
+    <line x1="340" y1="45" x2="375" y2="45" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <rect x="375" y="20" width="145" height="50" rx="6" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+    <text x="447" y="40" font-family="-apple-system,sans-serif" font-size="11" font-weight="700" fill="#991b1b" text-anchor="middle">3. Circulation Blocked</text>
+    <text x="447" y="55" font-family="-apple-system,sans-serif" font-size="9" fill="#b91c1c" text-anchor="middle">Hidden from checkout &amp; holds</text>
+
+    <line x1="520" y1="45" x2="555" y2="45" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <rect x="555" y="20" width="110" height="50" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="610" y="40" font-family="-apple-system,sans-serif" font-size="11" font-weight="700" fill="#166534" text-anchor="middle">4. Audit History</text>
+    <text x="610" y="55" font-family="-apple-system,sans-serif" font-size="9" fill="#15803d" text-anchor="middle">Retained &bull; Restorable</text>
+
+    <!-- Lower summary cards -->
+    <rect x="15" y="85" width="205" height="85" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="25" y="105" font-family="-apple-system,sans-serif" font-size="10.5" font-weight="700" fill="#0f172a">Dormant Inventory Audit</text>
+    <text x="25" y="123" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Identifies 0 loans in 12 months</text>
+    <text x="25" y="138" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Guides weeding decisions</text>
+    <text x="25" y="153" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Frees physical shelf capacity</text>
+
+    <rect x="235" y="85" width="205" height="85" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="245" y="105" font-family="-apple-system,sans-serif" font-size="10.5" font-weight="700" fill="#0f172a">Categorized Analytics</text>
+    <text x="245" y="123" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Damaged, Obsolete, Lost, Duplicate</text>
+    <text x="245" y="138" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Breakdown chart in Reports</text>
+    <text x="245" y="153" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Complete disposal documentation</text>
+
+    <rect x="455" y="85" width="210" height="85" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="465" y="105" font-family="-apple-system,sans-serif" font-size="10.5" font-weight="700" fill="#0f172a">1-Click Restoration</text>
+    <text x="465" y="123" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Found books restored in 1 click</text>
+    <text x="465" y="138" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Restores active circulation</text>
+    <text x="465" y="153" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; No data re-entry required</text>
+  </svg>
+  <div class="flowchart-caption">Flowchart 8: Collection Weeding, Maintenance &amp; Collection Health Lifecycle</div>
+  </div>
+
   <!-- =============================================================
        CHAPTER 14: REMOTE ACCESS, NETWORK PORTS & OPAC
        ============================================================= -->
   <div class="page-break"></div>
-  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 14: Remote Access &amp; Port 8585</span></div>
+  <div class="header-rule"><span>ErrinILS v1.5.0 User Manual</span><span>Chapter 14: Remote Access &amp; Port 8585</span></div>
   <h2 class="chapter-heading">14. Remote Access, Network Ports (Port 8585) &amp; Web OPAC</h2>
   <p>
     ErrinILS includes a built-in pure C# HTTP/HTTPS server binding to <code>0.0.0.0</code> (all network interfaces: Ethernet, Wi-Fi 2.4/5GHz, mobile hotspots, and VPNs). This allows smartphones, tablets, and other classroom laptops to interact with the library system without installing database daemons.
@@ -1022,11 +1287,59 @@
     <li><strong>Discover Scanners:</strong> Multithreaded subnet discovery scans the local Wi-Fi network (Port 8586) in parallel, listing all active ErrinILS Scanner phones within 1 second. Select any detected phone and click <em>Connect &amp; Pair Selected</em>.</li>
   </ul>
 
+  <div class="flowchart-box">
+  <svg class="flowchart-svg" viewBox="0 0 680 190" width="100%" height="auto" xmlns="http://www.w3.org/2000/svg">
+    <rect x="2" y="2" width="676" height="186" rx="8" fill="#ffffff" stroke="#e2e8f0" stroke-width="1.5"/>
+
+    <rect x="15" y="20" width="145" height="50" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="87" y="40" font-family="-apple-system,sans-serif" font-size="11" font-weight="700" fill="#1e3a8a" text-anchor="middle">1. Network Listener</text>
+    <text x="87" y="55" font-family="-apple-system,sans-serif" font-size="9" fill="#3b82f6" text-anchor="middle">0.0.0.0:8585 Binding</text>
+
+    <line x1="160" y1="45" x2="195" y2="45" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <rect x="195" y="20" width="145" height="50" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+    <text x="267" y="40" font-family="-apple-system,sans-serif" font-size="11" font-weight="700" fill="#1e3a8a" text-anchor="middle">2. Web OPAC Search</text>
+    <text x="267" y="55" font-family="-apple-system,sans-serif" font-size="9" fill="#3b82f6" text-anchor="middle">Title &bull; Author &bull; Call No</text>
+
+    <line x1="340" y1="45" x2="375" y2="45" stroke="#475569" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <rect x="375" y="20" width="145" height="50" rx="6" fill="#fefce8" stroke="#ca8a04" stroke-width="1.5"/>
+    <text x="447" y="40" font-family="-apple-system,sans-serif" font-size="11" font-weight="700" fill="#854d0e" text-anchor="middle">3. Subject Topic Filter</text>
+    <text x="447" y="55" font-family="-apple-system,sans-serif" font-size="9" fill="#a16207" text-anchor="middle">Subject Headings (Perkara)</text>
+
+    <line x1="520" y1="45" x2="555" y2="45" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+    <rect x="555" y="20" width="110" height="50" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+    <text x="610" y="40" font-family="-apple-system,sans-serif" font-size="11" font-weight="700" fill="#166534" text-anchor="middle">4. Patron Portal</text>
+    <text x="610" y="55" font-family="-apple-system,sans-serif" font-size="9" fill="#15803d" text-anchor="middle">Student ID / MyKid Login</text>
+
+    <!-- Lower summary cards -->
+    <rect x="15" y="85" width="205" height="85" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="25" y="105" font-family="-apple-system,sans-serif" font-size="10.5" font-weight="700" fill="#0f172a">Public Web OPAC</text>
+    <text x="25" y="123" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Modern mobile responsive</text>
+    <text x="25" y="138" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Live shelf availability cards</text>
+    <text x="25" y="153" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Accessible on phones &amp; tablets</text>
+
+    <rect x="235" y="85" width="205" height="85" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="245" y="105" font-family="-apple-system,sans-serif" font-size="10.5" font-weight="700" fill="#0f172a">Student Self-Service</text>
+    <text x="245" y="123" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Student ID or IC login</text>
+    <text x="245" y="138" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Check loan due dates &amp; fines</text>
+    <text x="245" y="153" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Place holds on loaned copies</text>
+
+    <rect x="455" y="85" width="210" height="85" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1"/>
+    <text x="465" y="105" font-family="-apple-system,sans-serif" font-size="10.5" font-weight="700" fill="#0f172a">Static OPAC Export</text>
+    <text x="465" y="123" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; 1-click GitHub Pages package</text>
+    <text x="465" y="138" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Sanitized catalog.json</text>
+    <text x="465" y="153" font-family="-apple-system,sans-serif" font-size="9" fill="#475569">&bull; Free 24/7 web hosting</text>
+  </svg>
+  <div class="flowchart-caption">Flowchart 9: Remote Web OPAC, Subject Heading Search &amp; Student Portal</div>
+  </div>
+
   <!-- =============================================================
        CHAPTER 15: ERRINILS SCANNER (ANDROID COMPANION APP)
        ============================================================= -->
   <div class="page-break"></div>
-  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 15: Android Scanner App</span></div>
+  <div class="header-rule"><span>ErrinILS v1.5.0 User Manual</span><span>Chapter 15: Android Scanner App</span></div>
   <h2 class="chapter-heading">15. ErrinILS Scanner (Android Companion Barcode Gun &amp; Port 8586)</h2>
   <p>
     <strong>ErrinILS Scanner</strong> is a native Android application engineered to eliminate the cost of commercial wireless barcode guns. Using Google ML Kit Barcode Scanning and CameraX, it converts any Android smartphone or tablet into a high-speed wireless barcode scanner, mobile cataloging terminal, and bidirectional companion device.
@@ -1171,14 +1484,14 @@
     <rect x="310" y="182" width="65" height="15" rx="3" fill="#dbeafe"/>
     <text x="342" y="193" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8" font-weight="700" fill="#1e40af" text-anchor="middle">POST /beep</text>
   </svg>
-  <div class="flowchart-caption">Flowchart 4: Bidirectional Dual-Port Companion Architecture (Desktop Port 8585 &harr; Mobile Port 8586)</div>
+  <div class="flowchart-caption">Flowchart 10: Bidirectional Dual-Port Companion Architecture (Desktop Port 8585 &harr; Mobile Port 8586)</div>
 </div>
 
   <!-- =============================================================
        CHAPTER 16: DUAL CLOUD SYNC
        ============================================================= -->
   <div class="page-break"></div>
-  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 16: Dual Cloud Sync</span></div>
+  <div class="header-rule"><span>ErrinILS v1.5.0 User Manual</span><span>Chapter 16: Dual Cloud Sync</span></div>
   <h2 class="chapter-heading">16. Dual Cloud Sync (Google Drive &amp; GitHub)</h2>
   <p>
     ErrinILS features an innovative privacy-compliant dual cloud synchronization engine that allows multiple library PCs to share identical records without exposing student personal data to public repositories:
@@ -1247,13 +1560,13 @@
       <text x="612" y="130" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8" font-weight="700" fill="#15803d" text-anchor="middle">100% Parity</text>
     </g>
   </svg>
-  <div class="flowchart-caption">Flowchart 5: Dual Privacy-Preserving Cloud Synchronization Architecture</div>
+  <div class="flowchart-caption">Flowchart 11: Dual Privacy-Preserving Cloud Synchronization Architecture</div>
 </div>
 
   <!-- =============================================================
        CHAPTER 17: REPORTS & ANALYTICS
        ============================================================= -->
-  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 17: Reports &amp; Analytics</span></div>
+  <div class="header-rule"><span>ErrinILS v1.5.0 User Manual</span><span>Chapter 17: Reports &amp; Analytics</span></div>
   <h2 class="chapter-heading">17. Reports, Reading Champions &amp; Collection Analytics</h2>
   <p>
     The <strong>Reports</strong> tab provides executive collection metrics, monthly borrowing trajectories, Nilam reader rankings, and 1-click full CSV spreadsheet export.
@@ -1275,7 +1588,7 @@
        CHAPTER 18: BACKUP, RESTORE & OPTIMIZATION
        ============================================================= -->
   <div class="page-break"></div>
-  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Chapter 18: Backup &amp; Recovery</span></div>
+  <div class="header-rule"><span>ErrinILS v1.5.0 User Manual</span><span>Chapter 18: Backup &amp; Recovery</span></div>
   <h2 class="chapter-heading">18. Backup, Disaster Recovery &amp; SQLite Optimization</h2>
   <p>
     In the <strong>Backup</strong> tab, click <strong>Export Backup (ZIP)</strong>. ErrinILS packages the active SQLite database, configuration files, and MARC catalog into a compressed ZIP file. Save this backup to an external USB flash drive every Friday afternoon.
@@ -1346,7 +1659,7 @@
     <text x="555" y="152" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8" fill="#15803d" text-anchor="middle">Reclaims unused database pages</text>
     <text x="555" y="164" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif" font-size="8" fill="#15803d" text-anchor="middle">Defragments SQLite storage</text>
   </svg>
-  <div class="flowchart-caption">Flowchart 6: Backup, Disaster Recovery &amp; SQLite Optimization Pipeline</div>
+  <div class="flowchart-caption">Flowchart 12: Backup, Disaster Recovery &amp; SQLite Optimization Pipeline</div>
 </div>
 
   <h2 class="chapter-heading">19. Troubleshooting Guide</h2>
@@ -1368,7 +1681,7 @@
        APPENDICES
        ============================================================= -->
   <div class="page-break"></div>
-  <div class="header-rule"><span>ErrinILS v1.4.3 User Manual</span><span>Appendices</span></div>
+  <div class="header-rule"><span>ErrinILS v1.5.0 User Manual</span><span>Appendices</span></div>
   <h2 class="chapter-heading">Appendix A. Quick Daily Task Reference</h2>
   <table>
     <thead><tr><th>Daily Task</th><th>Tab / Screen</th><th>Action to Perform</th></tr></thead>

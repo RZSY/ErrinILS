@@ -6,7 +6,7 @@
  \___|_|  |_|  |_|_| |_|___|_____|____/ 
 
  ErrinILS - Lightweight School Integrated Library System
- Version:  1.4.3
+ Version:  1.5.0
  License:  MIT Open Source
  Website:  https://rzsy.github.io/ErrinILS/
  GitHub:   https://github.com/RZSY/ErrinILS
@@ -27,6 +27,13 @@ Key Specifications:
     (%APPDATA%\Errin\errin-data.db) with built-in backups and automatic migration.
   * High-DPI support: Native PerMonitorV2 awareness for clear text and
     proper layout scaling at 125%, 150%, and 200%.
+  * Custom Numbering Engine: Configurable Acquisition & Barcode templates
+    supporting {0:D6}, ######, 000000, {YEAR}, {YYYY}, sequence baselines,
+    and automatic collision-free regex incrementing.
+  * Redesigned Wide Barcode Labels: Full-width centered barcode layout (240x54)
+    with optional parallel Dewey Call Number row for clean label printing.
+  * Comprehensive Fines & Overdue Holdings: Live overdue loans tracking
+    with Holding (Overdue) status, accrued calculations, and 1-click Pay/Waive/Return.
   * Android Companion App (ErrinILS Scanner): Wireless barcode scanner gun
     and mobile ISBN copy-cataloging using your Android phone's camera.
   * Dual Cloud Sync: Direct Google Drive cloud synchronization for private student
@@ -58,7 +65,7 @@ Network (Optional):   100% offline for core circulation; Wi-Fi/LAN enabled for
 Choose either the Windows installer or the portable standalone binary:
 
 Option A: Standard Windows Installer (Recommended)
-  1. Download ErrinILS-Setup-1.4.3.exe and double-click to launch.
+  1. Download ErrinILS-Setup-1.5.0.exe and double-click to launch.
   2. If Windows User Account Control prompts you, click "Yes".
   3. If a blue "Windows protected your PC" (SmartScreen) warning appears,
      click "More info", then click "Run anyway". (This is normal: ErrinILS

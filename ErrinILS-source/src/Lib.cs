@@ -173,15 +173,126 @@ namespace Errin
         public static string FCtl(int n) { return "ER" + n.ToString().PadLeft(8, '0'); }
         public static string FAcq(int n) { return "ACQ-" + n.ToString().PadLeft(6, '0'); }
         public static readonly Regex RCtl = new Regex(@"^ER(\d+)$"), RAcq = new Regex(@"^ACQ-(\d+)$"), RBc = new Regex(@"^B(\d+)$");
+
+        public static string NormalizePattern(string pattern, string defaultPattern)
+        {
+            if (string.IsNullOrEmpty(pattern) || string.IsNullOrEmpty(pattern.Trim()))
+                return defaultPattern;
+            string p = pattern.Trim();
+
+            p = Regex.Replace(p, @"\{(?:NUMBER|NUM):(\d+)\}", "{0:D$1}", RegexOptions.IgnoreCase);
+            p = Regex.Replace(p, @"\{(?:NUMBER|NUM)\}", "{0}", RegexOptions.IgnoreCase);
+            p = Regex.Replace(p, @"\[(?:NUMBER|NUM):(\d+)\]", "{0:D$1}", RegexOptions.IgnoreCase);
+            p = Regex.Replace(p, @"\[(?:NUMBER|NUM)\]", "{0}", RegexOptions.IgnoreCase);
+
+            if (!Regex.IsMatch(p, @"\{0(?::D\d+)?\}"))
+            {
+                var mHash = Regex.Match(p, @"#+");
+                if (mHash.Success)
+                {
+                    p = p.Substring(0, mHash.Index) + "{0:D" + mHash.Length + "}" + p.Substring(mHash.Index + mHash.Length);
+                }
+                else
+                {
+                    var mZero = Regex.Match(p, @"0{2,}");
+                    if (mZero.Success)
+                    {
+                        p = p.Substring(0, mZero.Index) + "{0:D" + mZero.Length + "}" + p.Substring(mZero.Index + mZero.Length);
+                    }
+                    else
+                    {
+                        if (defaultPattern != null && defaultPattern.Contains("{0:D"))
+                            p = p + "{0:D6}";
+                        else
+                            p = p + "{0}";
+                    }
+                }
+            }
+            return p;
+        }
+
+        public static string FormatItemNumber(string pattern, int n, DateTime? dt = null)
+        {
+            var now = dt ?? DateTime.Now;
+            string p = pattern ?? "";
+            p = Regex.Replace(p, @"\{(?:YEAR|YYYY)\}", now.Year.ToString(), RegexOptions.IgnoreCase);
+            p = Regex.Replace(p, @"\{YY\}", now.ToString("yy"), RegexOptions.IgnoreCase);
+            p = Regex.Replace(p, @"\{MM\}", now.ToString("MM"), RegexOptions.IgnoreCase);
+
+            try
+            {
+                return string.Format(p, n);
+            }
+            catch
+            {
+                return p + n;
+            }
+        }
+
+        public static Regex BuildNumberRegex(string pattern, DateTime? dt = null)
+        {
+            var now = dt ?? DateTime.Now;
+            string p = pattern ?? "";
+            p = Regex.Replace(p, @"\{(?:YEAR|YYYY)\}", now.Year.ToString(), RegexOptions.IgnoreCase);
+            p = Regex.Replace(p, @"\{YY\}", now.ToString("yy"), RegexOptions.IgnoreCase);
+            p = Regex.Replace(p, @"\{MM\}", now.ToString("MM"), RegexOptions.IgnoreCase);
+
+            var m = Regex.Match(p, @"\{0(?::D\d+)?\}");
+            if (!m.Success)
+            {
+                return new Regex(@"(\d+)");
+            }
+            string prefix = p.Substring(0, m.Index);
+            string suffix = p.Substring(m.Index + m.Length);
+
+            string patternRegex = "^" + Regex.Escape(prefix) + @"(\d+)" + Regex.Escape(suffix) + "$";
+            return new Regex(patternRegex, RegexOptions.IgnoreCase);
+        }
+
         public Func<string> Gen(string field, Regex re, Func<int, string> fmt, HashSet<string> used, int bas)
         {
             int m = bas;
-            foreach (var i in D.Items) { var k = re.Match(i.Get(field)); if (k.Success) { int v; if (int.TryParse(k.Groups[1].Value, out v) && v > m) m = v; } }
-            return () => { string c; do { c = fmt(++m); } while (used != null && used.Contains(c.ToLowerInvariant())); return c; };
+            var allUsed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (used != null) { foreach (var u in used) allUsed.Add(u); }
+            if (D != null && D.Items != null)
+            {
+                foreach (var i in D.Items)
+                {
+                    string val = i.Get(field) ?? "";
+                    if (val.Length > 0) allUsed.Add(val);
+                    var k = re.Match(val);
+                    if (k.Success)
+                    {
+                        int v;
+                        if (int.TryParse(k.Groups[1].Value, out v) && v > m) m = v;
+                    }
+                }
+            }
+            return () => {
+                string c;
+                do {
+                    c = fmt(++m);
+                } while (allUsed.Contains(c));
+                allUsed.Add(c);
+                if (used != null) used.Add(c.ToLowerInvariant());
+                return c;
+            };
         }
         public string NextCtl() { return Gen("ctl", RCtl, FCtl, null, 0)(); }
-        public string NextAcq() { return Gen("acq", RAcq, FAcq, null, 0)(); }
-        public string NextBarcode() { return Gen("barcode", RBc, n => "B" + n, null, 1000)(); }
+        public string NextAcq()
+        {
+            string fmtStr = NormalizePattern(D != null && D.Set != null ? D.Set.GetAcqFormat() : null, "ACQ-{0:D6}");
+            var re = BuildNumberRegex(fmtStr);
+            int bas = (D != null && D.Set != null && D.Set.GetAcqStart() > 1) ? D.Set.GetAcqStart() - 1 : 0;
+            return Gen("acq", re, n => FormatItemNumber(fmtStr, n), null, bas)();
+        }
+        public string NextBarcode()
+        {
+            string fmtStr = NormalizePattern(D != null && D.Set != null ? D.Set.GetBarcodeFormat() : null, "B{0}");
+            var re = BuildNumberRegex(fmtStr);
+            int bas = (D != null && D.Set != null && D.Set.GetBarcodeStart() > 1) ? D.Set.GetBarcodeStart() - 1 : 1000;
+            return Gen("barcode", re, n => FormatItemNumber(fmtStr, n), null, bas)();
+        }
         public int FixItems()
         {
             var used = new HashSet<string>();
@@ -192,8 +303,21 @@ namespace Errin
         }
         public int AddItems(List<Item> list, string mode, bool assignAcq, HashSet<Item> dups, out int skipped)
         {
-            var uc = new HashSet<string>(D.Items.Select(i => i.ctl.ToLowerInvariant())); var ub = new HashSet<string>(D.Items.Select(i => i.barcode.ToLowerInvariant()));
-            var gc = Gen("ctl", RCtl, FCtl, uc, 0); var gb = Gen("barcode", RBc, n => "B" + n, ub, 1000); var ga = Gen("acq", RAcq, FAcq, null, 0);
+            var uc = new HashSet<string>(D.Items.Select(i => i.ctl.ToLowerInvariant()));
+            var ub = new HashSet<string>(D.Items.Select(i => i.barcode.ToLowerInvariant()));
+            var ua = new HashSet<string>(D.Items.Select(i => i.acq.ToLowerInvariant()));
+
+            string bfmt = NormalizePattern(D != null && D.Set != null ? D.Set.GetBarcodeFormat() : null, "B{0}");
+            var bre = BuildNumberRegex(bfmt);
+            int bbas = (D != null && D.Set != null && D.Set.GetBarcodeStart() > 1) ? D.Set.GetBarcodeStart() - 1 : 1000;
+
+            string afmt = NormalizePattern(D != null && D.Set != null ? D.Set.GetAcqFormat() : null, "ACQ-{0:D6}");
+            var are = BuildNumberRegex(afmt);
+            int abas = (D != null && D.Set != null && D.Set.GetAcqStart() > 1) ? D.Set.GetAcqStart() - 1 : 0;
+
+            var gc = Gen("ctl", RCtl, FCtl, uc, 0);
+            var gb = Gen("barcode", bre, n => FormatItemNumber(bfmt, n), ub, bbas);
+            var ga = Gen("acq", are, n => FormatItemNumber(afmt, n), ua, abas);
             int added = 0; skipped = 0;
             foreach (var it in list)
             {

@@ -654,6 +654,18 @@ namespace Errin
                             HandleLookupIsbn(stream, query, body);
                             break;
 
+                        case "/api/next-number":
+                            ExecuteOnUi(() => {
+                                var lib = GetLib();
+                                SendJson(stream, 200, new Dictionary<string, object> {
+                                    { "ok", true },
+                                    { "barcode", lib != null ? lib.NextBarcode() : "" },
+                                    { "acq", lib != null ? lib.NextAcq() : "" },
+                                    { "ctl", lib != null ? lib.NextCtl() : "" }
+                                });
+                            });
+                            break;
+
                         case "/api/item":
                             if (method == "POST") HandleSaveItem(stream, body);
                             else HandleGetItem(stream, query);
@@ -1025,6 +1037,7 @@ namespace Errin
 
                     if (string.IsNullOrEmpty(item.barcode)) item.barcode = lib.NextBarcode();
                     if (string.IsNullOrEmpty(item.ctl)) item.ctl = lib.NextCtl();
+                    if (string.IsNullOrEmpty(item.acq)) item.acq = lib.NextAcq();
 
                     if (isNew) db.Items.Add(item);
                     if (OnRemoteWrite != null) OnRemoteWrite(isNew ? "Book added: " + item.title : "Book updated: " + item.title);
@@ -1183,13 +1196,23 @@ namespace Errin
                     if (r != null && r.Ok && r.Rec != null && !string.IsNullOrEmpty(r.Rec.title))
                     {
                         string srcStr = (r.Src != null && r.Src.Count > 0) ? string.Join(" + ", r.Src.ToArray()) : "Online";
+                        var itJ = r.Rec.ToJ();
+                        ExecuteOnUi(() => {
+                            var lib = GetLib();
+                            if (lib != null) {
+                                if (!itJ.ContainsKey("barcode") || string.IsNullOrEmpty(itJ["barcode"] as string))
+                                    itJ["barcode"] = lib.NextBarcode();
+                                if (!itJ.ContainsKey("acq") || string.IsNullOrEmpty(itJ["acq"] as string))
+                                    itJ["acq"] = lib.NextAcq();
+                            }
+                        });
                         SendJson(stream, 200, new Dictionary<string, object> {
                             { "ok", true },
                             { "found", true },
                             { "status", "remote" },
                             { "source", srcStr },
                             { "message", "Found via " + srcStr },
-                            { "item", r.Rec.ToJ() },
+                            { "item", itJ },
                             { "isbn", norm }
                         });
                     }
@@ -1658,10 +1681,40 @@ namespace Errin
                 {
                     var db = GetDb();
                     var lib = GetLib();
+                    var today = Lib.Today();
+
+                    // Include active loans that are overdue (students still holding onto overdue books)
+                    if (status == "all" || status == "unpaid" || status == "holding")
+                    {
+                        var activeOverdue = db.Loans.Where(l => l.ret == null && lib.Overdue(l)).OrderBy(l => l.due).ToList();
+                        foreach (var l in activeOverdue)
+                        {
+                            var it = db.Items.FirstOrDefault(i => i.id == l.iid);
+                            var p = db.Patrons.FirstOrDefault(x => x.id == l.pid);
+                            int days = Lib.Diff(today, l.due);
+                            double amt = Math.Round(days * db.Set.rate, 2);
+                            list.Add(new Dictionary<string, object> {
+                                { "id", "loan:" + l.id },
+                                { "loanId", l.id },
+                                { "pid", l.pid },
+                                { "patronName", p != null ? p.name : "(unknown)" },
+                                { "patronClass", p != null ? p.cls : "" },
+                                { "iid", l.iid },
+                                { "title", it != null ? it.title : "(deleted)" },
+                                { "barcode", it != null ? it.barcode : "" },
+                                { "date", l.due },
+                                { "days", (double)days },
+                                { "amt", amt },
+                                { "paid", "" },
+                                { "holding", true }
+                            });
+                        }
+                    }
 
                     IEnumerable<Fine> fines = db.Fines;
                     if (status == "unpaid") fines = fines.Where(f => f.paid == "");
                     else if (status == "paid") fines = fines.Where(f => f.paid != "");
+                    else if (status == "holding") fines = new List<Fine>();
 
                     foreach (var f in fines.OrderByDescending(f => f.date))
                     {
@@ -1678,7 +1731,8 @@ namespace Errin
                             { "date", f.date },
                             { "days", (double)f.days },
                             { "amt", f.amt },
-                            { "paid", f.paid }
+                            { "paid", f.paid },
+                            { "holding", false }
                         });
                     }
                 });
@@ -1695,6 +1749,22 @@ namespace Errin
                 ExecuteOnUi(() =>
                 {
                     var db = GetDb();
+                    var lib = GetLib();
+                    if (id.StartsWith("loan:"))
+                    {
+                        string lid = id.Substring(5);
+                        var l = db.Loans.FirstOrDefault(x => x.id == lid && x.ret == null);
+                        if (l == null) { error = "Active loan not found"; return; }
+                        var it = db.Items.FirstOrDefault(i => i.id == l.iid);
+                        string msg;
+                        string retErr = lib.Return(it != null ? it.barcode : "", out msg);
+                        if (retErr != null) { error = retErr; return; }
+                        var newFine = db.Fines.LastOrDefault(fn => fn.loan == l.id);
+                        if (newFine != null) newFine.paid = Lib.Today();
+                        if (OnRemoteWrite != null) OnRemoteWrite("Book returned & fine paid");
+                        return;
+                    }
+
                     var f = db.Fines.FirstOrDefault(x => x.id == id);
                     if (f == null) { error = "Fine record not found"; return; }
                     f.paid = Lib.Today();
@@ -1714,6 +1784,22 @@ namespace Errin
                 ExecuteOnUi(() =>
                 {
                     var db = GetDb();
+                    var lib = GetLib();
+                    if (id.StartsWith("loan:"))
+                    {
+                        string lid = id.Substring(5);
+                        var l = db.Loans.FirstOrDefault(x => x.id == lid && x.ret == null);
+                        if (l == null) { error = "Active loan not found"; return; }
+                        var it = db.Items.FirstOrDefault(i => i.id == l.iid);
+                        string msg;
+                        string retErr = lib.Return(it != null ? it.barcode : "", out msg);
+                        if (retErr != null) { error = retErr; return; }
+                        var newFine = db.Fines.LastOrDefault(fn => fn.loan == l.id);
+                        if (newFine != null) newFine.paid = "waived";
+                        if (OnRemoteWrite != null) OnRemoteWrite("Book returned & fine waived");
+                        return;
+                    }
+
                     var f = db.Fines.FirstOrDefault(x => x.id == id);
                     if (f == null) { error = "Fine record not found"; return; }
                     f.paid = "waived";
@@ -4084,9 +4170,10 @@ tr:hover td { background: rgba(255,255,255,0.02); }
       <div class=""card"">
         <div style=""display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;"">
           <div class=""card-title"" style=""margin: 0;"">Fines & Penalties</div>
-          <select id=""fineStatus"" class=""select-box"" style=""width: 150px;"" onchange=""loadFines()"">
-            <option value=""all"">All Fines</option>
-            <option value=""unpaid"" selected>Unpaid Only</option>
+          <select id=""fineStatus"" class=""select-box"" style=""width: 180px;"" onchange=""loadFines()"">
+            <option value=""all"">All Fines & Overdue</option>
+            <option value=""unpaid"" selected>Unpaid & Overdue</option>
+            <option value=""holding"">Holding Overdue Only</option>
             <option value=""paid"">Paid / Waived</option>
           </select>
         </div>
@@ -4692,6 +4779,13 @@ function openItemModal(item = null) {
   document.getElementById('itSub').value = item ? (item.sub || '') : '';
   document.getElementById('itAuthor').value = item ? (item.author || '') : '';
   document.getElementById('itBarcode').value = item ? item.barcode : '';
+  if (!item) {
+    api('/api/next-number').then(res => {
+      if (res && res.ok && res.barcode && !document.getElementById('itBarcode').value) {
+        document.getElementById('itBarcode').value = res.barcode;
+      }
+    }).catch(() => {});
+  }
   document.getElementById('itIsbn').value = item ? (item.isbn || '') : '';
   document.getElementById('itCall').value = item ? (item.call || '') : '';
   document.getElementById('itYear').value = item ? (item.year || '') : '';
@@ -4842,7 +4936,7 @@ async function searchCopyCatalog() {
 
       // Shelf barcode
       const bcInp = document.getElementById('ccBarcode');
-      bcInp.value = res.item.barcode || ('B' + Math.floor(100000 + Math.random() * 900000));
+      bcInp.value = res.item.barcode || '';
 
       // Subjects
       const subjBox = document.getElementById('ccSubjects');
@@ -4879,7 +4973,7 @@ async function searchCopyCatalog() {
 
 async function saveCcDirectly() {
   if (!ccCurrentItem) return;
-  const bc = document.getElementById('ccBarcode').value.trim() || ('B' + Math.floor(100000 + Math.random() * 900000));
+  const bc = document.getElementById('ccBarcode').value.trim();
   const payload = {
     id: ccCurrentItem.id || '',
     title: ccCurrentItem.title || '',
@@ -4945,7 +5039,7 @@ async function lookupIsbnInItemModal() {
       if (!document.getElementById('itYear').value || res.item.year) document.getElementById('itYear').value = res.item.year || '';
       if (!document.getElementById('itCall').value || res.item.call) document.getElementById('itCall').value = res.item.call || '';
       if (!document.getElementById('itSubj').value || res.item.subject) document.getElementById('itSubj').value = res.item.subject || '';
-      if (!document.getElementById('itBarcode').value) document.getElementById('itBarcode').value = res.item.barcode || ('B' + Math.floor(100000 + Math.random() * 900000));
+      if (!document.getElementById('itBarcode').value) document.getElementById('itBarcode').value = res.item.barcode || '';
 
       if (badge) {
         badge.textContent = res.source ? ('Via ' + res.source) : 'Found!';
@@ -5332,7 +5426,12 @@ async function loadFines() {
     let action = `
       <button class=""btn btn-primary btn-sm"" onclick=""payFine('${f.id}')"">Pay</button>
       <button class=""btn btn-sec btn-sm"" onclick=""waiveFine('${f.id}')"">Waive</button>`;
-    if (f.paid === 'waived') {
+    if (f.holding) {
+      stBadge = '<span class=""badge badge-err"" style=""background:#dc2626;color:#fff;"">Holding (Overdue)</span>';
+      action = `
+        <button class=""btn btn-primary btn-sm"" onclick=""payFine('${f.id}')"">Return & Pay</button>
+        <button class=""btn btn-sec btn-sm"" onclick=""waiveFine('${f.id}')"">Return & Waive</button>`;
+    } else if (f.paid === 'waived') {
       stBadge = '<span class=""badge badge-dim"">Waived</span>';
       action = '';
     } else if (f.paid) {

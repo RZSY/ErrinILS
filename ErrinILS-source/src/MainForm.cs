@@ -919,21 +919,106 @@ namespace Errin
         /* ---------- Fines ---------- */
         Control FinePage()
         {
-            var f = db.Fines.AsEnumerable().Reverse().ToList(); double un = f.Where(x => x.paid == "").Sum(x => x.amt), pd = f.Where(x => x.paid == "paid").Sum(x => x.amt);
-            var st = Ui.Flow(); st.Controls.Add(Ui.Stat(Mn(un), "Outstanding", Th.Blue)); st.Controls.Add(Ui.Stat(Mn(pd), "Collected", Th.Yel));
-            var g = MakeGrid(new[] { "Date", "Student", "Title", "Days", "Amount", "Status" }, f.Take(LIM).Select(x => new[] { x.date, lib.PName(x.pid), lib.Title(x.iid), x.days.ToString(), Mn(x.amt), x.paid == "paid" ? "Paid" : x.paid == "waived" ? "Waived" : "Unpaid" }).ToList(), f.Take(LIM).Cast<object>().ToList(), "No fines recorded");
+            string today = Lib.Today();
+            var activeOverdue = db.Loans.Where(l => l.ret == null && lib.Overdue(l)).OrderBy(l => l.due).ToList();
+            var f = db.Fines.AsEnumerable().Reverse().ToList();
+
+            double un = f.Where(x => x.paid == "").Sum(x => x.amt);
+            double accruedOverdue = activeOverdue.Sum(l => Math.Round(Lib.Diff(today, l.due) * db.Set.rate, 2));
+            double pd = f.Where(x => x.paid == "paid").Sum(x => x.amt);
+
+            var st = Ui.Flow();
+            st.Controls.Add(Ui.Stat(Mn(un + accruedOverdue), "Outstanding", Th.Blue));
+            if (activeOverdue.Count > 0)
+                st.Controls.Add(Ui.Stat(activeOverdue.Count.ToString(), "Holding overdue books", Th.Red));
+            st.Controls.Add(Ui.Stat(Mn(pd), "Collected", Th.Yel));
+
+            var rows = new List<string[]>();
+            var tags = new List<object>();
+
+            // 1. Include students who are still holding onto overdue books
+            foreach (var l in activeOverdue)
+            {
+                int days = Lib.Diff(today, l.due);
+                double amt = Math.Round(days * db.Set.rate, 2);
+                rows.Add(new[] { l.due, lib.PName(l.pid), lib.Title(l.iid), days.ToString(), Mn(amt), "Holding (Overdue)" });
+                tags.Add(l);
+            }
+
+            // 2. Then settled and unpaid fines from returned items
+            foreach (var x in f.Take(LIM))
+            {
+                rows.Add(new[] { x.date, lib.PName(x.pid), lib.Title(x.iid), x.days.ToString(), Mn(x.amt), x.paid == "paid" ? "Paid" : x.paid == "waived" ? "Waived" : "Unpaid" });
+                tags.Add(x);
+            }
+
+            var g = MakeGrid(new[] { "Date", "Student", "Title", "Days", "Amount", "Status" }, rows, tags, "No fines or overdue loans recorded");
             g.CellFormatting += (s, e) => {
                 if (e.RowIndex < 0 || e.Value == null) return;
                 if (e.ColumnIndex == 5) {
                     string fineStatus = e.Value.ToString();
-                    if (fineStatus == "Unpaid") { e.CellStyle.ForeColor = Th.Red; e.CellStyle.Font = Th.FB; }
+                    if (fineStatus == "Unpaid" || fineStatus.Contains("Holding") || fineStatus.Contains("Overdue")) {
+                        e.CellStyle.ForeColor = Th.Red; e.CellStyle.Font = Th.FB;
+                    }
                     else if (fineStatus == "Paid") { e.CellStyle.ForeColor = Th.Green; e.CellStyle.Font = Th.FB; }
                     else if (fineStatus == "Waived") { e.CellStyle.ForeColor = Th.Mut; }
                 }
             };
-            Action<string> mark = s => { var x = Ui.Sel<Fine>(g); if (x == null) { Toast("Select a fine first"); return; } if (x.paid != "") { Toast("Already settled"); return; } x.paid = s; Commit(s == "paid" ? "Payment recorded" : "Fine waived"); };
-            var body = WithButtons(g, Ui.Btn("Pay", 0, (s, e) => mark("paid")), Ui.Btn("Waive", 1, (s, e) => mark("waived")));
-            return Ui.Stack(new Control[] { Ui.Heading("Fine tracker", "Fines accrue at " + Mn(db.Set.rate) + " per day late, charged on return."), st, Ui.Card("All fines", body, 1) }, 2);
+
+            Action<string> mark = s => {
+                var sel = Ui.Sel<object>(g);
+                if (sel == null) { Toast("Select a record first"); return; }
+                if (sel is Fine)
+                {
+                    var x = (Fine)sel;
+                    if (x.paid != "") { Toast("Already settled"); return; }
+                    x.paid = s;
+                    Commit(s == "paid" ? "Payment recorded" : "Fine waived");
+                }
+                else if (sel is Loan)
+                {
+                    var l = (Loan)sel;
+                    if (l.ret != null) { Toast("Book already returned"); return; }
+                    var it = db.Items.FirstOrDefault(i => i.id == l.iid);
+                    string msg;
+                    string err = lib.Return(it != null ? it.barcode : "", out msg);
+                    if (err != null) { Toast(err); return; }
+                    var newFine = db.Fines.LastOrDefault(fn => fn.loan == l.id);
+                    if (newFine != null)
+                    {
+                        newFine.paid = s;
+                    }
+                    Commit(s == "paid" ? "Book returned and payment recorded" : "Book returned and fine waived");
+                }
+            };
+
+            Action returnOnly = () => {
+                var sel = Ui.Sel<object>(g);
+                if (sel is Loan)
+                {
+                    var l = (Loan)sel;
+                    var it = db.Items.FirstOrDefault(i => i.id == l.iid);
+                    string msg;
+                    string err = lib.Return(it != null ? it.barcode : "", out msg);
+                    if (err != null) { Toast(err); return; }
+                    Commit("Book returned: " + msg);
+                }
+                else
+                {
+                    Toast("Select an overdue book that is still on loan");
+                }
+            };
+
+            var body = WithButtons(g,
+                Ui.Btn("Pay", 0, (s, e) => mark("paid")),
+                Ui.Btn("Waive", 1, (s, e) => mark("waived")),
+                Ui.Btn("Return book", 1, (s, e) => returnOnly()));
+
+            return Ui.Stack(new Control[] {
+                Ui.Heading("Fine tracker", "Fines accrue at " + Mn(db.Set.rate) + " per day late. Includes students holding overdue books and settled fines."),
+                st,
+                Ui.Card("All fines & active overdue items", body, 1)
+            }, 2);
         }
 
         /* ---------- Reports ---------- */
@@ -1860,6 +1945,196 @@ namespace Errin
             var sch = Ui.Txt(300); sch.Text = s.school; var pol = Ui.Flow(); pol.Controls.Add(Ui.Field("School / library name (printed on library cards)", sch, 400)); pol.Controls.Add(Ui.Field("Fine per day late", rate, 190)); pol.Controls.Add(Ui.Field("Max items per student", mx, 210)); pol.Controls.Add(Ui.Field("Block checkout at unpaid fines of", blk, 290));
             var polBody = Vbox(pol, Ui.Lbl("Loan period fixed at " + Lib.LOAN + " days \u00B7 max 2 renewals.", true), Spacer(6), Ui.Btn("Save", 0, (a, b) => { db.Set.school = sch.Text.Trim(); db.Set.rate = (double)rate.Value; db.Set.maxLoans = (int)mx.Value; db.Set.block = (double)blk.Value; Save(); Toast("Settings saved"); }));
 
+            // Item Numbering & Barcodes Card
+            var acqFmtTxt = Ui.Txt(280);
+            acqFmtTxt.Text = s.GetAcqFormat();
+            var acqStartNum = Ui.Num(120, 1, 99999999, s.GetAcqStart());
+            var acqPresetCombo = Ui.Combo(240,
+                "(Choose preset template...)",
+                "ACQ-{0:D6} (e.g. ACQ-000001)",
+                "ACQ-{YEAR}-{0:D4} (e.g. ACQ-2026-0001)",
+                "{YEAR}/{0:D5} (e.g. 2026/00001)",
+                "ACC-{0:D5} (e.g. ACC-00001)",
+                "{0:D6} (e.g. 000001)",
+                "P{0:D5} (Perpustakaan: P00001)"
+            );
+            var acqPrevLbl = new Label { UseMnemonic = false, AutoSize = true, Font = Th.F, ForeColor = Th.Mut, Margin = Ui.S(new Padding(0, 2, 0, 6)) };
+
+            var bcFmtTxt = Ui.Txt(280);
+            bcFmtTxt.Text = s.GetBarcodeFormat();
+            var bcStartNum = Ui.Num(120, 1, 99999999, s.GetBarcodeStart());
+            var bcPresetCombo = Ui.Combo(240,
+                "(Choose preset template...)",
+                "B{0} (e.g. B1001 - Default)",
+                "B{0:D5} (e.g. B01001)",
+                "B{0:D6} (e.g. B001001)",
+                "LIB{0:D5} (e.g. LIB01001)",
+                "{0:D8} (e.g. 00001001)",
+                "{YEAR}{0:D4} (e.g. 20261001)",
+                "SKTR{0:D4} (e.g. SKTR1001)"
+            );
+            var bcPrevLbl = new Label { UseMnemonic = false, AutoSize = true, Font = Th.F, ForeColor = Th.Mut, Margin = Ui.S(new Padding(0, 2, 0, 6)) };
+
+            Action updateAcqPreview = () =>
+            {
+                string norm = Lib.NormalizePattern(acqFmtTxt.Text, "ACQ-{0:D6}");
+                int sNum = (int)acqStartNum.Value;
+                try
+                {
+                    string p1 = Lib.FormatItemNumber(norm, sNum);
+                    string p2 = Lib.FormatItemNumber(norm, sNum + 1);
+                    string next = "";
+                    try
+                    {
+                        var re = Lib.BuildNumberRegex(norm);
+                        int m = sNum - 1;
+                        foreach (var it in db.Items)
+                        {
+                            var k = re.Match(it.acq ?? "");
+                            if (k.Success) { int v; if (int.TryParse(k.Groups[1].Value, out v) && v > m) m = v; }
+                        }
+                        next = Lib.FormatItemNumber(norm, m + 1);
+                    }
+                    catch { }
+                    acqPrevLbl.Text = "Preview: " + p1 + ", " + p2 + (!string.IsNullOrEmpty(next) ? "  [Next in catalogue: " + next + "]" : "");
+                    acqPrevLbl.ForeColor = Th.Mut;
+                }
+                catch (Exception ex)
+                {
+                    acqPrevLbl.Text = "Invalid format: " + ex.Message;
+                    acqPrevLbl.ForeColor = Th.Red;
+                }
+            };
+
+            Action updateBcPreview = () =>
+            {
+                string norm = Lib.NormalizePattern(bcFmtTxt.Text, "B{0}");
+                int sNum = (int)bcStartNum.Value;
+                try
+                {
+                    string p1 = Lib.FormatItemNumber(norm, sNum);
+                    string p2 = Lib.FormatItemNumber(norm, sNum + 1);
+                    string next = "";
+                    try
+                    {
+                        var re = Lib.BuildNumberRegex(norm);
+                        int m = sNum - 1;
+                        foreach (var it in db.Items)
+                        {
+                            var k = re.Match(it.barcode ?? "");
+                            if (k.Success) { int v; if (int.TryParse(k.Groups[1].Value, out v) && v > m) m = v; }
+                        }
+                        next = Lib.FormatItemNumber(norm, m + 1);
+                    }
+                    catch { }
+                    bcPrevLbl.Text = "Preview: " + p1 + ", " + p2 + (!string.IsNullOrEmpty(next) ? "  [Next in catalogue: " + next + "]" : "");
+                    bcPrevLbl.ForeColor = Th.Mut;
+                }
+                catch (Exception ex)
+                {
+                    bcPrevLbl.Text = "Invalid format: " + ex.Message;
+                    bcPrevLbl.ForeColor = Th.Red;
+                }
+            };
+
+            acqFmtTxt.TextChanged += (a, b) => updateAcqPreview();
+            acqStartNum.ValueChanged += (a, b) => updateAcqPreview();
+            bcFmtTxt.TextChanged += (a, b) => updateBcPreview();
+            bcStartNum.ValueChanged += (a, b) => updateBcPreview();
+
+            acqPresetCombo.SelectedIndexChanged += (a, b) =>
+            {
+                if (acqPresetCombo.SelectedIndex == 1) acqFmtTxt.Text = "ACQ-{0:D6}";
+                else if (acqPresetCombo.SelectedIndex == 2) acqFmtTxt.Text = "ACQ-{YEAR}-{0:D4}";
+                else if (acqPresetCombo.SelectedIndex == 3) acqFmtTxt.Text = "{YEAR}/{0:D5}";
+                else if (acqPresetCombo.SelectedIndex == 4) acqFmtTxt.Text = "ACC-{0:D5}";
+                else if (acqPresetCombo.SelectedIndex == 5) acqFmtTxt.Text = "{0:D6}";
+                else if (acqPresetCombo.SelectedIndex == 6) acqFmtTxt.Text = "P{0:D5}";
+            };
+
+            bcPresetCombo.SelectedIndexChanged += (a, b) =>
+            {
+                if (bcPresetCombo.SelectedIndex == 1) bcFmtTxt.Text = "B{0}";
+                else if (bcPresetCombo.SelectedIndex == 2) bcFmtTxt.Text = "B{0:D5}";
+                else if (bcPresetCombo.SelectedIndex == 3) bcFmtTxt.Text = "B{0:D6}";
+                else if (bcPresetCombo.SelectedIndex == 4) bcFmtTxt.Text = "LIB{0:D5}";
+                else if (bcPresetCombo.SelectedIndex == 5) bcFmtTxt.Text = "{0:D8}";
+                else if (bcPresetCombo.SelectedIndex == 6) bcFmtTxt.Text = "{YEAR}{0:D4}";
+                else if (bcPresetCombo.SelectedIndex == 7) bcFmtTxt.Text = "SKTR{0:D4}";
+            };
+
+            updateAcqPreview();
+            updateBcPreview();
+
+            var acqFlow = Ui.Flow();
+            acqFlow.Controls.Add(Ui.Field("Acquisition number format (e.g. ACQ-{0:D6})", acqFmtTxt, 300));
+            acqFlow.Controls.Add(Ui.Field("Presets", acqPresetCombo, 250));
+            acqFlow.Controls.Add(Ui.Field("Starting sequence #", acqStartNum, 140));
+
+            var bcFlow = Ui.Flow();
+            bcFlow.Controls.Add(Ui.Field("Barcode number format (e.g. B{0})", bcFmtTxt, 300));
+            bcFlow.Controls.Add(Ui.Field("Presets", bcPresetCombo, 250));
+            bcFlow.Controls.Add(Ui.Field("Starting sequence #", bcStartNum, 140));
+
+            var labelShowCallCheck = new CheckBox
+            {
+                Text = "Show call number on barcode labels (parallel layout above barcode)",
+                Checked = s.labelShowCall,
+                AutoSize = true,
+                ForeColor = Th.Ink,
+                BackColor = Color.Transparent,
+                Font = Th.F,
+                Margin = Ui.S(new Padding(0, 4, 0, 4))
+            };
+
+            var numBtns = Ui.Flow(false);
+            numBtns.Controls.Add(Ui.Btn("Save numbering formats", 0, (a, b) =>
+            {
+                db.Set.acqFormat = Lib.NormalizePattern(acqFmtTxt.Text, "ACQ-{0:D6}");
+                db.Set.acqStart = (int)acqStartNum.Value;
+                db.Set.barcodeFormat = Lib.NormalizePattern(bcFmtTxt.Text, "B{0}");
+                db.Set.barcodeStart = (int)bcStartNum.Value;
+                db.Set.labelShowCall = labelShowCallCheck.Checked;
+                Save();
+                updateAcqPreview();
+                updateBcPreview();
+                Toast("Item numbering formats saved");
+            }));
+            numBtns.Controls.Add(Ui.Btn("Reset to defaults", 1, (a, b) =>
+            {
+                acqFmtTxt.Text = "ACQ-{0:D6}";
+                acqStartNum.Value = 1;
+                bcFmtTxt.Text = "B{0}";
+                bcStartNum.Value = 1001;
+                labelShowCallCheck.Checked = false;
+                db.Set.acqFormat = "ACQ-{0:D6}";
+                db.Set.acqStart = 1;
+                db.Set.barcodeFormat = "B{0}";
+                db.Set.barcodeStart = 1001;
+                db.Set.labelShowCall = false;
+                Save();
+                updateAcqPreview();
+                updateBcPreview();
+                Toast("Reset to default numbering formats");
+            }));
+
+            var numBody = Vbox(
+                new Label { UseMnemonic = false, Text = "Customize the automatic number generation pattern when adding new books or importing records into the library catalogue.\nTokens: {0} for sequence number, {0:D6} or {NUMBER:6} for zero-padded numbers, {YEAR} or {YYYY} for 4-digit year, {YY} for 2-digit year.", AutoSize = false, Size = new Size(Ui.S(820), Ui.S(40)), ForeColor = Th.Ink },
+                new Label { UseMnemonic = false, Text = "Acquisition / Accession Number (No. Perolehan)", Font = Th.FB, ForeColor = Th.Ink, AutoSize = true, Margin = Ui.S(new Padding(0, 4, 0, 2)) },
+                acqFlow,
+                acqPrevLbl,
+                Spacer(8),
+                new Label { UseMnemonic = false, Text = "Barcode Number (Nombor Barkod Buku)", Font = Th.FB, ForeColor = Th.Ink, AutoSize = true, Margin = Ui.S(new Padding(0, 4, 0, 2)) },
+                bcFlow,
+                bcPrevLbl,
+                Spacer(6),
+                new Label { UseMnemonic = false, Text = "Barcode Label Options", Font = Th.FB, ForeColor = Th.Ink, AutoSize = true, Margin = Ui.S(new Padding(0, 4, 0, 2)) },
+                labelShowCallCheck,
+                Ui.Lbl("When unchecked, barcode labels show only title and a large centered barcode. When checked, the call number is placed in a parallel line above the barcode.", true),
+                Spacer(6),
+                numBtns
+            );
+
             // Student Registration Required Fields Card (optimized direct-layout table)
             var reqPanel = new Panel { AutoSize = true, Width = Ui.S(820), Dock = DockStyle.Top, BackColor = Color.Transparent };
             reqPanel.SuspendLayout();
@@ -2271,6 +2546,13 @@ namespace Errin
                 rate.Value = (decimal)cur.rate;
                 mx.Value = cur.maxLoans;
                 blk.Value = (decimal)cur.block;
+                acqFmtTxt.Text = cur.GetAcqFormat();
+                acqStartNum.Value = cur.GetAcqStart();
+                bcFmtTxt.Text = cur.GetBarcodeFormat();
+                bcStartNum.Value = cur.GetBarcodeStart();
+                labelShowCallCheck.Checked = cur.labelShowCall;
+                updateAcqPreview();
+                updateBcPreview();
                 foreach (var f in Patron.PatronFields)
                 {
                     if (chkBoxes.ContainsKey(f.Key))
@@ -2297,6 +2579,7 @@ namespace Errin
 
             return ScrollPage(Ui.Heading("Settings", "Policies and data management"),
                 Ui.Card("Policies", polBody),
+                Ui.Card("Item numbering & barcodes (Acquisition & Barcode Formats)", numBody),
                 Ui.Card("Cloud Sync & Multi-PC (Google Drive & GitHub)", syncBody),
                 Ui.Card("Student registration fields", reqBody),
                 Ui.Card("Admin password", pwBody),

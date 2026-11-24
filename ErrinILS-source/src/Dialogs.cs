@@ -316,12 +316,12 @@ namespace Errin
                     e.Graphics.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
                     float sc = 1.3f * Ui.DpiScale;
                     e.Graphics.ScaleTransform(sc, sc);
-                    Labels.Draw(e.Graphics, 12, 12, i);
+                    Labels.Draw(e.Graphics, 12, 12, i, db != null && db.Set != null && db.Set.labelShowCall);
                 };
                 d.Controls.Add(pv);
                 var n = Ui.Num(80, 1, 50, 1); var f = Ui.Field("Copies", n, 100); f.Location = new Point(Ui.S(20), Ui.S(246)); d.Controls.Add(f);
                 var pr = Ui.Btn("Print", 0); pr.Location = new Point(Ui.S(140), Ui.S(266)); var cl = Ui.Btn("Close", 1); cl.Location = new Point(Ui.S(232), Ui.S(266));
-                pr.Click += (s, e) => { if (Labels.Print(d, new List<Item> { i }, (int)n.Value)) { d.Close(); Toast("Sent to printer"); } };
+                pr.Click += (s, e) => { if (Labels.Print(d, new List<Item> { i }, (int)n.Value, db != null && db.Set != null && db.Set.labelShowCall)) { d.Close(); Toast("Sent to printer"); } };
                 cl.Click += (s, e) => d.Close(); d.Controls.Add(pr); d.Controls.Add(cl); d.ShowDialog(this);
             }
         }
@@ -561,7 +561,7 @@ namespace Errin
                         float oy = (pv.Height - Labels.H * sc) / 2f;
                         e.Graphics.TranslateTransform(ox, oy);
                         e.Graphics.ScaleTransform(sc, sc);
-                        Labels.Draw(e.Graphics, 0, 0, it);
+                        Labels.Draw(e.Graphics, 0, 0, it, db != null && db.Set != null && db.Set.labelShowCall);
                     }
                 };
 
@@ -614,7 +614,7 @@ namespace Errin
                             items.Count, copies, copies > 1 ? "ies" : "y", items.Count * copies);
                         if (!Ui.Confirm(d, msg)) return;
 
-                        if (Labels.Print(d, items, copies))
+                        if (Labels.Print(d, items, copies, db != null && db.Set != null && db.Set.labelShowCall))
                         {
                             d.Close();
                             Toast(string.Format("Sent {0} label(s) to printer", items.Count * copies));
@@ -1197,7 +1197,7 @@ namespace Errin
                     Font = Th.FB, AutoSize = false, Size = new Size(Ui.S(695), Ui.S(24)), Location = new Point(Ui.S(20), Ui.S(68)) });
                 int y = 98; ComboBox mode = null;
                 if (dup.Count > 0) { mode = Ui.Combo(340, "Skip them", "Add them as another copy (new barcode)"); var f = Ui.Field("Records already in the catalogue", mode, 360); f.Location = new Point(Ui.S(20), Ui.S(y)); d.Controls.Add(f); y += 62; }
-                var acq = new CheckBox { Text = "Give records that have no acquisition number a new one (ACQ-nnnnnn)", Checked = true, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(y)), ForeColor = Th.Ink, BackColor = Color.Transparent }; d.Controls.Add(acq); y += 30;
+                var acq = new CheckBox { Text = "Give records that have no acquisition number a new one (" + lib.NextAcq() + ")", Checked = true, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(y)), ForeColor = Th.Ink, BackColor = Color.Transparent }; d.Controls.Add(acq); y += 30;
                 d.Controls.Add(new Label { UseMnemonic = false, Text = "Control numbers and barcodes from the file are kept when they are free; otherwise new ones are assigned.", ForeColor = Th.Mut, Font = Th.FS, AutoSize = true, Location = new Point(Ui.S(20), Ui.S(y)) }); y += 28;
                 var g = MakeGrid(new[] { "Title", "Author", "ISBN" }, ok.Take(8).Select(i => new[] { i.title, i.author, i.isbn }).ToList(), null, "Nothing to import");
                 g.Dock = DockStyle.None; g.Location = new Point(Ui.S(20), Ui.S(y)); g.Size = new Size(Ui.S(695), Ui.S(580 - y - 95)); d.Controls.Add(g);

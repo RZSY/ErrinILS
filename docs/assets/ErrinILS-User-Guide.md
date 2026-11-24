@@ -1,7 +1,7 @@
 # ErrinILS School Library System
 ## User Manual and Operating Guidelines
-**Installation, daily circulation, cataloguing, students, fines, weeding, remote access, reports, backup, Android scanner, and administration**  
-**Software Version 1.4.3 (Windows Edition &amp; Android Companion)**  
+**Installation, daily circulation, cataloguing, custom numbering, barcode labels, students, fines, weeding, remote access, reports, backup, Android scanner, and administration**  
+**Software Version 1.5.0 (Windows Edition &amp; Android Companion)**  
 *For Windows 7, 8, 8.1, 10 and 11 (32-bit and 64-bit) &amp; Android 7.0+*  
 *Official Repository: https://github.com/RZSY/ErrinILS*  
 *Online Portal: https://rzsy.github.io/ErrinILS/*
@@ -245,8 +245,8 @@ ErrinILS is engineered to work out of the box with any **USB Keyboard Wedge Barc
 ## 3. Installing, Updating and Starting ErrinILS
 
 ### 3.1 Installing with the Setup program
-1. Download `ErrinILS-Setup-1.4.3.exe` from the official release page: `https://github.com/RZSY/ErrinILS/releases/tag/v1.4.3`.
-2. Double-click `ErrinILS-Setup-1.4.3.exe`.
+1. Download `ErrinILS-Setup-1.5.0.exe` from the official release page: `https://github.com/RZSY/ErrinILS/releases/tag/v1.5.0`.
+2. Double-click `ErrinILS-Setup-1.5.0.exe`.
 3. If Windows User Account Control (UAC) prompts *"Do you want to allow this app to make changes?"*, click **Yes**.
 4. If a blue **Windows protected your PC** (SmartScreen) notification appears, click **More info**, then click **Run anyway**. *(This appears on open-source releases that do not have costly commercial signing certificates).*
 5. The setup wizard opens. Click **Next**, keep the default destination directory (`C:\Program Files (x86)\ErrinILS` or `C:\Program Files\ErrinILS`), click **Install**, then click **Finish**.
@@ -336,18 +336,18 @@ If an unhandled system error occurs, ErrinILS displays a notification: *"Somethi
 
 | Rule | Default Value | Configurable? | Location in Settings |
 |---|---|---|---|
-| **Loan Period** | 7 calendar days | Fixed in v1.4.3 | Core Circulation Engine |
-| **Max Renewals per Loan** | 2 renewals (+14 days max) | Fixed in v1.4.3 | Core Circulation Engine |
+| **Loan Period** | 7 calendar days | Fixed in v1.5.0 | Core Circulation Engine |
+| **Max Renewals per Loan** | 2 renewals (+14 days max) | Fixed in v1.5.0 | Core Circulation Engine |
 | **Max Books per Student** | 3 books | Yes | **Settings → Max items per student** |
 | **Overdue Fine Rate** | RM 0.10 / day late | Yes | **Settings → Fine per day late** |
 | **Borrowing Block Threshold** | RM 5.00 unpaid fines | Yes | **Settings → Block checkout at unpaid fines of** |
-| **Data Retention Purge** | 5 years after last activity | Automatic | **Tools → Purge Inactive Data** |
+| **Data Retention Purge** | 6 years after last activity | Automatic | **Reports → Inactive Archive** |
 | **Student ID Standard** | Malaysian 12-digit IC/MyKid | Yes (Strict) | **Students → Register Student** |
 
 ### 5.2 How due dates and fines work
 - **Due Date Calculation**: A book checked out on Monday 1 September is due on Monday 8 September (day of checkout + 7 days).
 - **Grace Period**: On the due date itself, the book is considered on time. A book is overdue only when the calendar day advances past the due date.
-- **Accrual vs. Settled Fines**: While an overdue book remains in the student's possession, the fine accrues in real time on the Dashboard (*"Fine on item"*), but is not officially recorded in the ledger. When the book is returned at the circulation desk, the fine is finalized and recorded in the **Fines** ledger.
+- **Accrual vs. Settled Fines**: In v1.5.0, students holding unreturned overdue books appear directly in the **Fines** ledger tagged with a crimson **Holding (Overdue)** badge, with accrued fines calculated in real time (`Days Overdue × Daily Rate`). Librarians can settle fines and return books in a single click using **Pay** or **Waive**.
 
 ### 5.3 When a student cannot borrow (Prioritized refusal checks)
 When a checkout is attempted, ErrinILS evaluates the patron and copy against 6 criteria in strict priority order:
@@ -361,7 +361,29 @@ When a checkout is attempted, ErrinILS evaluates the patron and copy against 6 c
 > [!CAUTION]
 > Never configure **Block checkout at unpaid fines of** to `0.00`. Because the rule blocks checkout when unpaid fines reach or exceed the threshold, a value of zero would block every student at all times. To disable fine blocking, enter a large number such as `999.00`.
 
-### 5.4 Identifiers used in the catalogue
+### 5.4 Custom Acquisition & Barcode Numbering Formats (Flowchart 4)
+In ErrinILS v1.5.0, both the Acquisition Number (Accession ID) and Barcode Number format structures can be formatted in **Settings → Item numbering & barcodes**:
+- **Format Placeholders**: Supports `{0:D6}`, `######`, `000000`, `{NUMBER}`, `{NUMBER:6}`, and raw `{0}`.
+- **Date Variables**: Supports `{YEAR}`, `{YYYY}`, `{YY}`, and `{MM}` for year-based numbering (e.g. `{YEAR}-######` produces `2026-000042`).
+- **Starting Baseline Sequences**: Set custom starting offsets (e.g. `1001` or `50000`) to align with existing physical accession ledgers.
+- **Collision Avoidance**: Automatically parses existing catalog numbers using dynamic regular expressions, determining the highest existing sequence and auto-incrementing safely without duplicates.
+- **Live Previews**: Sample badges in Settings demonstrate exact rendered numbers in real time.
+
+```text
+[Flowchart 4: Custom Item Numbering Engine & Sequence Generation Pipeline]
+  1. Template Input (Format & Start Sequence e.g. ACQ-######, Start: 1001)
+         │
+         ▼
+  2. Normalization ({YEAR} -> 2026, ###### -> {0:D6})
+         │
+         ▼
+  3. Regex DB Scan (Scans SQLite items table for highest existing index)
+         │
+         ▼
+  4. Collision-Free Increment & Auto-Assignment (e.g. ACQ-001042)
+```
+
+### 5.5 Identifiers used in the catalogue
 
 | Identifier | Typical Format | MARC Field | Purpose |
 |---|---|---|---|
@@ -693,8 +715,9 @@ ErrinILS includes a high-throughput **Batch Label & Spine Printing** engine:
      - *Current search / page (N)*: Prints all items matching the active filter or grid page.
      - *All active catalog (N)*: Prints labels for every non-weeded book in the library.
    - **Label Format**:
-     - *Item Barcode Label (3.5" × 1.1")*: Includes School/Library Name, Call Number, Book Title, and crisp Code 128 barcode.
-     - *Spine Call Number Label (1" × 1.5")*: High-contrast Dewey classification split into large, stacked lines for shelf spine readability.
+     - *Redesigned Barcode Label (3.5" × 1.1")*: Features a large, centered 240-unit wide by 54-unit high Code 128 barcode across the full printable width with full-width title across the top and human-readable numbers centered below. The barcode is never smashed or squished to the side.
+     - *Optional Parallel Call Number*: Configurable in Settings (*"Include Call Number on barcode labels (parallel layout)"*). Positioned horizontally parallel as a full-width line between title and barcode.
+     - *Spine Call Number Label (1" × 1.5")*: High-contrast Dewey classification split into large, stacked lines for shelf spine readability. Books without call numbers are safely skipped.
    - **Copies per Record**: Adjust from 1 to 50 copies for printing multiple labels per cataloged copy.
    - **Skip Items without Call Number**: Automatically excludes unclassified books from spine label batches to prevent blank labels.
 4. **Live Antialiased Preview**:
@@ -788,23 +811,21 @@ To comply with student privacy laws, ErrinILS automatically purges inactive stud
 
 ---
 
-## 11. Fines Management
+## 11. Fines & Overdue Holdings Management
 
-### 11.1 How fines arise
-Fines are created when an overdue book is scanned at the return desk:
-$$\text{Fine Amount} = \text{Days Overdue} \times \text{Daily Fine Rate (RM 0.10)}$$
-Fines accumulate per book. If a student returns three late books together, three distinct fine records are created.
+### 11.1 How fines arise & Live Overdue Tracking
+In ErrinILS v1.5.0, the Fines module unifies both settled unpaid fines and active unreturned loans that are past their due date:
+- **Accrued Overdue Calculation**:
+  $$\text{Fine Amount} = \text{Days Overdue} \times \text{Daily Fine Rate (RM 0.10)}$$
+- **Holding (Overdue) Status**: Students holding overdue books appear directly in the ledger marked with a crimson **Holding (Overdue)** badge.
+- **Comprehensive Balances**: Summary metrics instantly show Total Outstanding Balances, Holding Overdue count, and Lifetime Collected Fines.
 
-### 11.2 The Fine Tracker page
-Open the **Fines** tab:
-- **Summary Cards**: Displays **Total Outstanding Fines** and **Total Collected Fines**.
-- **Ledger Table**: Lists Date, Student Name, Book Title, Days Late, Amount (RM), and Status (`Unpaid`, `Paid`, or `Waived`).
-
-### 11.3 Recording payment or waiving a fine
-1. Select the fine record in the table.
-2. Click **Pay** when the student presents cash payment.
-3. Click **Waive** if the library excuses the fine (e.g., student was hospitalized with medical certificate).
-4. Once paid or waived, the status is sealed and the student's checkout block is lifted immediately.
+### 11.2 The Fine Tracker actions
+Select any fine row in the **Fines** tab:
+1. **Pay**: When the student returns the book and pays cash, click **Pay**. The system marks the fine as paid, checks in the book, and returns it to active stock in a single transaction.
+2. **Waive**: If excusing the fee (e.g. documented sick leave), click **Waive**. The book is checked in and the fine is forgiven.
+3. **Return (Check In)**: If the student returns the overdue book without cash, click **Return**. The book is returned to stock, and the fine remains on their account as an assessed debt.
+4. **Circulation Block**: If unpaid fines reach or exceed **RM 5.00**, borrowing is automatically blocked until settled.
 
 ### 11.4 Handling lost or unreturned books
 If a student reports a library book lost:

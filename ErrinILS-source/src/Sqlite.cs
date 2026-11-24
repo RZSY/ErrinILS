@@ -554,7 +554,12 @@ namespace Errin
                     block REAL,
                     zt_json TEXT,
                     patron_req_json TEXT,
-                    opac_login INTEGER DEFAULT 0
+                    opac_login INTEGER DEFAULT 0,
+                    acq_format TEXT,
+                    barcode_format TEXT,
+                    acq_start INTEGER DEFAULT 1,
+                    barcode_start INTEGER DEFAULT 1001,
+                    label_show_call INTEGER DEFAULT 0
                 );
 
                 CREATE TABLE IF NOT EXISTS class_history (
@@ -604,6 +609,26 @@ namespace Errin
             if (!sCols.Contains("opac_login"))
             {
                 try { db.Execute("ALTER TABLE settings ADD COLUMN opac_login INTEGER DEFAULT 0;"); } catch { }
+            }
+            if (!sCols.Contains("acq_format"))
+            {
+                try { db.Execute("ALTER TABLE settings ADD COLUMN acq_format TEXT;"); } catch { }
+            }
+            if (!sCols.Contains("barcode_format"))
+            {
+                try { db.Execute("ALTER TABLE settings ADD COLUMN barcode_format TEXT;"); } catch { }
+            }
+            if (!sCols.Contains("acq_start"))
+            {
+                try { db.Execute("ALTER TABLE settings ADD COLUMN acq_start INTEGER DEFAULT 1;"); } catch { }
+            }
+            if (!sCols.Contains("barcode_start"))
+            {
+                try { db.Execute("ALTER TABLE settings ADD COLUMN barcode_start INTEGER DEFAULT 1001;"); } catch { }
+            }
+            if (!sCols.Contains("label_show_call"))
+            {
+                try { db.Execute("ALTER TABLE settings ADD COLUMN label_show_call INTEGER DEFAULT 0;"); } catch { }
             }
             var aCols = GetTableColumns(db, "archived_patrons");
             if (!aCols.Contains("extra_json"))
@@ -770,7 +795,7 @@ namespace Errin
                 }
 
                 // Load settings
-                using (var cmd = sdb.CreateCommand("SELECT school, rate, max_loans, block, zt_json, patron_req_json, opac_login FROM settings WHERE id = 1;"))
+                using (var cmd = sdb.CreateCommand("SELECT school, rate, max_loans, block, zt_json, patron_req_json, opac_login, acq_format, barcode_format, acq_start, barcode_start, label_show_call FROM settings WHERE id = 1;"))
                 {
                     if (cmd.Step())
                     {
@@ -816,6 +841,15 @@ namespace Errin
                             catch { }
                         }
                         db.Set.opacLogin = cmd.GetInt(6) != 0;
+                        string af = cmd.GetText(7);
+                        if (!string.IsNullOrEmpty(af)) db.Set.acqFormat = af;
+                        string bf = cmd.GetText(8);
+                        if (!string.IsNullOrEmpty(bf)) db.Set.barcodeFormat = bf;
+                        int aStart = cmd.GetInt(9);
+                        if (aStart > 0) db.Set.acqStart = aStart;
+                        int bStart = cmd.GetInt(10);
+                        if (bStart > 0) db.Set.barcodeStart = bStart;
+                        db.Set.labelShowCall = cmd.GetInt(11) != 0;
                     }
                 }
 
@@ -1101,7 +1135,7 @@ namespace Errin
 
                     // Settings
                     sdb.Execute("DELETE FROM settings;");
-                    using (var cmd = sdb.CreateCommand("INSERT INTO settings (id, school, rate, max_loans, block, zt_json, patron_req_json, opac_login) VALUES (1, ?, ?, ?, ?, ?, ?, ?);"))
+                    using (var cmd = sdb.CreateCommand("INSERT INTO settings (id, school, rate, max_loans, block, zt_json, patron_req_json, opac_login, acq_format, barcode_format, acq_start, barcode_start, label_show_call) VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"))
                     {
                         cmd.Bind(1, db.Set.school ?? "");
                         cmd.Bind(2, db.Set.rate);
@@ -1121,6 +1155,11 @@ namespace Errin
                         string reqJson = db.Set.requiredPatronFields != null ? Json.Write(db.Set.requiredPatronFields.Select(x => (object)x).ToList()) : "";
                         cmd.Bind(6, reqJson);
                         cmd.Bind(7, db.Set.opacLogin ? 1 : 0);
+                        cmd.Bind(8, db.Set.GetAcqFormat());
+                        cmd.Bind(9, db.Set.GetBarcodeFormat());
+                        cmd.Bind(10, db.Set.GetAcqStart());
+                        cmd.Bind(11, db.Set.GetBarcodeStart());
+                        cmd.Bind(12, db.Set.labelShowCall ? 1 : 0);
                         cmd.ExecuteNonQuery();
                     }
 

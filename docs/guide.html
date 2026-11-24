@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ErrinILS User Manual - Comprehensive Operating Guidelines</title>
-  <meta name="description" content="Official, exhaustive user manual and operating handbook for ErrinILS version 1.4.3. Covers installation, circulation, 31-source cataloguing, batch label printing, Android companion scanner, cloud sync, student management, fines, weeding, QR remote pairing, analytics, and administration.">
+  <meta name="description" content="Official, exhaustive user manual and operating handbook for ErrinILS version 1.5.0. Covers installation, circulation, 31-source cataloguing, custom accession & barcode numbering formats, redesigned barcode labels, overdue holding loan tracking, batch label printing, Android companion scanner, cloud sync, student management, fines, weeding, QR remote pairing, analytics, and administration.">
   <link rel="icon" type="image/png" href="assets/icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -28,7 +28,7 @@
       <a href="index.html" class="brand-link">
         <img src="assets/icon.png" alt="ErrinILS Logo" class="brand-icon">
         <span>ErrinILS</span>
-        <span class="brand-badge">v1.4.3</span>
+        <span class="brand-badge">v1.5.0</span>
         <span class="brand-school-pill"><span class="school-dot"></span>School Edition</span>
       </a>
 
@@ -44,7 +44,7 @@
 
       <div class="nav-actions">
         <button class="theme-toggle-btn" aria-label="Toggle theme" title="Toggle theme"></button>
-        <a href="download.html" class="btn btn-primary btn-sm">Download v1.4.3</a>
+        <a href="download.html" class="btn btn-primary btn-sm">Download v1.5.0</a>
       </div>
     </div>
   </header>
@@ -57,14 +57,14 @@
       <span class="section-eyebrow">Official School Library Handbook (PSS Manual)</span>
       <h1 class="section-title" style="font-size: 2.5rem;">ErrinILS User Manual &amp; Guidelines</h1>
       <p class="section-subtitle">
-        Exhaustive step-by-step operating guidelines for school librarians, administrators, IT staff, and student helpers. Covers daily circulation, 31-source automated copy-cataloguing, batch label printing &amp; multi-select, the Android companion scanner app, dual cloud sync, Malaysian IC student management, simplified circulation, weeding, remote QR access, and disaster recovery.
+        Exhaustive step-by-step operating guidelines for school librarians, administrators, IT staff, and student helpers. Covers daily circulation, simplified kiosk view, 31-source automated copy-cataloguing, custom accession and barcode numbering templates, redesigned wide barcode labels with optional parallel call numbers, comprehensive fines and active overdue holding tracking, batch label printing, Android companion scanner app, dual cloud sync, Malaysian IC student management, weeding, remote QR access, and disaster recovery.
       </p>
     </div>
 
     <!-- Download / Print Action Bar -->
     <div class="guide-actions-bar">
       <div class="guide-actions-left">
-        <a href="assets/ErrinILS-User-Guide.pdf" download="ErrinILS-User-Guide-v1.4.3.pdf" id="btn-download-guide-pdf" class="btn btn-primary btn-sm">
+        <a href="assets/ErrinILS-User-Guide.pdf" download="ErrinILS-User-Guide-v1.5.0.pdf" id="btn-download-guide-pdf" class="btn btn-primary btn-sm">
           Download PDF Manual
         </a>
         <button id="btn-download-guide-md" class="btn btn-secondary btn-sm">
@@ -78,7 +78,7 @@
         </button>
       </div>
       <div>
-        <span class="badge badge-gold">Official Manual v1.4.3</span>
+        <span class="badge badge-gold">Official Manual v1.5.0</span>
       </div>
     </div>
 
@@ -93,21 +93,21 @@
           <li><a href="#ch2" class="guide-nav-link">2. System Requirements</a></li>
           <li><a href="#ch3" class="guide-nav-link">3. Installing &amp; Starting</a></li>
           <li><a href="#ch4" class="guide-nav-link">4. Getting Started</a></li>
-          <li><a href="#ch5" class="guide-nav-link">5. Rules &amp; Numbering</a></li>
+          <li><a href="#ch5" class="guide-nav-link">5. Rules &amp; Numbering Engine (Flowchart 4)</a></li>
           <li><a href="#ch6" class="guide-nav-link">6. The Dashboard</a></li>
           <li><a href="#ch7" class="guide-nav-link">7. Daily Circulation (Flowchart 1)</a></li>
-          <li><a href="#ch8" class="guide-nav-link">8. The Simplified View</a></li>
+          <li><a href="#ch8" class="guide-nav-link">8. Simplified View Kiosk (Flowchart 2)</a></li>
           <li><a href="#ch9" class="guide-nav-link">9. Catalog &amp; 31-Source Lookup (Flowchart 3)</a></li>
-          <li><a href="#batch-labels" class="guide-nav-link">&bull; Batch Label Printing (Flowchart 4)</a></li>
-          <li><a href="#ch10" class="guide-nav-link">10. Students &amp; Patrons</a></li>
-          <li><a href="#ch11" class="guide-nav-link">11. Fines Management</a></li>
-          <li><a href="#ch12" class="guide-nav-link">12. Collection Weeding</a></li>
-          <li><a href="#ch13" class="guide-nav-link">13. Remote Access &amp; Web OPAC</a></li>
-          <li><a href="#android-scanner" class="guide-nav-link">&bull; Android Companion App (Flowchart 2)</a></li>
+          <li><a href="#batch-labels" class="guide-nav-link">&bull; Redesigned Barcode Labels (Flowchart 5)</a></li>
+          <li><a href="#ch10" class="guide-nav-link">10. Students &amp; Patrons (Flowchart 6)</a></li>
+          <li><a href="#ch11" class="guide-nav-link">11. Fines &amp; Overdue Holdings (Flowchart 7)</a></li>
+          <li><a href="#ch12" class="guide-nav-link">12. Collection Weeding (Flowchart 8)</a></li>
+          <li><a href="#ch13" class="guide-nav-link">13. Remote Access &amp; Web OPAC (Flowchart 9)</a></li>
+          <li><a href="#android-scanner" class="guide-nav-link">&bull; Android Companion App (Flowchart 10)</a></li>
           <li><a href="#remote-copycat" class="guide-nav-link">&bull; Remote Copy-Cataloging</a></li>
-          <li><a href="#cloud-sync" class="guide-nav-link">&bull; Dual Cloud Sync (Flowchart 5)</a></li>
+          <li><a href="#cloud-sync" class="guide-nav-link">&bull; Dual Cloud Sync (Flowchart 11)</a></li>
           <li><a href="#ch14" class="guide-nav-link">14. Reports &amp; Analytics</a></li>
-          <li><a href="#ch15" class="guide-nav-link">15. Backup &amp; Recovery</a></li>
+          <li><a href="#ch15" class="guide-nav-link">15. Backup &amp; Recovery (Flowchart 12)</a></li>
           <li><a href="#db-vacuum" class="guide-nav-link">&bull; Database Optimization</a></li>
           <li><a href="#ch16" class="guide-nav-link">16. Settings &amp; Admin</a></li>
           <li><a href="#ch17" class="guide-nav-link">17. Operational Routines</a></li>
@@ -287,7 +287,7 @@
           <div class="chapter-body">
             <h4 style="color: var(--accent-gold); margin: 16px 0 8px 0;">3.1 Installing with the Setup program</h4>
             <ol class="step-list">
-              <li>Download <code>ErrinILS-Setup-1.4.3.exe</code> from the official website or GitHub release.</li>
+              <li>Download <code>ErrinILS-Setup-1.5.0.exe</code> from the official website or GitHub release.</li>
               <li>Double-click the installer. If Windows UAC prompts *"Do you want to allow this app to make changes?"*, click <strong>Yes</strong>.</li>
               <li>If a blue *"Windows protected your PC"* box appears, click <strong>More info</strong> and then <strong>Run anyway</strong>. This occurs because open-source educational software is released without costly commercial certificates.</li>
               <li>Follow the setup wizard, keep the default directory (<code>C:\Program Files (x86)\ErrinILS</code>), click <strong>Install</strong>, and click <strong>Finish</strong>.</li>
@@ -296,7 +296,7 @@
 
             <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">3.2 Running without installing (portable copy &amp; USB drives)</h4>
             <p>
-              If you do not have administrator permissions, extract <code>ErrinILS-Windows-v1.4.3.zip</code> to any folder or USB flash drive (e.g. <code>E:\ErrinILS\</code>) and double-click <code>ErrinILS.exe</code>. The portable version works identically and stores data in the same location.
+              If you do not have administrator permissions, extract <code>ErrinILS-Windows-v1.5.0.zip</code> to any folder or USB flash drive (e.g. <code>E:\ErrinILS\</code>) and double-click <code>ErrinILS.exe</code>. The portable version works identically and stores data in the same location.
             </p>
 
             <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">3.3 Upgrading to a newer version</h4>
@@ -439,6 +439,123 @@
               <li>Student already has 3 books checked out.</li>
               <li>Another student is waiting first in the hold queue for this title.</li>
             </ol>
+
+            <h4 style="color: var(--accent-gold); margin: 24px 0 8px 0;">5.4 Custom Acquisition &amp; Barcode Numbering Engine</h4>
+            <p>
+              In ErrinILS v1.5.0, both the <strong>Acquisition Number</strong> (Accession ID) and <strong>Barcode Number</strong> format structures are completely customizable in <strong>Settings &rarr; Item numbering &amp; barcodes</strong>. Libraries can configure exact school accessioning schemes, year-prefixed sequences, zero-padded serial numbers, and custom starting offsets without database conflicts.
+            </p>
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Placeholder Token</th>
+                    <th>Syntax Example</th>
+                    <th>Rendered Output (Sequence = 42)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><code>{0:D6}</code> or <code>######</code> or <code>000000</code></td>
+                    <td><code>ACQ-######</code></td>
+                    <td class="highlight"><code>ACQ-000042</code></td>
+                  </tr>
+                  <tr>
+                    <td><code>{NUMBER:5}</code> or <code>{NUMBER}</code></td>
+                    <td><code>LIB-{NUMBER:5}</code></td>
+                    <td class="highlight"><code>LIB-00042</code></td>
+                  </tr>
+                  <tr>
+                    <td><code>{YEAR}</code> or <code>{YYYY}</code></td>
+                    <td><code>{YEAR}-######</code></td>
+                    <td class="highlight"><code>2026-000042</code></td>
+                  </tr>
+                  <tr>
+                    <td><code>{YY}</code> &amp; <code>{MM}</code></td>
+                    <td><code>B{YY}{MM}-000000</code></td>
+                    <td class="highlight"><code>B2611-000042</code></td>
+                  </tr>
+                  <tr>
+                    <td>Raw Digits (Default)</td>
+                    <td><code>{0}</code> (Offset = 1000)</td>
+                    <td class="highlight"><code>1042</code></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <ul class="step-list">
+              <li><strong>Starting Sequence Number:</strong> Set the starting baseline (e.g. <code>1001</code> or <code>50000</code>) to match your physical accession ledger when migrating from another system.</li>
+              <li><strong>Live Interactive Preview:</strong> Real-time sample badges in Settings demonstrate exact rendered results as you type or click presets (<em>Default</em>, <em>6 Digits</em>, <em>Year-Prefixed</em>, <em>8 Digits</em>).</li>
+              <li><strong>Collision Avoidance Engine:</strong> The background engine dynamically compiles regular expressions from your format template, inspecting all existing records in SQLite to locate the highest numeric sequence and increment reliably without duplicates.</li>
+            </ul>
+
+            <!-- Flowchart 4 -->
+            <div class="flowchart-container">
+              <div class="flowchart-title">
+                <span>&#x1F522; Flowchart 4: Custom Item Numbering Engine &amp; Sequence Generation</span>
+              </div>
+              <div class="flowchart-desc">
+                Dynamic template normalization, token replacement ({YEAR}, {0:D6}, ######), starting offset resolution, regex compilation, and collision-free catalog auto-incrementing.
+              </div>
+              <svg class="flowchart-svg" viewBox="0 0 860 300" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                  <marker id="arrow-gold" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                    <path d="M 0 1 L 10 5 L 0 9 z" fill="#f6c61b"/>
+                  </marker>
+                </defs>
+
+                <!-- Box 1 -->
+                <rect x="20" y="30" width="180" height="75" rx="8" fill="#1c2538" stroke="#58a6ff" stroke-width="2"/>
+                <text x="110" y="56" fill="#58a6ff" font-size="12" font-weight="700" text-anchor="middle">1. TEMPLATE INPUT</text>
+                <text x="110" y="76" fill="#f1efe8" font-size="12" text-anchor="middle">Format &amp; Start Sequence</text>
+                <text x="110" y="92" fill="#9a9a94" font-size="11" text-anchor="middle">e.g. ACQ-######, Start: 1001</text>
+
+                <line x1="200" y1="67" x2="238" y2="67" stroke="#f6c61b" stroke-width="2" marker-end="url(#arrow-gold)"/>
+
+                <!-- Box 2 -->
+                <rect x="240" y="30" width="180" height="75" rx="8" fill="#2c2d31" stroke="#44454a" stroke-width="2"/>
+                <text x="330" y="56" fill="#f6c61b" font-size="12" font-weight="700" text-anchor="middle">2. NORMALIZATION</text>
+                <text x="330" y="76" fill="#f1efe8" font-size="12" text-anchor="middle">Token Replacement</text>
+                <text x="330" y="92" fill="#9a9a94" font-size="11" text-anchor="middle">{YEAR}&rarr;2026, ######&rarr;{0:D6}</text>
+
+                <line x1="420" y1="67" x2="458" y2="67" stroke="#f6c61b" stroke-width="2" marker-end="url(#arrow-gold)"/>
+
+                <!-- Box 3 -->
+                <rect x="460" y="30" width="180" height="75" rx="8" fill="#2c2d31" stroke="#58a6ff" stroke-width="2"/>
+                <text x="550" y="56" fill="#58a6ff" font-size="12" font-weight="700" text-anchor="middle">3. REGEX COMPILATION</text>
+                <text x="550" y="76" fill="#f1efe8" font-size="12" text-anchor="middle">Build Pattern &amp; Scan DB</text>
+                <text x="550" y="92" fill="#9a9a94" font-size="11" text-anchor="middle">Find max existing number</text>
+
+                <line x1="640" y1="67" x2="678" y2="67" stroke="#2fb36b" stroke-width="2" marker-end="url(#arrow-green)"/>
+
+                <!-- Box 4 -->
+                <rect x="680" y="30" width="160" height="75" rx="8" fill="#1b2e23" stroke="#2fb36b" stroke-width="2"/>
+                <text x="760" y="56" fill="#2fb36b" font-size="12" font-weight="700" text-anchor="middle">&#x2714; NEXT NUMBER</text>
+                <text x="760" y="76" fill="#f1efe8" font-size="12" text-anchor="middle">Increment &amp; Assign</text>
+                <text x="760" y="92" fill="#9a9a94" font-size="11" text-anchor="middle">Conflict-free insertion</text>
+
+                <!-- Sub-cards -->
+                <rect x="20" y="135" width="260" height="135" rx="8" fill="#232427" stroke="#44454a" stroke-width="1"/>
+                <text x="35" y="160" fill="#f6c61b" font-size="13" font-weight="700">Acquisition Formats</text>
+                <text x="35" y="182" fill="#f1efe8" font-size="12">&bull; Custom accession prefix: ACQ-</text>
+                <text x="35" y="202" fill="#f1efe8" font-size="12">&bull; Year-based prefixes: {YEAR}-######</text>
+                <text x="35" y="222" fill="#f1efe8" font-size="12">&bull; Supports MARC 21 001/035/852 tag</text>
+                <text x="35" y="242" fill="#9a9a94" font-size="11">Applies to manual entry &amp; batch lookups</text>
+
+                <rect x="300" y="135" width="260" height="135" rx="8" fill="#232427" stroke="#44454a" stroke-width="1"/>
+                <text x="315" y="160" fill="#58a6ff" font-size="13" font-weight="700">Barcode Formats</text>
+                <text x="315" y="182" fill="#f1efe8" font-size="12">&bull; Standard sequential digits: 100001</text>
+                <text x="315" y="202" fill="#f1efe8" font-size="12">&bull; Branch / school codes: B-######</text>
+                <text x="315" y="222" fill="#f1efe8" font-size="12">&bull; High-density Code 128 compatibility</text>
+                <text x="315" y="242" fill="#9a9a94" font-size="11">Used for label printing &amp; barcode scans</text>
+
+                <rect x="580" y="135" width="260" height="135" rx="8" fill="#232427" stroke="#44454a" stroke-width="1"/>
+                <text x="595" y="160" fill="#2fb36b" font-size="13" font-weight="700">Zero-Dependency Storage</text>
+                <text x="595" y="182" fill="#f1efe8" font-size="12">&bull; Auto SQLite schema ALTER TABLE</text>
+                <text x="595" y="202" fill="#f1efe8" font-size="12">&bull; Bi-directional Google Drive JSON sync</text>
+                <text x="595" y="222" fill="#f1efe8" font-size="12">&bull; Backward-compatible with default {0}</text>
+                <text x="595" y="242" fill="#9a9a94" font-size="11">Settings persist safely in errin-data.db</text>
+              </svg>
+            </div>
           </div>
         </article>
 
@@ -632,6 +749,78 @@
               <li>Student scans book barcode. ErrinILS confirms on screen: *"Checked out: [Title]. Due back [Date]!"*</li>
               <li>Click **Next student** to reset session.</li>
             </ol>
+
+            <!-- Flowchart 2 -->
+            <div class="flowchart-container">
+              <div class="flowchart-title">
+                <span>&#x1F476; Flowchart 2: Simplified Touch Kiosk (Self-Checkout &amp; Return) Workflow</span>
+              </div>
+              <div class="flowchart-desc">
+                Child-friendly kiosk cycle: Card scan, stateful eligibility verification, friendly audiovisual feedback, book scanning, and automated session reset.
+              </div>
+              <svg class="flowchart-svg" viewBox="0 0 860 300" xmlns="http://www.w3.org/2000/svg">
+                <!-- Box 1 -->
+                <rect x="20" y="30" width="180" height="75" rx="8" fill="#1c2538" stroke="#58a6ff" stroke-width="2"/>
+                <text x="110" y="56" fill="#58a6ff" font-size="12" font-weight="700" text-anchor="middle">1. WELCOME SCREEN</text>
+                <text x="110" y="76" fill="#f1efe8" font-size="12" text-anchor="middle">"Ready. Scan Card"</text>
+                <text x="110" y="92" fill="#9a9a94" font-size="11" text-anchor="middle">Awaiting student badge</text>
+
+                <line x1="200" y1="67" x2="238" y2="67" stroke="#f6c61b" stroke-width="2" marker-end="url(#arrow-gold)"/>
+
+                <!-- Box 2 -->
+                <rect x="240" y="30" width="180" height="75" rx="8" fill="#2c2d31" stroke="#44454a" stroke-width="2"/>
+                <text x="330" y="56" fill="#f6c61b" font-size="12" font-weight="700" text-anchor="middle">2. CARD SCAN &amp; CHECK</text>
+                <text x="330" y="76" fill="#f1efe8" font-size="12" text-anchor="middle">Greets: "Hello [Name]!"</text>
+                <text x="330" y="92" fill="#9a9a94" font-size="11" text-anchor="middle">Checks fines &amp; overdue</text>
+
+                <!-- Blocked -->
+                <line x1="330" y1="105" x2="330" y2="148" stroke="#e8392f" stroke-width="2" marker-end="url(#arrow-red)"/>
+                <text x="340" y="132" fill="#e8392f" font-size="11" font-weight="700">Blocked</text>
+
+                <rect x="240" y="150" width="180" height="65" rx="8" fill="#3d1b1b" stroke="#e8392f" stroke-width="2"/>
+                <text x="330" y="174" fill="#e8392f" font-size="12" font-weight="700" text-anchor="middle">FRIENDLY ALERT</text>
+                <text x="330" y="194" fill="#f1efe8" font-size="11" text-anchor="middle">"Please see the librarian!"</text>
+
+                <!-- Success -->
+                <line x1="420" y1="67" x2="458" y2="67" stroke="#2fb36b" stroke-width="2" marker-end="url(#arrow-green)"/>
+
+                <!-- Box 3 -->
+                <rect x="460" y="30" width="180" height="75" rx="8" fill="#2c2d31" stroke="#58a6ff" stroke-width="2"/>
+                <text x="550" y="56" fill="#58a6ff" font-size="12" font-weight="700" text-anchor="middle">3. SCAN BOOK BARCODE</text>
+                <text x="550" y="76" fill="#f1efe8" font-size="12" text-anchor="middle">Touch or Laser Gun</text>
+                <text x="550" y="92" fill="#9a9a94" font-size="11" text-anchor="middle">Instant sound beep</text>
+
+                <line x1="640" y1="67" x2="678" y2="67" stroke="#2fb36b" stroke-width="2" marker-end="url(#arrow-green)"/>
+
+                <!-- Box 4 -->
+                <rect x="680" y="30" width="160" height="75" rx="8" fill="#1b2e23" stroke="#2fb36b" stroke-width="2"/>
+                <text x="760" y="56" fill="#2fb36b" font-size="12" font-weight="700" text-anchor="middle">&#x2714; SUCCESS BANNER</text>
+                <text x="760" y="76" fill="#f1efe8" font-size="12" text-anchor="middle">Checked Out / Returned</text>
+                <text x="760" y="92" fill="#9a9a94" font-size="11" text-anchor="middle">Displays Due Date</text>
+
+                <!-- Feedback & Features row -->
+                <rect x="20" y="135" width="200" height="135" rx="8" fill="#232427" stroke="#44454a" stroke-width="1"/>
+                <text x="35" y="160" fill="#f6c61b" font-size="13" font-weight="700">Child-Friendly UI</text>
+                <text x="35" y="182" fill="#f1efe8" font-size="12">&bull; Large 28pt touch targets</text>
+                <text x="35" y="202" fill="#f1efe8" font-size="12">&bull; High-contrast banners</text>
+                <text x="35" y="222" fill="#f1efe8" font-size="12">&bull; Gentle polite wording</text>
+                <text x="35" y="242" fill="#9a9a94" font-size="11">Designed for Primary 1 to 6</text>
+
+                <rect x="440" y="135" width="200" height="135" rx="8" fill="#232427" stroke="#44454a" stroke-width="1"/>
+                <text x="455" y="160" fill="#58a6ff" font-size="13" font-weight="700">Audible Audio Chimes</text>
+                <text x="455" y="182" fill="#f1efe8" font-size="12">&bull; Cheerful chime on loan</text>
+                <text x="455" y="202" fill="#f1efe8" font-size="12">&bull; Soft double tone on return</text>
+                <text x="455" y="222" fill="#f1efe8" font-size="12">&bull; Warning buzz on block</text>
+                <text x="455" y="242" fill="#9a9a94" font-size="11">Zero external sound DLLs</text>
+
+                <rect x="655" y="135" width="185" height="135" rx="8" fill="#232427" stroke="#44454a" stroke-width="1"/>
+                <text x="670" y="160" fill="#2fb36b" font-size="13" font-weight="700">Session Security</text>
+                <text x="670" y="182" fill="#f1efe8" font-size="12">&bull; Hidden admin menu</text>
+                <text x="670" y="202" fill="#f1efe8" font-size="12">&bull; "Next student" reset</text>
+                <text x="670" y="222" fill="#f1efe8" font-size="12">&bull; Audit transaction log</text>
+                <text x="670" y="242" fill="#9a9a94" font-size="11">Exit to desk anytime</text>
+              </svg>
+            </div>
           </div>
         </article>
 
@@ -762,7 +951,8 @@
               </li>
               <li><strong>Label Formats:</strong>
                 <ul>
-                  <li><strong>Item Barcode Labels (3.5" &times; 1.1"):</strong> Displays Dewey call number, book title, high-resolution Code 128 barcode, and accession number. Ideal for front/inside covers.</li>
+                  <li><strong>Redesigned Full-Width Barcode Labels (3.5" &times; 1.1"):</strong> Features a large, centered 240-unit wide by 54-unit high Code 128 barcode with full-width centered book title across the top and human-readable barcode numbers centered below. The barcode is never cramped or smashed to one side.</li>
+                  <li><strong>Optional Parallel Call Number:</strong> Configured via Settings &rarr; <em>"Include Call Number on barcode labels (parallel layout)"</em>. When enabled, the Dewey Call Number is positioned as a dedicated, full-width parallel row between the title and the barcode.</li>
                   <li><strong>Spine Labels (1" &times; 1.5"):</strong> Displays bold multi-line Dewey call numbers formatted specifically for book spines. Books without call numbers are automatically identified and safely skipped.</li>
                 </ul>
               </li>
@@ -774,13 +964,13 @@
               </li>
             </ul>
 
-            <!-- Flowchart 4 -->
+            <!-- Flowchart 5 -->
             <div class="flowchart-container">
               <div class="flowchart-title">
-                <span>&#x1F5A8;&#xFE0F; Flowchart 4: Batch Label Printing &amp; Multi-Selection Workflow</span>
+                <span>&#x1F5A8;&#xFE0F; Flowchart 5: Redesigned Barcode Label Printing &amp; Parallel Call Number Workflow</span>
               </div>
               <div class="flowchart-desc">
-                End-to-end printing pipeline from DataGridView multi-selection to live rendering and Windows print spooler dispatch.
+                End-to-end printing pipeline from DataGridView multi-selection to wide-barcode layout rendering, optional parallel call number positioning, and Windows print spooler dispatch.
               </div>
               <svg class="flowchart-svg" viewBox="0 0 860 320" xmlns="http://www.w3.org/2000/svg">
                 <!-- Step 1: Select Records -->
@@ -801,9 +991,9 @@
 
                 <!-- Step 3: Interactive Preview -->
                 <rect x="480" y="30" width="180" height="70" rx="8" fill="#2c2d31" stroke="#58a6ff" stroke-width="2"/>
-                <text x="570" y="56" fill="#58a6ff" font-size="12" font-weight="700" text-anchor="middle">3. LIVE PREVIEW</text>
-                <text x="570" y="76" fill="#f1efe8" font-size="12" text-anchor="middle">Inspect labels &bull; Copies</text>
-                <text x="570" y="90" fill="#9a9a94" font-size="11" text-anchor="middle">Skip check for missing calls</text>
+                <text x="570" y="56" fill="#58a6ff" font-size="12" font-weight="700" text-anchor="middle">3. WIDE LAYOUT ENGINE</text>
+                <text x="570" y="76" fill="#f1efe8" font-size="12" text-anchor="middle">Full-Width Barcode (240&times;54)</text>
+                <text x="570" y="90" fill="#9a9a94" font-size="11" text-anchor="middle">Optional Parallel Call Number</text>
 
                 <line x1="660" y1="65" x2="708" y2="65" stroke="#2fb36b" stroke-width="2" marker-end="url(#arrow-green)"/>
 
@@ -815,12 +1005,12 @@
 
                 <!-- Features breakdown cards below -->
                 <rect x="20" y="130" width="260" height="150" rx="8" fill="#232427" stroke="#44454a" stroke-width="1"/>
-                <text x="35" y="156" fill="#f6c61b" font-size="13" font-weight="700">Item Barcode Labels (3.5" &times; 1.1")</text>
-                <text x="35" y="178" fill="#f1efe8" font-size="12">&bull; Bold Call Number on left margin</text>
-                <text x="35" y="198" fill="#f1efe8" font-size="12">&bull; Truncated Book Title on top right</text>
-                <text x="35" y="218" fill="#f1efe8" font-size="12">&bull; Precision Code 128 barcode</text>
-                <text x="35" y="238" fill="#f1efe8" font-size="12">&bull; Human-readable accession number</text>
-                <text x="35" y="258" fill="#9a9a94" font-size="11">Best for book cover &amp; loan checkout</text>
+                <text x="35" y="156" fill="#f6c61b" font-size="13" font-weight="700">Redesigned Barcode Labels</text>
+                <text x="35" y="178" fill="#f1efe8" font-size="12">&bull; Full-width 240-unit centered barcode</text>
+                <text x="35" y="198" fill="#f1efe8" font-size="12">&bull; Large 54-unit height (no squishing)</text>
+                <text x="35" y="218" fill="#f1efe8" font-size="12">&bull; Centered book title across top</text>
+                <text x="35" y="238" fill="#f1efe8" font-size="12">&bull; Parallel Call Number (optional row)</text>
+                <text x="35" y="258" fill="#9a9a94" font-size="11">Fast laser scanning on book covers</text>
 
                 <rect x="300" y="130" width="260" height="150" rx="8" fill="#232427" stroke="#44454a" stroke-width="1"/>
                 <text x="315" y="156" fill="#58a6ff" font-size="13" font-weight="700">Spine Labels (1" &times; 1.5")</text>
@@ -859,32 +1049,177 @@
               <li>Click **Register** and print their scannable credit-card-sized library card.</li>
             </ol>
 
-            <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">10.9 Automated 5-year data retention rule</h4>
+            <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">10.5 Malaysian IC &amp; MyKid Mathematical Validation</h4>
             <p>
-              To maintain student privacy compliance, ErrinILS automatically purges student accounts 5 years after their last recorded activity. A student is never purged if they have unreturned books or unpaid fines.
+              ErrinILS includes a built-in mathematical verification engine for 12-digit Malaysian Identification numbers (MyKid / MyKad):
             </p>
+            <ul class="step-list">
+              <li><strong>Calendar Validation:</strong> Birth month must be within <code>01–12</code>, and calendar day must be mathematically valid for the specific month and leap year.</li>
+              <li><strong>Normalization:</strong> Automatically parses raw unpunctuated input into standard <code>YYMMDD-PB-###G</code> formatting across all tables and barcode cards.</li>
+              <li><strong>Bulk Import via Excel / CSV:</strong> The zero-dependency OpenXML engine allows instant registration of whole school cohorts from <code>.xlsx</code>, <code>.csv</code>, or <code>.txt</code> files. Duplicate ICs update existing student details rather than generating conflicting records.</li>
+            </ul>
+
+            <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">10.9 Automated 6-year data retention rule &amp; Class Archiving</h4>
+            <p>
+              To safeguard student privacy and prevent database bloat, <code>Lib.Purge()</code> safely moves inactive students into a password-protected **Inactive Archive** if they have had no borrowing activity for 6 years. Records with active loans or unsettled fines are never purged. In addition, an **Annual Class Snapshot** automatically archives class rosters every December 31st to preserve historical Nilam reading cohorts.
+            </p>
+
+            <!-- Flowchart 6 -->
+            <div class="flowchart-container">
+              <div class="flowchart-title">
+                <span>&#x1F393; Flowchart 6: Student Patron Registration, Malaysian IC Validation &amp; Retention Lifecycle</span>
+              </div>
+              <div class="flowchart-desc">
+                From MyKid IC validation and bulk Excel ingestion to active circulation, reading awards, class snapshots, and 6-year privacy deactivation.
+              </div>
+              <svg class="flowchart-svg" viewBox="0 0 860 300" xmlns="http://www.w3.org/2000/svg">
+                <!-- Step 1 -->
+                <rect x="20" y="30" width="180" height="75" rx="8" fill="#1c2538" stroke="#58a6ff" stroke-width="2"/>
+                <text x="110" y="56" fill="#58a6ff" font-size="12" font-weight="700" text-anchor="middle">1. STUDENT INGESTION</text>
+                <text x="110" y="76" fill="#f1efe8" font-size="12" text-anchor="middle">Manual Entry or Excel</text>
+                <text x="110" y="92" fill="#9a9a94" font-size="11" text-anchor="middle">.xlsx / .csv / .tsv batch</text>
+
+                <line x1="200" y1="67" x2="238" y2="67" stroke="#f6c61b" stroke-width="2" marker-end="url(#arrow-gold)"/>
+
+                <!-- Step 2 -->
+                <rect x="240" y="30" width="180" height="75" rx="8" fill="#2c2d31" stroke="#44454a" stroke-width="2"/>
+                <text x="330" y="56" fill="#f6c61b" font-size="12" font-weight="700" text-anchor="middle">2. IC VALIDATION</text>
+                <text x="330" y="76" fill="#f1efe8" font-size="12" text-anchor="middle">Lib.IcOk() &amp; Lib.NormIc()</text>
+                <text x="330" y="92" fill="#9a9a94" font-size="11" text-anchor="middle">YYMMDD-PB-###G check</text>
+
+                <line x1="420" y1="67" x2="458" y2="67" stroke="#2fb36b" stroke-width="2" marker-end="url(#arrow-green)"/>
+
+                <!-- Step 3 -->
+                <rect x="460" y="30" width="180" height="75" rx="8" fill="#2c2d31" stroke="#58a6ff" stroke-width="2"/>
+                <text x="550" y="56" fill="#58a6ff" font-size="12" font-weight="700" text-anchor="middle">3. ACTIVE CIRCULATION</text>
+                <text x="550" y="76" fill="#f1efe8" font-size="12" text-anchor="middle">Checkouts &amp; Returns</text>
+                <text x="550" y="92" fill="#9a9a94" font-size="11" text-anchor="middle">Nilam Reading Champions</text>
+
+                <line x1="640" y1="67" x2="678" y2="67" stroke="#2fb36b" stroke-width="2" marker-end="url(#arrow-green)"/>
+
+                <!-- Step 4 -->
+                <rect x="680" y="30" width="160" height="75" rx="8" fill="#1b2e23" stroke="#2fb36b" stroke-width="2"/>
+                <text x="760" y="56" fill="#2fb36b" font-size="12" font-weight="700" text-anchor="middle">4. ANNUAL SNAPSHOT</text>
+                <text x="760" y="76" fill="#f1efe8" font-size="12" text-anchor="middle">Dec 31 Class Cohort</text>
+                <text x="760" y="92" fill="#9a9a94" font-size="11" text-anchor="middle">Previous years archive</text>
+
+                <!-- Cards below -->
+                <rect x="20" y="135" width="260" height="135" rx="8" fill="#232427" stroke="#44454a" stroke-width="1"/>
+                <text x="35" y="160" fill="#f6c61b" font-size="13" font-weight="700">CR80 Library Cards</text>
+                <text x="35" y="182" fill="#f1efe8" font-size="12">&bull; Standard credit card format</text>
+                <text x="35" y="202" fill="#f1efe8" font-size="12">&bull; High-res Code 128 barcode</text>
+                <text x="35" y="222" fill="#f1efe8" font-size="12">&bull; Fast batch printing on A4</text>
+                <text x="35" y="242" fill="#9a9a94" font-size="11">Durable student badges</text>
+
+                <rect x="300" y="135" width="260" height="135" rx="8" fill="#232427" stroke="#44454a" stroke-width="1"/>
+                <text x="315" y="160" fill="#58a6ff" font-size="13" font-weight="700">6-Year Retention Purge</text>
+                <text x="315" y="182" fill="#f1efe8" font-size="12">&bull; Deactivates inactive records</text>
+                <text x="315" y="202" fill="#f1efe8" font-size="12">&bull; Retains names &amp; past totals</text>
+                <text x="315" y="222" fill="#f1efe8" font-size="12">&bull; Excluded from active leaderboards</text>
+                <text x="315" y="242" fill="#9a9a94" font-size="11">Protected by admin password</text>
+
+                <rect x="580" y="135" width="260" height="135" rx="8" fill="#232427" stroke="#44454a" stroke-width="1"/>
+                <text x="595" y="160" fill="#2fb36b" font-size="13" font-weight="700">1-Click Restoration</text>
+                <text x="595" y="182" fill="#f1efe8" font-size="12">&bull; Never permanently destroyed</text>
+                <text x="595" y="202" fill="#f1efe8" font-size="12">&bull; One-click restore to active</text>
+                <text x="595" y="222" fill="#f1efe8" font-size="12">&bull; Safe private Google Drive sync</text>
+                <text x="595" y="242" fill="#9a9a94" font-size="11">Accessible under Reports &rarr; Archive</text>
+              </svg>
+            </div>
           </div>
         </article>
 
         <!-- Chapter 11 -->
         <article class="guide-chapter" id="ch11">
           <div class="chapter-number">Chapter 11</div>
-          <h2 class="chapter-title">Fines Management</h2>
+          <h2 class="chapter-title">Fines &amp; Overdue Holdings Management</h2>
           <div class="chapter-body">
             <div class="figure-box">
               <img src="assets/screenshot-fines.png" alt="ErrinILS Fines Tracker Screenshot" class="figure-img">
-              <div class="figure-caption">Figure 6: The Fine Tracker — Real-time outstanding balances, payment recording, and fine waivers.</div>
+              <div class="figure-caption">Figure 6: The Fine Tracker — Real-time outstanding balances, active overdue holding loans, payment recording, and fine waivers.</div>
             </div>
             <p>
-              Fines are created when an overdue book is returned: <code>Days Overdue × Daily Rate (RM 0.10)</code>.
+              In ErrinILS v1.5.0, the Fines Management module tracks both <strong>assessed unpaid fines</strong> (from books returned late) and <strong>active unreturned loans</strong> currently held by students past their due dates. This provides librarians with complete monetary oversight without having to cross-reference multiple screens.
+            </p>
+            <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">11.2 Live Overdue Holdings &amp; Accrued Fines</h4>
+            <p>
+              Any student currently holding an overdue book appears directly in the Fines ledger with a prominent crimson <strong>Holding (Overdue)</strong> status badge:
             </p>
             <ul class="step-list">
-              <li><strong>Pay:</strong> Select the fine row in the **Fines** tab and click **Pay** when cash is received.</li>
-              <li><strong>Waive:</strong> Click **Waive** if the library excuses the fine (e.g. documented sick leave).</li>
-              <li>Once all fines are settled, the borrowing block is lifted immediately.</li>
+              <li><strong>Real-Time Accrued Calculation:</strong> Shows the exact calculated fine to date: <code>Days Overdue × Daily Fine Rate (RM 0.10)</code>.</li>
+              <li><strong>Comprehensive Balances:</strong> Summary cards instantly aggregate total unpaid balances, active overdue books held, and lifetime collected fines.</li>
             </ul>
-          </div>
-        </article>
+
+            <h4 style="color: var(--accent-gold); margin: 20px 0 8px 0;">11.3 One-Click Librarian Actions</h4>
+            <ul class="step-list">
+              <li><strong>Pay:</strong> When a student returns the book and pays cash, click <strong>Pay</strong>. The system records the payment, automatically returns the book, and checks it back into the catalog in one transaction.</li>
+              <li><strong>Waive:</strong> If the library excuses the fine (e.g. medical leave or flood disaster), click <strong>Waive</strong>. The book is checked in and the accrued fine is forgiven.</li>
+              <li><strong>Return (Check In):</strong> If the student returns the overdue book but cannot pay immediately, click <strong>Return</strong>. The book is checked back into stock, and the fine remains on their account as an assessed unpaid debt.</li>
+              <li><strong>Borrowing Block:</strong> If a student's unpaid fines equal or exceed the threshold (default <strong>RM 5.00</strong>), checkout is automatically blocked across desktop and kiosk views until settled.</li>
+            </ul>
+
+            <!-- Flowchart 7 -->
+            <div class="flowchart-container">
+              <div class="flowchart-title">
+                <span>&#x1F4B0; Flowchart 7: Fines Management &amp; Active Overdue Holding Lifecycle</span>
+              </div>
+              <div class="flowchart-desc">
+                Daily overdue monitoring, real-time fine accrual, unified ledger display with Holding (Overdue) status, 1-click Pay/Waive/Return triage, and automatic block lifting.
+              </div>
+              <svg class="flowchart-svg" viewBox="0 0 860 300" xmlns="http://www.w3.org/2000/svg">
+                <!-- Box 1 -->
+                <rect x="20" y="30" width="180" height="75" rx="8" fill="#1c2538" stroke="#58a6ff" stroke-width="2"/>
+                <text x="110" y="56" fill="#58a6ff" font-size="12" font-weight="700" text-anchor="middle">1. ACTIVE LOAN AUDIT</text>
+                <text x="110" y="76" fill="#f1efe8" font-size="12" text-anchor="middle">Daily Clock Evaluation</text>
+                <text x="110" y="92" fill="#9a9a94" font-size="11" text-anchor="middle">Is Today &gt; Due Date?</text>
+
+                <line x1="200" y1="67" x2="238" y2="67" stroke="#e8392f" stroke-width="2" marker-end="url(#arrow-red)"/>
+
+                <!-- Box 2 -->
+                <rect x="240" y="30" width="180" height="75" rx="8" fill="#3d1b1b" stroke="#e8392f" stroke-width="2"/>
+                <text x="330" y="56" fill="#e8392f" font-size="12" font-weight="700" text-anchor="middle">2. HOLDING (OVERDUE)</text>
+                <text x="330" y="76" fill="#f1efe8" font-size="12" text-anchor="middle">Accrues: Days &times; RM 0.10</text>
+                <text x="330" y="92" fill="#9a9a94" font-size="11" text-anchor="middle">Appears in Fines ledger</text>
+
+                <line x1="420" y1="67" x2="458" y2="67" stroke="#f6c61b" stroke-width="2" marker-end="url(#arrow-gold)"/>
+
+                <!-- Box 3 -->
+                <rect x="460" y="30" width="180" height="75" rx="8" fill="#2c2d31" stroke="#58a6ff" stroke-width="2"/>
+                <text x="550" y="56" fill="#58a6ff" font-size="12" font-weight="700" text-anchor="middle">3. LIBRARIAN TRIAGE</text>
+                <text x="550" y="76" fill="#f1efe8" font-size="12" text-anchor="middle">[Pay] &bull; [Waive] &bull; [Return]</text>
+                <text x="550" y="92" fill="#9a9a94" font-size="11" text-anchor="middle">One-click execution</text>
+
+                <line x1="640" y1="67" x2="678" y2="67" stroke="#2fb36b" stroke-width="2" marker-end="url(#arrow-green)"/>
+
+                <!-- Box 4 -->
+                <rect x="680" y="30" width="160" height="75" rx="8" fill="#1b2e23" stroke="#2fb36b" stroke-width="2"/>
+                <text x="760" y="56" fill="#2fb36b" font-size="12" font-weight="700" text-anchor="middle">&#x2714; SETTLED</text>
+                <text x="760" y="76" fill="#f1efe8" font-size="12" text-anchor="middle">Book Returned to Stock</text>
+                <text x="760" y="92" fill="#9a9a94" font-size="11" text-anchor="middle">Borrowing block lifted</text>
+
+                <!-- Cards below -->
+                <rect x="20" y="135" width="260" height="135" rx="8" fill="#232427" stroke="#44454a" stroke-width="1"/>
+                <text x="35" y="160" fill="#f6c61b" font-size="13" font-weight="700">Action: [Pay]</text>
+                <text x="35" y="182" fill="#f1efe8" font-size="12">&bull; Cash received at desk</text>
+                <text x="35" y="202" fill="#f1efe8" font-size="12">&bull; Marks fine as paid (RM)</text>
+                <text x="35" y="222" fill="#f1efe8" font-size="12">&bull; Checks in book immediately</text>
+                <text x="35" y="242" fill="#9a9a94" font-size="11">Lifts loan block if balance &lt; RM 5</text>
+
+                <rect x="300" y="135" width="260" height="135" rx="8" fill="#232427" stroke="#44454a" stroke-width="1"/>
+                <text x="315" y="160" fill="#58a6ff" font-size="13" font-weight="700">Action: [Waive]</text>
+                <text x="315" y="182" fill="#f1efe8" font-size="12">&bull; Forgives accrued balance</text>
+                <text x="315" y="202" fill="#f1efe8" font-size="12">&bull; Records waiver in audit log</text>
+                <text x="315" y="222" fill="#f1efe8" font-size="12">&bull; Returns book to active shelf</text>
+                <text x="315" y="242" fill="#9a9a94" font-size="11">Used for verified medical reasons</text>
+
+                <rect x="580" y="135" width="260" height="135" rx="8" fill="#232427" stroke="#44454a" stroke-width="1"/>
+                <text x="595" y="160" fill="#2fb36b" font-size="13" font-weight="700">Action: [Return]</text>
+                <text x="595" y="182" fill="#f1efe8" font-size="12">&bull; Checks in book to stock</text>
+                <text x="595" y="202" fill="#f1efe8" font-size="12">&bull; Assesses fine to student balance</text>
+                <text x="595" y="222" fill="#f1efe8" font-size="12">&bull; Shows in Outstanding Fines table</text>
+                <text x="595" y="242" fill="#9a9a94" font-size="11">Student can settle payment later</text>
+              </svg>
+            </div>
 
         <!-- Chapter 12 -->
         <article class="guide-chapter" id="ch12">
@@ -898,9 +1233,72 @@
             <ol class="step-list">
               <li>In the **Catalog** tab, select the book copy and click **Weed Copy**.</li>
               <li>Select reason: <em>Condition / Damaged</em>, <em>Obsolete / Outdated</em>, <em>Lost / Unreturned</em>, or <em>Duplicate Excess</em>.</li>
-              <li>Confirm weeding. The copy is withdrawn and blocked from checkout.</li>
-              <li>Filter the Catalog by <em>"Weeded Items"</em> at any time to inspect withdrawn stock or restore a found book.</li>
+              <li>Confirm weeding. The copy is withdrawn and blocked from checkout and hold requests.</li>
+              <li>Filter the Catalog by <em>"Weeded Items"</em> at any time to inspect withdrawn stock, generate weeding disposal reports, or restore a found book.</li>
             </ol>
+
+            <!-- Flowchart 8 -->
+            <div class="flowchart-container">
+              <div class="flowchart-title">
+                <span>&#x1F5D1;&#xFE0F; Flowchart 8: Collection Weeding, Maintenance &amp; Collection Health Lifecycle</span>
+              </div>
+              <div class="flowchart-desc">
+                Stock audit, multi-reason withdrawal categorization, circulation blocking, historical data preservation, and 1-click catalog restoration.
+              </div>
+              <svg class="flowchart-svg" viewBox="0 0 860 300" xmlns="http://www.w3.org/2000/svg">
+                <!-- Box 1 -->
+                <rect x="20" y="30" width="180" height="75" rx="8" fill="#1c2538" stroke="#58a6ff" stroke-width="2"/>
+                <text x="110" y="56" fill="#58a6ff" font-size="12" font-weight="700" text-anchor="middle">1. STOCK AUDIT</text>
+                <text x="110" y="76" fill="#f1efe8" font-size="12" text-anchor="middle">Identify Candidates</text>
+                <text x="110" y="92" fill="#9a9a94" font-size="11" text-anchor="middle">Dormant &bull; Damaged &bull; Lost</text>
+
+                <line x1="200" y1="67" x2="238" y2="67" stroke="#e8392f" stroke-width="2" marker-end="url(#arrow-red)"/>
+
+                <!-- Box 2 -->
+                <rect x="240" y="30" width="180" height="75" rx="8" fill="#2c2d31" stroke="#44454a" stroke-width="2"/>
+                <text x="330" y="56" fill="#f6c61b" font-size="12" font-weight="700" text-anchor="middle">2. WITHDRAW COPY</text>
+                <text x="330" y="76" fill="#f1efe8" font-size="12" text-anchor="middle">Select Reason &amp; Date</text>
+                <text x="330" y="92" fill="#9a9a94" font-size="11" text-anchor="middle">Condition &bull; Obsolete &bull; Excess</text>
+
+                <line x1="420" y1="67" x2="458" y2="67" stroke="#e8392f" stroke-width="2" marker-end="url(#arrow-red)"/>
+
+                <!-- Box 3 -->
+                <rect x="460" y="30" width="180" height="75" rx="8" fill="#3d1b1b" stroke="#e8392f" stroke-width="2"/>
+                <text x="550" y="56" fill="#e8392f" font-size="12" font-weight="700" text-anchor="middle">3. CIRCULATION BLOCKED</text>
+                <text x="550" y="76" fill="#f1efe8" font-size="12" text-anchor="middle">Cannot be Checked Out</text>
+                <text x="550" y="92" fill="#9a9a94" font-size="11" text-anchor="middle">Cannot be Placed on Hold</text>
+
+                <line x1="640" y1="67" x2="678" y2="67" stroke="#2fb36b" stroke-width="2" marker-end="url(#arrow-green)"/>
+
+                <!-- Box 4 -->
+                <rect x="680" y="30" width="160" height="75" rx="8" fill="#1b2e23" stroke="#2fb36b" stroke-width="2"/>
+                <text x="760" y="56" fill="#2fb36b" font-size="12" font-weight="700" text-anchor="middle">4. HISTORY SAVED</text>
+                <text x="760" y="76" fill="#f1efe8" font-size="12" text-anchor="middle">Nilam Stats Retained</text>
+                <text x="760" y="92" fill="#9a9a94" font-size="11" text-anchor="middle">Ready for Restore / Report</text>
+
+                <!-- Cards below -->
+                <rect x="20" y="135" width="260" height="135" rx="8" fill="#232427" stroke="#44454a" stroke-width="1"/>
+                <text x="35" y="160" fill="#f6c61b" font-size="13" font-weight="700">Dormant Collection Audit</text>
+                <text x="35" y="182" fill="#f1efe8" font-size="12">&bull; Filter zero loans in 12 months</text>
+                <text x="35" y="202" fill="#f1efe8" font-size="12">&bull; Re-shelving promotion insights</text>
+                <text x="35" y="222" fill="#f1efe8" font-size="12">&bull; Curricular obsolescence check</text>
+                <text x="35" y="242" fill="#9a9a94" font-size="11">Frees shelf space intelligently</text>
+
+                <rect x="300" y="135" width="260" height="135" rx="8" fill="#232427" stroke="#44454a" stroke-width="1"/>
+                <text x="315" y="160" fill="#58a6ff" font-size="13" font-weight="700">Weeding Analytics</text>
+                <text x="315" y="182" fill="#f1efe8" font-size="12">&bull; Categorized breakdown chart</text>
+                <text x="315" y="202" fill="#f1efe8" font-size="12">&bull; Damaged vs Lost percentages</text>
+                <text x="315" y="222" fill="#f1efe8" font-size="12">&bull; Annual disposal audit log</text>
+                <text x="315" y="242" fill="#9a9a94" font-size="11">Complies with MOE library standards</text>
+
+                <rect x="580" y="135" width="260" height="135" rx="8" fill="#232427" stroke="#44454a" stroke-width="1"/>
+                <text x="595" y="160" fill="#2fb36b" font-size="13" font-weight="700">Restoration Safeguard</text>
+                <text x="595" y="182" fill="#f1efe8" font-size="12">&bull; Found books restored in 1 click</text>
+                <text x="595" y="202" fill="#f1efe8" font-size="12">&bull; Clears weeded flag instantly</text>
+                <text x="595" y="222" fill="#f1efe8" font-size="12">&bull; Re-activates borrowing status</text>
+                <text x="595" y="242" fill="#9a9a94" font-size="11">Full provenance maintained</text>
+              </svg>
+            </div>
           </div>
         </article>
 
@@ -914,7 +1312,7 @@
               <div class="figure-caption">Figure 7: Settings &amp; Remote Access — Policy parameters, admin password, OPAC configuration, and wireless QR code device pairing.</div>
             </div>
             <p>
-              ErrinILS features a built-in pure C# HTTP server (<code>TcpListener</code>) binding to all network interfaces (<code>0.0.0.0</code>), allowing smartphones, tablets, and computers on school Wi-Fi or LAN to access the library wirelessly.
+              ErrinILS features a built-in pure C# HTTP server (<code>TcpListener</code>) binding to all network interfaces (<code>0.0.0.0:8585</code>), allowing smartphones, tablets, and computers on school Wi-Fi or LAN to access the library wirelessly.
             </p>
             <h4 style="color: var(--accent-gold); margin: 16px 0 8px 0;">13.3 Instant QR Code &amp; 6-digit PIN pairing (Staff Remote Access)</h4>
             <ol class="step-list">
@@ -930,7 +1328,7 @@
               The OPAC provides a clean, responsive public search portal for students, teachers, and parents:
             </p>
             <ul class="step-list">
-              <li><strong>Local Network URL:</strong> Open any browser on the school network and navigate to <code>http://&lt;server-ip&gt;:8080/opac</code> (or click <strong>Open OPAC in Browser</strong> in Settings).</li>
+              <li><strong>Local Network URL:</strong> Open any browser on the school network and navigate to <code>http://&lt;server-ip&gt;:8585/opac</code> (or click <strong>Open OPAC in Browser</strong> in Settings).</li>
               <li><strong>Signature Theme:</strong> Designed with the desktop software's charcoal palette, golden yellow accents, royal blue branding, and clear status cards.</li>
               <li><strong>Search Capabilities:</strong> Multi-token keyword search across title, author, and call number, plus a dedicated <strong>Subject Heading</strong> filter and interactive topic tag cloud.</li>
               <li><strong>Live Copy Availability:</strong> Immediately shows whether copies are on the shelf, on loan (with due date), or held.</li>
@@ -943,6 +1341,71 @@
             <ul class="step-list">
               <li><strong>Enabling Login:</strong> In <strong>Settings → OPAC &amp; Online Catalog</strong>, check the box: <code>Enable Patron Login for OPAC</code>.</li>
               <li><strong>Student Sign-In:</strong> Students click <strong>Log Masuk Murid / Patron Login</strong> in the top header and enter either their <strong>Student ID</strong> (<code>id_murid</code>) or <strong>Malaysian IC / MyKid</strong> (<code>no_pengenalan</code>).</li>
+              <li><strong>Student Dashboard:</strong> Once logged in, students can review their active borrowed items, loan due dates, calculated overdue fines (RM), reading history, and place holds on books currently loaned out to others.</li>
+            </ul>
+
+            <!-- Flowchart 9 -->
+            <div class="flowchart-container">
+              <div class="flowchart-title">
+                <span>&#x1F310; Flowchart 9: Remote Web OPAC, Subject Heading Search &amp; Student Portal</span>
+              </div>
+              <div class="flowchart-desc">
+                Multi-interface binding (0.0.0.0:8585), public catalog browsing, subject heading filtering, patron MyKid authentication, and self-service book reserves.
+              </div>
+              <svg class="flowchart-svg" viewBox="0 0 860 300" xmlns="http://www.w3.org/2000/svg">
+                <!-- Box 1 -->
+                <rect x="20" y="30" width="180" height="75" rx="8" fill="#1c2538" stroke="#58a6ff" stroke-width="2"/>
+                <text x="110" y="56" fill="#58a6ff" font-size="12" font-weight="700" text-anchor="middle">1. NETWORK LISTENER</text>
+                <text x="110" y="76" fill="#f1efe8" font-size="12" text-anchor="middle">0.0.0.0:8585 Binding</text>
+                <text x="110" y="92" fill="#9a9a94" font-size="11" text-anchor="middle">Wi-Fi &bull; LAN &bull; Hotspots</text>
+
+                <line x1="200" y1="67" x2="238" y2="67" stroke="#f6c61b" stroke-width="2" marker-end="url(#arrow-gold)"/>
+
+                <!-- Box 2 -->
+                <rect x="240" y="30" width="180" height="75" rx="8" fill="#2c2d31" stroke="#44454a" stroke-width="2"/>
+                <text x="330" y="56" fill="#f6c61b" font-size="12" font-weight="700" text-anchor="middle">2. PUBLIC WEB OPAC</text>
+                <text x="330" y="76" fill="#f1efe8" font-size="12" text-anchor="middle">Search /opac Endpoint</text>
+                <text x="330" y="92" fill="#9a9a94" font-size="11" text-anchor="middle">Title &bull; Author &bull; Call No</text>
+
+                <line x1="420" y1="67" x2="458" y2="67" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrow-blue)"/>
+
+                <!-- Box 3 -->
+                <rect x="460" y="30" width="180" height="75" rx="8" fill="#2c2d31" stroke="#58a6ff" stroke-width="2"/>
+                <text x="550" y="56" fill="#58a6ff" font-size="12" font-weight="700" text-anchor="middle">3. SUBJECT FILTER</text>
+                <text x="550" y="76" fill="#f1efe8" font-size="12" text-anchor="middle">Perkara Topic Tags</text>
+                <text x="550" y="92" fill="#9a9a94" font-size="11" text-anchor="middle">Interactive tag cloud</text>
+
+                <line x1="640" y1="67" x2="678" y2="67" stroke="#2fb36b" stroke-width="2" marker-end="url(#arrow-green)"/>
+
+                <!-- Box 4 -->
+                <rect x="680" y="30" width="160" height="75" rx="8" fill="#1b2e23" stroke="#2fb36b" stroke-width="2"/>
+                <text x="760" y="56" fill="#2fb36b" font-size="12" font-weight="700" text-anchor="middle">4. PATRON PORTAL</text>
+                <text x="760" y="76" fill="#f1efe8" font-size="12" text-anchor="middle">Student ID / MyKid Login</text>
+                <text x="760" y="92" fill="#9a9a94" font-size="11" text-anchor="middle">Check loans &bull; Place holds</text>
+
+                <!-- Cards below -->
+                <rect x="20" y="135" width="260" height="135" rx="8" fill="#232427" stroke="#44454a" stroke-width="1"/>
+                <text x="35" y="160" fill="#f6c61b" font-size="13" font-weight="700">Responsive Architecture</text>
+                <text x="35" y="182" fill="#f1efe8" font-size="12">&bull; Mobile-optimized HTML5</text>
+                <text x="35" y="202" fill="#f1efe8" font-size="12">&bull; Left-border status cards</text>
+                <text x="35" y="222" fill="#f1efe8" font-size="12">&bull; Live availability status</text>
+                <text x="35" y="242" fill="#9a9a94" font-size="11">Accessible from phones &amp; tablets</text>
+
+                <rect x="300" y="135" width="260" height="135" rx="8" fill="#232427" stroke="#44454a" stroke-width="1"/>
+                <text x="315" y="160" fill="#58a6ff" font-size="13" font-weight="700">Student Self-Service</text>
+                <text x="315" y="182" fill="#f1efe8" font-size="12">&bull; Optional privacy toggle</text>
+                <text x="315" y="202" fill="#f1efe8" font-size="12">&bull; Track due dates &amp; fines</text>
+                <text x="315" y="222" fill="#f1efe8" font-size="12">&bull; Self-service hold queue</text>
+                <text x="315" y="242" fill="#9a9a94" font-size="11">Empowers independent reading</text>
+
+                <rect x="580" y="135" width="260" height="135" rx="8" fill="#232427" stroke="#44454a" stroke-width="1"/>
+                <text x="595" y="160" fill="#2fb36b" font-size="13" font-weight="700">Static Export (Zero-Server)</text>
+                <text x="595" y="182" fill="#f1efe8" font-size="12">&bull; 1-click GitHub Pages package</text>
+                <text x="595" y="202" fill="#f1efe8" font-size="12">&bull; Sanitized catalog.json</text>
+                <text x="595" y="222" fill="#f1efe8" font-size="12">&bull; No 24/7 server needed</text>
+                <text x="595" y="242" fill="#9a9a94" font-size="11">Free public hosting forever</text>
+              </svg>
+            </div>
               <li><strong>Student Dashboard:</strong> Once logged in, students can review their active borrowed items, loan due dates, calculated overdue fines (RM), reading history, and place holds on books currently loaned out to others.</li>
             </ul>
 
@@ -990,44 +1453,44 @@
               </li>
             </ul>
 
-            <!-- Flowchart 2 -->
+            <!-- Flowchart 10 -->
             <div class="flowchart-container">
               <div class="flowchart-title">
-                <span>&#x1F4F1; Flowchart 2: Android Companion App &amp; Wireless Wedge Architecture</span>
+                <span>&#x1F4F1; Flowchart 10: Android Companion App &amp; Bidirectional Dual-Port Architecture</span>
               </div>
               <div class="flowchart-desc">
-                High-speed wireless scanning pipeline from CameraX/ML Kit recognition to desktop keyboard keystroke injection.
+                High-speed wireless scanning pipeline connecting Desktop ErrinILS (port 8585) with the Android Companion App (port 8586) for wireless barcode wedge injection, remote ISBN cataloging, latency ping checks, and haptic beeps.
               </div>
               <svg class="flowchart-svg" viewBox="0 0 860 330" xmlns="http://www.w3.org/2000/svg">
                 <!-- Phone Box -->
                 <rect x="20" y="30" width="240" height="260" rx="10" fill="#1b202c" stroke="#58a6ff" stroke-width="2"/>
-                <text x="140" y="58" fill="#58a6ff" font-size="14" font-weight="700" text-anchor="middle">&#x1F4F1; ANDROID PHONE</text>
-                <text x="140" y="74" fill="#9a9a94" font-size="11" text-anchor="middle">ErrinILS Scanner App</text>
+                <text x="140" y="58" fill="#58a6ff" font-size="14" font-weight="700" text-anchor="middle">&#x1F4F1; ANDROID COMPANION</text>
+                <text x="140" y="74" fill="#9a9a94" font-size="11" text-anchor="middle">Port 8586 Companion Server</text>
 
                 <rect x="35" y="90" width="210" height="42" rx="6" fill="#2c2d31" stroke="#44454a" stroke-width="1"/>
                 <text x="140" y="108" fill="#f6c61b" font-size="11" font-weight="700" text-anchor="middle">1. CameraX + Google ML Kit</text>
                 <text x="140" y="122" fill="#f1efe8" font-size="10" text-anchor="middle">Sub-second 1D/2D barcode scan</text>
 
                 <rect x="35" y="142" width="210" height="42" rx="6" fill="#2c2d31" stroke="#44454a" stroke-width="1"/>
-                <text x="140" y="160" fill="#58a6ff" font-size="11" font-weight="700" text-anchor="middle">2. Cryptographic Header</text>
-                <text x="140" y="174" fill="#f1efe8" font-size="10" text-anchor="middle">X-Errin-Token: 32-byte hash</text>
+                <text x="140" y="160" fill="#58a6ff" font-size="11" font-weight="700" text-anchor="middle">2. Cryptographic Auth</text>
+                <text x="140" y="174" fill="#f1efe8" font-size="10" text-anchor="middle">X-Errin-Token &bull; Port Header</text>
 
                 <rect x="35" y="194" width="210" height="52" rx="6" fill="#2c2d31" stroke="#44454a" stroke-width="1"/>
-                <text x="140" y="212" fill="#2fb36b" font-size="11" font-weight="700" text-anchor="middle">3. Mode Dispatcher</text>
-                <text x="140" y="226" fill="#f1efe8" font-size="10" text-anchor="middle">A: /api/wedge (Wireless gun)</text>
-                <text x="140" y="238" fill="#f1efe8" font-size="10" text-anchor="middle">B: /api/item (Catalog add)</text>
+                <text x="140" y="212" fill="#2fb36b" font-size="11" font-weight="700" text-anchor="middle">3. Bidirectional Server</text>
+                <text x="140" y="226" fill="#f1efe8" font-size="10" text-anchor="middle">Listens for Desktop Ping / Beep</text>
+                <text x="140" y="238" fill="#f1efe8" font-size="10" text-anchor="middle">Triggers vibration &amp; audio tone</text>
 
                 <!-- Wi-Fi Network Arrow -->
                 <line x1="260" y1="160" x2="358" y2="160" stroke="#f6c61b" stroke-width="2" marker-end="url(#arrow)"/>
-                <text x="310" y="150" fill="#f6c61b" font-size="11" font-weight="700" text-anchor="middle">Local Wi-Fi</text>
-                <text x="310" y="180" fill="#9a9a94" font-size="10" text-anchor="middle">HTTP POST</text>
+                <text x="310" y="150" fill="#f6c61b" font-size="11" font-weight="700" text-anchor="middle">School Wi-Fi</text>
+                <text x="310" y="180" fill="#9a9a94" font-size="10" text-anchor="middle">HTTP REST</text>
 
                 <!-- Network Hub Card -->
                 <rect x="360" y="80" width="140" height="160" rx="8" fill="#232427" stroke="#44454a" stroke-width="1.5"/>
-                <text x="430" y="110" fill="#f6c61b" font-size="12" font-weight="700" text-anchor="middle">&#x1F4E1; ROUTER</text>
-                <text x="430" y="130" fill="#f1efe8" font-size="11" text-anchor="middle">School Wi-Fi</text>
-                <text x="430" y="145" fill="#f1efe8" font-size="11" text-anchor="middle">2.4 / 5 GHz LAN</text>
-                <text x="430" y="175" fill="#9a9a94" font-size="10" text-anchor="middle">Port 8080</text>
+                <text x="430" y="110" fill="#f6c61b" font-size="12" font-weight="700" text-anchor="middle">&#x1F4E1; DUAL PORTS</text>
+                <text x="430" y="130" fill="#f1efe8" font-size="11" text-anchor="middle">PC: Port 8585</text>
+                <text x="430" y="145" fill="#f1efe8" font-size="11" text-anchor="middle">App: Port 8586</text>
+                <text x="430" y="175" fill="#9a9a94" font-size="10" text-anchor="middle">Subnet Discovery</text>
                 <text x="430" y="195" fill="#9a9a94" font-size="10" text-anchor="middle">Low-latency JSON</text>
 
                 <!-- Arrow to PC -->
@@ -1040,16 +1503,16 @@
 
                 <rect x="615" y="90" width="210" height="42" rx="6" fill="#2c2d31" stroke="#44454a" stroke-width="1"/>
                 <text x="720" y="108" fill="#f6c61b" font-size="11" font-weight="700" text-anchor="middle">Pure C# TcpListener</text>
-                <text x="720" y="122" fill="#f1efe8" font-size="10" text-anchor="middle">Binds 0.0.0.0:8080</text>
+                <text x="720" y="122" fill="#f1efe8" font-size="10" text-anchor="middle">Binds 0.0.0.0:8585</text>
 
                 <rect x="615" y="142" width="210" height="42" rx="6" fill="#2c2d31" stroke="#44454a" stroke-width="1"/>
-                <text x="720" y="160" fill="#2fb36b" font-size="11" font-weight="700" text-anchor="middle">SendKeys Keystroke Injection</text>
+                <text x="720" y="160" fill="#2fb36b" font-size="11" font-weight="700" text-anchor="middle">Wireless Barcode Gun</text>
                 <text x="720" y="174" fill="#f1efe8" font-size="10" text-anchor="middle">Types barcode + sends Enter</text>
 
                 <rect x="615" y="194" width="210" height="52" rx="6" fill="#1b2e23" stroke="#2fb36b" stroke-width="1"/>
-                <text x="720" y="214" fill="#2fb36b" font-size="11" font-weight="700" text-anchor="middle">&#x2714; INSTANT ACTION</text>
-                <text x="720" y="228" fill="#f1efe8" font-size="10" text-anchor="middle">Loans checked out / books found</text>
-                <text x="720" y="240" fill="#9a9a94" font-size="10" text-anchor="middle">Without touching PC keyboard!</text>
+                <text x="720" y="214" fill="#2fb36b" font-size="11" font-weight="700" text-anchor="middle">&#x2714; INSTANT TRIAGE</text>
+                <text x="720" y="228" fill="#f1efe8" font-size="10" text-anchor="middle">Ping App (ms) &bull; Beep Phone</text>
+                <text x="720" y="240" fill="#9a9a94" font-size="10" text-anchor="middle">Subnet Auto-Discovery</text>
               </svg>
             </div>
 
@@ -1078,10 +1541,10 @@
               <li><strong>Multi-PC Parity:</strong> Running ErrinILS on Circulation PC 1 and Cataloging PC 2 pulls and syncs both data streams, ensuring seamless multi-desk library management.</li>
             </ul>
 
-            <!-- Flowchart 5 -->
+            <!-- Flowchart 11 -->
             <div class="flowchart-container">
               <div class="flowchart-title">
-                <span>&#x2601;&#xFE0F; Flowchart 5: Dual Cloud Synchronization Architecture</span>
+                <span>&#x2601;&#xFE0F; Flowchart 11: Dual Cloud Synchronization Architecture</span>
               </div>
               <div class="flowchart-desc">
                 Separation of private patron data (Google Drive direct cloud) and public catalog metadata (GitHub Pustaka Terbuka).
@@ -1186,6 +1649,69 @@
               <li><strong>Defragmentation &amp; Space Reclamation:</strong> Runs <code>VACUUM;</code> to rebuild the database file from scratch, releasing unused disk blocks back to the operating system and compacting storage.</li>
               <li><strong>Query Optimization:</strong> Executes <code>PRAGMA optimize;</code> to update SQLite query planner statistics, keeping catalog and student searches running at sub-millisecond speeds even on 1 GB RAM school computers.</li>
             </ul>
+
+            <!-- Flowchart 12 -->
+            <div class="flowchart-container">
+              <div class="flowchart-title">
+                <span>&#x1F4BE; Flowchart 12: Backup, Disaster Recovery &amp; SQLite Optimization Pipeline</span>
+              </div>
+              <div class="flowchart-desc">
+                High-performance SQLite engine with WAL journaling, zero-dependency ZIP backups, VACUUM defragmentation, and automatic schema recovery.
+              </div>
+              <svg class="flowchart-svg" viewBox="0 0 860 300" xmlns="http://www.w3.org/2000/svg">
+                <!-- Box 1 -->
+                <rect x="20" y="30" width="180" height="75" rx="8" fill="#1c2538" stroke="#58a6ff" stroke-width="2"/>
+                <text x="110" y="56" fill="#58a6ff" font-size="12" font-weight="700" text-anchor="middle">1. MASTER SQLITE DB</text>
+                <text x="110" y="76" fill="#f1efe8" font-size="12" text-anchor="middle">errin-data.db</text>
+                <text x="110" y="92" fill="#9a9a94" font-size="11" text-anchor="middle">WAL Mode &bull; ACID Safety</text>
+
+                <line x1="200" y1="67" x2="238" y2="67" stroke="#f6c61b" stroke-width="2" marker-end="url(#arrow-gold)"/>
+
+                <!-- Box 2 -->
+                <rect x="240" y="30" width="180" height="75" rx="8" fill="#2c2d31" stroke="#44454a" stroke-width="2"/>
+                <text x="330" y="56" fill="#f6c61b" font-size="12" font-weight="700" text-anchor="middle">2. EXPORT BACKUP</text>
+                <text x="330" y="76" fill="#f1efe8" font-size="12" text-anchor="middle">Pure C# DEFLATE ZIP</text>
+                <text x="330" y="92" fill="#9a9a94" font-size="11" text-anchor="middle">Exports to USB Drive</text>
+
+                <line x1="420" y1="67" x2="458" y2="67" stroke="#58a6ff" stroke-width="2" marker-end="url(#arrow-blue)"/>
+
+                <!-- Box 3 -->
+                <rect x="460" y="30" width="180" height="75" rx="8" fill="#2c2d31" stroke="#58a6ff" stroke-width="2"/>
+                <text x="550" y="56" fill="#58a6ff" font-size="12" font-weight="700" text-anchor="middle">3. OPTIMIZE ENGINE</text>
+                <text x="550" y="76" fill="#f1efe8" font-size="12" text-anchor="middle">PRAGMA integrity_check</text>
+                <text x="550" y="92" fill="#9a9a94" font-size="11" text-anchor="middle">VACUUM &bull; Space Reclaim</text>
+
+                <line x1="640" y1="67" x2="678" y2="67" stroke="#2fb36b" stroke-width="2" marker-end="url(#arrow-green)"/>
+
+                <!-- Box 4 -->
+                <rect x="680" y="30" width="160" height="75" rx="8" fill="#1b2e23" stroke="#2fb36b" stroke-width="2"/>
+                <text x="760" y="56" fill="#2fb36b" font-size="12" font-weight="700" text-anchor="middle">&#x2714; RECOVERY READY</text>
+                <text x="760" y="76" fill="#f1efe8" font-size="12" text-anchor="middle">1-Click Restore</text>
+                <text x="760" y="92" fill="#9a9a94" font-size="11" text-anchor="middle">Automatic Schema Alter</text>
+
+                <!-- Cards below -->
+                <rect x="20" y="135" width="260" height="135" rx="8" fill="#232427" stroke="#44454a" stroke-width="1"/>
+                <text x="35" y="160" fill="#f6c61b" font-size="13" font-weight="700">Native SQLite Store</text>
+                <text x="35" y="182" fill="#f1efe8" font-size="12">&bull; Dynamic winsqlite3 binding</text>
+                <text x="35" y="202" fill="#f1efe8" font-size="12">&bull; Zero external DLL dependencies</text>
+                <text x="35" y="222" fill="#f1efe8" font-size="12">&bull; Sub-millisecond indexed queries</text>
+                <text x="35" y="242" fill="#9a9a94" font-size="11">Protected from sudden power cuts</text>
+
+                <rect x="300" y="135" width="260" height="135" rx="8" fill="#232427" stroke="#44454a" stroke-width="1"/>
+                <text x="315" y="160" fill="#58a6ff" font-size="13" font-weight="700">Database Optimization</text>
+                <text x="315" y="182" fill="#f1efe8" font-size="12">&bull; Reclaims deleted record space</text>
+                <text x="315" y="202" fill="#f1efe8" font-size="12">&bull; Defragments database file</text>
+                <text x="315" y="222" fill="#f1efe8" font-size="12">&bull; Analyzes query planner statistics</text>
+                <text x="315" y="242" fill="#9a9a94" font-size="11">Run termly or after bulk imports</text>
+
+                <rect x="580" y="135" width="260" height="135" rx="8" fill="#232427" stroke="#44454a" stroke-width="1"/>
+                <text x="595" y="160" fill="#2fb36b" font-size="13" font-weight="700">Disaster Resilience</text>
+                <text x="595" y="182" fill="#f1efe8" font-size="12">&bull; Password-protected restore</text>
+                <text x="595" y="202" fill="#f1efe8" font-size="12">&bull; Automatic .bak rollback creation</text>
+                <text x="595" y="222" fill="#f1efe8" font-size="12">&bull; Auto-migrates JSON and older schemas</text>
+                <text x="595" y="242" fill="#9a9a94" font-size="11">100% data preservation guarantee</text>
+              </svg>
+            </div>
           </div>
         </article>
 
@@ -1288,7 +1814,7 @@
             <p><strong>What is the default administrator password?</strong><br>The factory default administrator password is <code>admin123</code>. You can change it to any password of 4 or more characters in <strong>Settings → Admin Password</strong>.</p>
             <p style="margin-top: 12px;"><strong>Can multiple devices access the system at once?</strong><br>Yes. Enable the built-in Remote Web Server in Settings to let smartphones and tablets perform circulation and cataloguing over school Wi-Fi.</p>
             <p style="margin-top: 12px;"><strong>Are student records private?</strong><br>Yes. All database files remain strictly on your local PC. ErrinILS transmits no personal student data over the internet.</p>
-            <p style="margin-top: 12px;"><strong>Can we change the 7-day loan duration?</strong><br>In ErrinILS (v1.4.3), the loan duration is fixed at 7 days with up to 2 renewals (21 days max). Fine rates and block thresholds can be customized at any time in Settings.</p>
+            <p style="margin-top: 12px;"><strong>Can we change the 7-day loan duration?</strong><br>In ErrinILS (v1.5.0), the loan duration is fixed at 7 days with up to 2 renewals (21 days max). Fine rates, custom numbering templates, barcode label designs, and block thresholds can be customized at any time in Settings.</p>
           </div>
         </article>
 
@@ -1458,7 +1984,7 @@
             <li><a href="download.html#requirements">System Requirements</a></li>
             <li><a href="guide.html#circ">Circulation Desk Guide</a></li>
             <li><a href="guide.html#simple">Simplified View Setup</a></li>
-            <li><a href="assets/ErrinILS-User-Guide.pdf" download="ErrinILS-User-Guide-v1.4.3.pdf">Official Manual (PDF)</a></li>
+            <li><a href="assets/ErrinILS-User-Guide.pdf" download="ErrinILS-User-Guide-v1.5.0.pdf">Official Manual (PDF)</a></li>
             <li><a href="assets/ErrinILS-User-Guide.md" download>Download Manual (.md)</a></li>
           </ul>
         </div>
@@ -1466,9 +1992,9 @@
         <div>
           <div class="footer-col-title">Releases</div>
           <ul class="footer-links">
-            <li><a href="https://github.com/RZSY/ErrinILS/releases/tag/v1.4.3" target="_blank" rel="noopener">ErrinILS v1.4.3 on GitHub</a></li>
-            <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.4.3/ErrinILS-Setup-1.4.3.exe">Setup Installer (.exe)</a></li>
-            <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.4.3/ErrinILS-Windows-v1.4.3.zip">Portable Package (.zip)</a></li>
+            <li><a href="https://github.com/RZSY/ErrinILS/releases/tag/v1.5.0" target="_blank" rel="noopener">ErrinILS v1.5.0 on GitHub</a></li>
+            <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.5.0/ErrinILS-Setup-1.5.0.exe">Setup Installer (.exe)</a></li>
+            <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.5.0/ErrinILS-Windows-v1.5.0.zip">Portable Package (.zip)</a></li>
             <li><a href="https://github.com/RZSY/ErrinILS/releases/download/v1.4.3/ErrinILS-Scanner-v1.4.3.apk">Android Scanner APK (.apk)</a></li>
             <li><a href="https://github.com/RZSY/ErrinILS" target="_blank" rel="noopener">GitHub Repository</a></li>
           </ul>

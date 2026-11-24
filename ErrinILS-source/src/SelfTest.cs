@@ -470,6 +470,43 @@ static class SelfTest
             var batchObj = Json.Parse(addBatchResp) as Dictionary<string, object>;
             Ok(batchObj != null && (bool)batchObj["ok"] && Json.Num(batchObj, "added") == 2, "Batch add items API adds multiple records");
             Ok(wdb.Items.Count == countBefore + 2, "Db.Items count increased by 2 from batch add");
+
+            // 7e. Test Next-Number API
+            string numJson = wc.DownloadString("http://127.0.0.1:" + wport + "/api/next-number");
+            var numObj = Json.Parse(numJson) as Dictionary<string, object>;
+            Ok(numObj != null && (bool)numObj["ok"] && !string.IsNullOrEmpty(Json.Str(numObj, "barcode")) && !string.IsNullOrEmpty(Json.Str(numObj, "acq")), "Next-number API returns barcode and acquisition number");
+
+            // 7f. Test Fines API includes students holding overdue books
+            string ovBookId = wdb.Items[0].id;
+            string ovStudentId = wdb.Patrons[0].id;
+            string ovDueDate = Lib.AddD(Lib.Today(), -4);
+            var ovLoan = new Loan { id = "ov_test_1", iid = ovBookId, pid = ovStudentId, @out = Lib.AddD(Lib.Today(), -11), due = ovDueDate, ret = null, ren = 0 };
+            wdb.Loans.Add(ovLoan);
+
+            string finesJson = wc.DownloadString("http://127.0.0.1:" + wport + "/api/fines?status=unpaid");
+            var finesObj = Json.Parse(finesJson) as Dictionary<string, object>;
+            Ok(finesObj != null && (bool)finesObj["ok"], "Get fines API succeeded");
+            var finesList = Json.Arr(finesObj, "fines");
+            bool foundHolding = false;
+            foreach (var fo in finesList)
+            {
+                var fd = fo as Dictionary<string, object>;
+                if (fd != null && Json.Str(fd, "id") == "loan:ov_test_1")
+                {
+                    foundHolding = true;
+                    Ok(fd.ContainsKey("holding") && (bool)fd["holding"], "Fines API flags active overdue loan as holding:true");
+                    Ok(Json.Num(fd, "days") >= 4, "Fines API calculates days overdue for holding student");
+                    Ok(Json.Num(fd, "amt") >= 0.40, "Fines API calculates accrued fine amount for holding student");
+                }
+            }
+            Ok(foundHolding, "Fines API includes student still holding onto overdue book");
+
+            // Test settling holding fine via /api/pay-fine (returns book & records payment)
+            string payOverdueResp = wc.UploadString("http://127.0.0.1:" + wport + "/api/pay-fine", "{\"id\":\"loan:ov_test_1\"}");
+            var payOverdueObj = Json.Parse(payOverdueResp) as Dictionary<string, object>;
+            Ok(payOverdueObj != null && (bool)payOverdueObj["ok"], "Paying fine for student holding overdue book returns book and settles fine");
+            Ok(ovLoan.ret != null, "Loan ret is now set (book returned)");
+            Ok(wdb.Fines.Any(fn => fn.loan == "ov_test_1" && fn.paid != ""), "Fine record created and settled as paid");
         }
 
         // 8. Revoke token
@@ -825,6 +862,91 @@ static class SelfTest
             // GitHub Direct API Push without token validation test
             var noTokenRes = GitHubCatalogSync.PushViaApi("pustaka-terbuka/sk-taman-ria", "", testCatDir, "test");
             Ok(!noTokenRes.Success && noTokenRes.Message.Contains("Token is required"), "PushViaApi requires token validation check");
+
+            // ============================================================
+            // Acquisition Number and Barcode Number Formatting in Settings
+            // ============================================================
+            // 1. Test Pattern Normalization
+            Ok(Lib.NormalizePattern("ACQ-{0:D6}", "ACQ-{0:D6}") == "ACQ-{0:D6}", "NormalizePattern keeps standard format");
+            Ok(Lib.NormalizePattern("ACQ-{NUMBER:6}", "ACQ-{0:D6}") == "ACQ-{0:D6}", "NormalizePattern converts {NUMBER:6}");
+            Ok(Lib.NormalizePattern("ACQ-{NUM:5}", "ACQ-{0:D6}") == "ACQ-{0:D5}", "NormalizePattern converts {NUM:5}");
+            Ok(Lib.NormalizePattern("ACQ-######", "ACQ-{0:D6}") == "ACQ-{0:D6}", "NormalizePattern converts ######");
+            Ok(Lib.NormalizePattern("B{0:D5}", "B{0}") == "B{0:D5}", "NormalizePattern keeps B{0:D5}");
+            Ok(Lib.NormalizePattern("LIB-00000", "B{0}") == "LIB-{0:D5}", "NormalizePattern converts 00000");
+            Ok(Lib.NormalizePattern("ACQ-", "ACQ-{0:D6}") == "ACQ-{0:D6}", "NormalizePattern appends default to bare prefix");
+            Ok(Lib.NormalizePattern("B", "B{0}") == "B{0}", "NormalizePattern appends default to bare B");
+            Ok(Lib.NormalizePattern("", "ACQ-{0:D6}") == "ACQ-{0:D6}", "NormalizePattern returns default on empty");
+
+            // 2. Test Number Formatting
+            var testDt = new DateTime(2026, 11, 24);
+            Ok(Lib.FormatItemNumber("ACQ-{0:D6}", 42) == "ACQ-000042", "FormatItemNumber pads sequence number with zeros");
+            Ok(Lib.FormatItemNumber("B{0}", 1001) == "B1001", "FormatItemNumber outputs unpadded number");
+            Ok(Lib.FormatItemNumber("B{0:D5}", 1001) == "B01001", "FormatItemNumber outputs 5-digit padded barcode");
+            Ok(Lib.FormatItemNumber("{YEAR}/ACQ/{0:D4}", 5, testDt) == "2026/ACQ/0005", "FormatItemNumber evaluates {YEAR} token");
+            Ok(Lib.FormatItemNumber("ACQ-{YY}{MM}-{0:D3}", 8, testDt) == "ACQ-2611-008", "FormatItemNumber evaluates {YY} and {MM} tokens");
+
+            // 3. Test Number Regex Generation
+            var rAcq = Lib.BuildNumberRegex("ACQ-{0:D6}");
+            Ok(rAcq.IsMatch("ACQ-000001"), "BuildNumberRegex matches ACQ-000001");
+            Ok(rAcq.Match("ACQ-000042").Groups[1].Value == "000042", "BuildNumberRegex captures sequence digits");
+            var rYearAcq = Lib.BuildNumberRegex("{YEAR}/ACQ/{0:D4}", testDt);
+            Ok(rYearAcq.IsMatch("2026/ACQ/0001"), "BuildNumberRegex matches year-prefixed format");
+            Ok(rYearAcq.Match("2026/ACQ/0001").Groups[1].Value == "0001", "BuildNumberRegex captures year-prefixed sequence");
+
+            // 4. Test Number Generation with Default and Custom Settings
+            var numTestDb = new Db();
+            var numTestLib = new Lib(numTestDb);
+            Ok(numTestLib.NextAcq() == "ACQ-000001", "Default NextAcq starts at ACQ-000001");
+            Ok(numTestLib.NextBarcode() == "B1001", "Default NextBarcode starts at B1001");
+
+            // Configure custom formats in Settings
+            numTestDb.Set.acqFormat = "ACC-{YEAR}-{0:D4}";
+            numTestDb.Set.acqStart = 1;
+            numTestDb.Set.barcodeFormat = "LIB-{0:D5}";
+            numTestDb.Set.barcodeStart = 500;
+            string curYear = DateTime.Now.Year.ToString();
+            Ok(numTestLib.NextAcq() == "ACC-" + curYear + "-0001", "Custom NextAcq respects configured acqFormat and acqStart");
+            Ok(numTestLib.NextBarcode() == "LIB-00500", "Custom NextBarcode respects configured barcodeFormat and barcodeStart");
+
+            // Add an item and verify incrementation
+            numTestDb.Items.Add(new Item { id = "t1", barcode = "LIB-00500", acq = "ACC-" + curYear + "-0001", title = "Test 1" });
+            Ok(numTestLib.NextAcq() == "ACC-" + curYear + "-0002", "NextAcq increments from highest existing item in catalogue");
+            Ok(numTestLib.NextBarcode() == "LIB-00501", "NextBarcode increments from highest existing item in catalogue");
+
+            // Batch AddItems respects custom numbering formats
+            var batchNumItems = new List<Item> { new Item { title = "Batch Book A" }, new Item { title = "Batch Book B" } };
+            int bSk;
+            int bAdded = numTestLib.AddItems(batchNumItems, "copy", true, null, out bSk);
+            Ok(bAdded == 2, "Batch AddItems added 2 books");
+            Ok(numTestDb.Items[1].barcode == "LIB-00501" && numTestDb.Items[2].barcode == "LIB-00502", "Batch AddItems assigned sequential custom barcodes");
+            Ok(numTestDb.Items[1].acq == "ACC-" + curYear + "-0002" && numTestDb.Items[2].acq == "ACC-" + curYear + "-0003", "Batch AddItems assigned sequential custom acquisition numbers");
+
+            // 5. Test JSON Persistence of Numbering Settings
+            string numJsonStr = numTestDb.ToJson();
+            var restoredJsonDb = Db.FromJson(numJsonStr);
+            Ok(restoredJsonDb.Set.acqFormat == "ACC-{YEAR}-{0:D4}", "Db.ToJson/FromJson preserves acqFormat");
+            Ok(restoredJsonDb.Set.barcodeFormat == "LIB-{0:D5}", "Db.ToJson/FromJson preserves barcodeFormat");
+            Ok(restoredJsonDb.Set.acqStart == 1, "Db.ToJson/FromJson preserves acqStart");
+            Ok(restoredJsonDb.Set.barcodeStart == 500, "Db.ToJson/FromJson preserves barcodeStart");
+
+            // 6. Test SQLite Persistence of Numbering Settings
+            string testDbFile = Path.Combine(testSyncDir, "test-format.db");
+            SqliteStore.Save(testDbFile, numTestDb);
+            var restoredSqliteDb = SqliteStore.Load(testDbFile);
+            Ok(restoredSqliteDb.Set.acqFormat == "ACC-{YEAR}-{0:D4}", "SqliteStore.Save/Load preserves acqFormat");
+            Ok(restoredSqliteDb.Set.barcodeFormat == "LIB-{0:D5}", "SqliteStore.Save/Load preserves barcodeFormat");
+            Ok(restoredSqliteDb.Set.acqStart == 1, "SqliteStore.Save/Load preserves acqStart");
+            Ok(restoredSqliteDb.Set.barcodeStart == 500, "SqliteStore.Save/Load preserves barcodeStart");
+
+            // 7. Test Settings.labelShowCall Persistence
+            numTestDb.Set.labelShowCall = true;
+            string jsonWithCall = numTestDb.ToJson();
+            var restoredCallJson = Db.FromJson(jsonWithCall);
+            Ok(restoredCallJson.Set.labelShowCall == true, "Db.ToJson/FromJson preserves labelShowCall");
+
+            SqliteStore.Save(testDbFile, numTestDb);
+            var restoredCallSqlite = SqliteStore.Load(testDbFile);
+            Ok(restoredCallSqlite.Set.labelShowCall == true, "SqliteStore.Save/Load preserves labelShowCall");
         }
         finally
         {

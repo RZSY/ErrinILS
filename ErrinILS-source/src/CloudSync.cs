@@ -294,7 +294,12 @@ function doGet(e) {{
                 { "rate", db.Set.rate },
                 { "maxLoans", (double)db.Set.maxLoans },
                 { "block", db.Set.block },
-                { "opacLogin", db.Set.opacLogin }
+                { "opacLogin", db.Set.opacLogin },
+                { "acqFormat", db.Set.GetAcqFormat() },
+                { "barcodeFormat", db.Set.GetBarcodeFormat() },
+                { "acqStart", (double)db.Set.GetAcqStart() },
+                { "barcodeStart", (double)db.Set.GetBarcodeStart() },
+                { "labelShowCall", db.Set.labelShowCall }
             };
             if (db.Set.requiredPatronFields != null)
                 s["requiredPatronFields"] = db.Set.requiredPatronFields.Select(x => (object)x).ToList();
@@ -561,6 +566,16 @@ function doGet(e) {{
                 var s = Json.Obj(root, "settings");
                 if (s.ContainsKey("school") && string.IsNullOrEmpty(db.Set.school))
                     db.Set.school = Json.Str(s, "school");
+                if (s.ContainsKey("acqFormat") && string.IsNullOrEmpty(db.Set.acqFormat))
+                    db.Set.acqFormat = Json.Str(s, "acqFormat");
+                if (s.ContainsKey("barcodeFormat") && string.IsNullOrEmpty(db.Set.barcodeFormat))
+                    db.Set.barcodeFormat = Json.Str(s, "barcodeFormat");
+                if (s.ContainsKey("acqStart") && db.Set.acqStart <= 0)
+                    db.Set.acqStart = (int)Json.Num(s, "acqStart");
+                if (s.ContainsKey("barcodeStart") && db.Set.barcodeStart <= 0)
+                    db.Set.barcodeStart = (int)Json.Num(s, "barcodeStart");
+                if (s.ContainsKey("labelShowCall"))
+                    db.Set.labelShowCall = Json.Bool(s, "labelShowCall");
 
                 res.Success = true;
                 res.Message = string.Format("Merged cloud records: {0} new students, {1} updated, {2} loans.",

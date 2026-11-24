@@ -364,20 +364,53 @@ namespace Errin
         static Font WF(float pt, FontStyle s) { return new Font("Arial", pt / 72f * 100f, s, GraphicsUnit.World); }
         public static void Draw(Graphics g, float x, float y, Item it)
         {
+            Draw(g, x, y, it, false);
+        }
+        public static void Draw(Graphics g, float x, float y, Item it, bool showCall)
+        {
             g.TextRenderingHint = TextRenderingHint.ClearTypeGridFit;
             using (var pen = new Pen(Color.FromArgb(150, 150, 150)) { DashStyle = DashStyle.Dash }) g.DrawRectangle(pen, x, y, W, H);
-            using (var fc = WF(15f, FontStyle.Bold)) using (var ft = WF(6.5f, FontStyle.Regular)) using (var fx = WF(8f, FontStyle.Regular))
+
+            float pad = 12, rw = W - 2 * pad;
+            var sfCenter = new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center, Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };
+
+            bool hasCall = showCall && !string.IsNullOrEmpty(it.call);
+
+            using (var ft = WF(hasCall ? 7.5f : 8f, FontStyle.Bold))
+            using (var fc = WF(7.5f, FontStyle.Bold))
+            using (var fx = WF(hasCall ? 8.5f : 9.5f, FontStyle.Regular))
             {
-                float pad = 8, cw = 94;
-                var call = string.Join("\n", (string.IsNullOrEmpty(it.call) ? "\u2014" : it.call).Split(' '));
-                var sfC = new StringFormat { LineAlignment = StringAlignment.Center };
-                g.DrawString(call, fc, Brushes.Black, new RectangleF(x + pad, y, cw, H), sfC);
-                float rx = x + pad + cw + 10, rw = W - pad - cw - 10 - pad;
-                var sfT = new StringFormat { Alignment = StringAlignment.Center, Trimming = StringTrimming.EllipsisCharacter, FormatFlags = StringFormatFlags.NoWrap };
-                g.DrawString(it.title ?? "", ft, Brushes.Black, new RectangleF(rx, y + 12, rw, 18), sfT);
-                int total; var mod = Modules(it.barcode, out total); float sc = rw / (total + 20f), cx = rx + 10 * sc; bool bar = true;
-                foreach (int m in mod) { if (bar) g.FillRectangle(Brushes.Black, cx, y + 32, m * sc, 50); cx += m * sc; bar = !bar; }
-                g.DrawString(it.barcode ?? "", fx, Brushes.Black, new RectangleF(rx, y + 85, rw, 20), new StringFormat { Alignment = StringAlignment.Center });
+                if (hasCall)
+                {
+                    // Parallel layout: Title on top, Call number line parallel below it, wide centered barcode, barcode text
+                    g.DrawString(it.title ?? "", ft, Brushes.Black, new RectangleF(x + pad, y + 6, rw, 16), sfCenter);
+                    g.DrawString("Call: " + it.call, fc, Brushes.Black, new RectangleF(x + pad, y + 22, rw, 15), sfCenter);
+
+                    float by = y + 40, bh = 45;
+                    float bw = rw - 12;
+                    int total; var mod = Modules(it.barcode, out total);
+                    float sc = bw / (total + 20f);
+                    float cx = x + (W - total * sc) / 2f;
+                    bool bar = true;
+                    foreach (int m in mod) { if (bar) g.FillRectangle(Brushes.Black, cx, by, m * sc, bh); cx += m * sc; bar = !bar; }
+
+                    g.DrawString(it.barcode ?? "", fx, Brushes.Black, new RectangleF(x + pad, y + 88, rw, 22), sfCenter);
+                }
+                else
+                {
+                    // Clean layout: Title on top, large wide centered barcode, barcode text at bottom
+                    g.DrawString(it.title ?? "", ft, Brushes.Black, new RectangleF(x + pad, y + 9, rw, 18), sfCenter);
+
+                    float by = y + 29, bh = 54;
+                    float bw = rw - 12;
+                    int total; var mod = Modules(it.barcode, out total);
+                    float sc = bw / (total + 20f);
+                    float cx = x + (W - total * sc) / 2f;
+                    bool bar = true;
+                    foreach (int m in mod) { if (bar) g.FillRectangle(Brushes.Black, cx, by, m * sc, bh); cx += m * sc; bar = !bar; }
+
+                    g.DrawString(it.barcode ?? "", fx, Brushes.Black, new RectangleF(x + pad, y + 87, rw, 22), sfCenter);
+                }
             }
         }
         /// <summary>Lay out many identical-size items on pages and print them after the user chooses a printer.</summary>
@@ -397,8 +430,12 @@ namespace Errin
         /// <summary>Print labels (item repeated n times).</summary>
         public static bool Print(IWin32Window owner, List<Item> list, int copies)
         {
+            return Print(owner, list, copies, false);
+        }
+        public static bool Print(IWin32Window owner, List<Item> list, int copies, bool showCall)
+        {
             var all = new List<Item>(); foreach (var i in list) for (int k = 0; k < Math.Min(copies, 50); k++) all.Add(i);
-            return PrintSheet(owner, all, W, H, 100, (g, x, y, it) => Draw(g, x, y, it), "ErrinILS labels");
+            return PrintSheet(owner, all, W, H, 100, (g, px, py, it) => Draw(g, px, py, it, showCall), "ErrinILS labels");
         }
     }
 

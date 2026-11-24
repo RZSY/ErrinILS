@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/RZSY/ErrinILS/releases"><img src="https://img.shields.io/badge/version-1.4.3-blue.svg?style=flat-square" height="20" alt="Version 1.4.3" /></a>
+  <a href="https://github.com/RZSY/ErrinILS/releases"><img src="https://img.shields.io/badge/version-1.5.0-blue.svg?style=flat-square" height="20" alt="Version 1.5.0" /></a>
   <a href="#system-requirements"><img src="https://img.shields.io/badge/platform-Windows%207%20|%208%20|%2010%20|%2011%20|%20Android-0078D6.svg?style=flat-square&logo=windows" height="20" alt="Platform: Windows & Android" /></a>
   <a href="#system-requirements"><img src="https://img.shields.io/badge/runtime-.NET%20Framework%204.0%2B-512BD4.svg?style=flat-square&logo=dotnet" height="20" alt=".NET 4.0+" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green.svg?style=flat-square" height="20" alt="MIT License" /></a>
@@ -45,6 +45,9 @@ It covers everyday school library operations: barcode checkouts and returns, cop
 
 ## Features
 
+- **Custom Acquisition & Barcode Numbering Engine**: Format templates configured in Settings with full support for semantic and date tokens (`{0:D6}`, `######`, `000000`, `{NUMBER}`, `{NUMBER:6}`, `{YEAR}`, `{YYYY}`, `{YY}`, `{MM}`), custom sequence starting baselines, live real-time preview sample badges, and automatic collision-free regex parsing across existing catalog items.
+- **Redesigned Wide Barcode Labels with Optional Parallel Call Numbers**: Barcodes span the full label width (240 units wide by 54 units tall) centered on the label to eliminate cramped, squished barcodes. Full-width title is rendered across the top, and Dewey Call Numbers can be optionally rendered parallel as a full-width horizontal row between the title and barcode (`labelShowCall`).
+- **Comprehensive Fines & Overdue Holdings Tracking**: The Fines ledger includes students currently holding unreturned overdue books tagged with a crimson `Holding (Overdue)` badge. Features real-time accrued calculations (`daysOverdue × rate`), with 1-click librarian actions to **Pay** (settle fine and return book in one click), **Waive** (forgive fine and return book), or **Return** (check in book and assess fine for later payment).
 - **Barcode Circulation**: Scan student IDs and book labels with instant visual feedback, automatic return dates, loan limit checks (default: 3 books for 7 days), and hold alerts.
 - **31-Source ISBN Union Cataloguing**: Enter or scan an ISBN to automatically pull title, author, publisher, publication year, DDC, and subjects across 31 union archives: Pustaka Terbuka Union, KIK (National Union), PNM (Perpustakaan Negara Malaysia), all 14 State Public Libraries (Selangor, Penang, Perak, Kedah, Perlis, Johor, Kelantan, Terengganu, Pahang, Negeri Sembilan, Melaka, Sarawak, Sabah, KL, Putrajaya, Labuan), u-Pustaka, MALCat, Universiti Malaya (UM), UKM Tun Seri Lanang, UiTM PTAR, UPSI, Dewan Bahasa dan Pustaka (DBP), Library of Congress (Z39.50), Open Library, Google Books, HathiTrust, and K10plus German Union.
 - **Batch Label & Spine Printing**: Select multiple items using `Ctrl+A`, Shift-click, or row selection. Print physical 3.5"×1.1" barcode labels or 1"×1.5" Dewey spine labels with live antialiased preview, copies-per-record selector, and print dialog.
