@@ -4,10 +4,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ErrinILS - Lightweight School Library Management System for Windows</title>
+  <title>ErrinILS - Modern School Library System for Windows (Pusat Sumber Sekolah)</title>
   <meta name="description"
-    content="Standalone, zero-dependency school library system (ILS) for Windows. Fast barcode circulation, automated 5-source ISBN cataloguing, Simplified View, and offline SQLite database.">
+    content="Lightweight, zero-dependency school library system (ILS) for Windows. 1-second barcode circulation, automated 31-source union copy-cataloguing, child-friendly Simplified View kiosk, Nilam reading leaderboards, and offline SQLite resilience.">
   <link rel="icon" type="image/png" href="assets/icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <script>
     (function () {
@@ -29,13 +32,16 @@
         <img src="assets/icon.png" alt="ErrinILS Logo" class="brand-icon">
         <span>ErrinILS</span>
         <span class="brand-badge">v1.4.3</span>
+        <span class="brand-school-pill"><span class="school-dot"></span>School Edition</span>
       </a>
 
       <button class="mobile-menu-btn" aria-label="Toggle navigation" aria-expanded="false">☰</button>
 
       <nav class="main-nav">
         <a href="index.html" class="nav-link active">Home</a>
-        <a href="about.html" class="nav-link">About</a>
+        <a href="#roles" class="nav-link">School Roles</a>
+        <a href="#workflow" class="nav-link">Daily Flow</a>
+        <a href="about.html" class="nav-link">About &amp; Architecture</a>
         <a href="download.html" class="nav-link">Download</a>
         <a href="guide.html" class="nav-link">User Guide</a>
       </nav>
@@ -55,17 +61,29 @@
       <div class="hero-container">
 
         <div class="hero-badge-row">
-          <span class="badge badge-gold">Release v1.4.3 (Production Stable)</span>
-          <span class="hero-tagline">Open-Source Integrated Library System for Windows &amp; Android</span>
+          <span class="badge badge-gold">Release v1.4.3</span>
+          <span class="badge badge-subtle">School Library Media Center Edition</span>
+          <span class="hero-tagline">Windows &bull; Standalone Desktop ILS</span>
         </div>
 
         <h1 class="hero-title">
-          Lightweight, Zero-Dependency School Integrated Library System
+          Lightweight School Library Management System with <span class="title-accent">Zero IT Overhead</span>
         </h1>
 
         <p class="hero-lead">
-          A standalone desktop application engineered specifically for primary and secondary school libraries. Features 31-source union copy-cataloguing, wireless Android companion barcode gun, touch-friendly self-checkout kiosk, and privacy-preserving dual cloud sync.
+          Built specifically for teacher-librarians, school staff, and young readers. Fast 1-second barcode circulation, automated 31-source union copy-cataloguing, child-friendly Simplified View kiosk, Nilam reading awards, and 100% offline SQLite reliability—all in a single 294 KB Windows application with zero server configuration.
         </p>
+
+        <!-- School Library Trust Badges -->
+        <div class="school-trust-badges">
+          <div class="trust-badge">Primary &amp; Secondary Schools</div>
+          <div class="trust-badge">Malaysian IC / MyKid Native</div>
+          <div class="trust-badge">Nilam Reading Metrics</div>
+          <div class="trust-badge">1-Second Barcode Wedge</div>
+          <div class="trust-badge">Android Scanner Gun (Port 8586)</div>
+          <div class="trust-badge">1 GB RAM &bull; Offline SQLite WAL</div>
+          <div class="trust-badge">Private Google Drive Sync</div>
+        </div>
 
         <div class="hero-actions">
           <a href="download.html" class="btn btn-primary btn-hero-cta">
@@ -88,8 +106,8 @@
               <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
             </svg>
             <span class="cta-text">
-              <span class="cta-title">Portable ZIP Package</span>
-              <span class="cta-sub">No Install Required • 315 KB</span>
+              <span class="cta-title">Portable USB Edition</span>
+              <span class="cta-sub">Run from Flash Drive • 315 KB</span>
             </span>
           </a>
 
@@ -110,6 +128,15 @@
               stroke-linecap="round" stroke-linejoin="round">
               <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
               <polyline points="14 2 14 8 20 8"></polyline>
+              <line x1="16" y1="13" x2="8" y2="13"></line>
+              <line x1="16" y1="17" x2="8" y2="17"></line>
+            </svg>
+            <span class="cta-text">
+              <span class="cta-title">Official Manual (PDF)</span>
+              <span class="cta-sub">24 Pages • Complete Handbook</span>
+            </span>
+          </a>
+        </div>
               <line x1="16" y1="13" x2="8" y2="13"></line>
               <line x1="16" y1="17" x2="8" y2="17"></line>
             </svg>
@@ -151,19 +178,14 @@
         <!-- Real Application Showcase -->
         <div class="app-showcase">
           <div class="showcase-tabs" role="tablist">
-            <button class="showcase-tab active" data-shot="circulation" role="tab" aria-selected="true">Circulation
-              Desk</button>
-            <button class="showcase-tab" data-shot="catalog" role="tab" aria-selected="false">31-Source ISBN
-              Lookup</button>
+            <button class="showcase-tab active" data-shot="circulation" role="tab" aria-selected="true">Circulation Desk</button>
+            <button class="showcase-tab" data-shot="catalog" role="tab" aria-selected="false">31-Source ISBN Catalog</button>
             <button class="showcase-tab" data-shot="simple" role="tab" aria-selected="false">Simplified View</button>
             <button class="showcase-tab" data-shot="reports" role="tab" aria-selected="false">Reading Champions</button>
-            <button class="showcase-tab" data-shot="students" role="tab" aria-selected="false">Student Patrons
-              (IC)</button>
-            <button class="showcase-tab" data-shot="fines" role="tab" aria-selected="false">Fines &amp;
-              Overdues</button>
-            <button class="showcase-tab" data-shot="settings" role="tab" aria-selected="false">Settings &amp; Mobile
-              QR</button>
-            <button class="showcase-tab" data-shot="opac" role="tab" aria-selected="false">Web OPAC &amp; Static</button>
+            <button class="showcase-tab" data-shot="students" role="tab" aria-selected="false">Student Patrons (IC)</button>
+            <button class="showcase-tab" data-shot="fines" role="tab" aria-selected="false">Fines &amp; Overdues</button>
+            <button class="showcase-tab" data-shot="settings" role="tab" aria-selected="false">Settings &amp; Mobile Scanner</button>
+            <button class="showcase-tab" data-shot="opac" role="tab" aria-selected="false">Web OPAC &amp; Catalog</button>
           </div>
 
           <div class="window-frame">
@@ -192,6 +214,172 @@
 
       </div>
     </section>
+
+    <!-- School Roles Section -->
+    <section class="section" id="roles">
+      <div class="section-header">
+        <span class="section-eyebrow">School Library Roles</span>
+        <h2 class="section-title">Built for School Library Operations</h2>
+        <p class="section-subtitle">
+          Designed specifically to address the daily circulation, cataloguing, and hardware constraints of primary and secondary school libraries:
+        </p>
+      </div>
+
+      <div class="roles-grid">
+        <!-- Persona 1: Teacher-Librarians -->
+        <div class="role-card role-librarian">
+          <div class="role-header">
+            <span class="role-badge">Library Staff</span>
+            <h3 class="role-title">Teacher-Librarians</h3>
+          </div>
+          <p class="role-desc">
+            Automate daily circulation and cataloguing. Barcode scanner support and 31-source metadata lookup eliminate manual typing.
+          </p>
+          <ul class="role-features-list">
+            <li>
+              <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              <span><strong>1-Second Circulation:</strong> Scan student IC barcode, scan book barcode, done.</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              <span><strong>31-Source Copy-Cataloguing:</strong> Auto-populates title, author, and Dewey numbers in &lt;1s.</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              <span><strong>Batch Label Printing:</strong> Multi-select to print standard 1"×1.5" spine and 3.5"×1.1" barcode labels.</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              <span><strong>Automated Overdues:</strong> Ringgit Malaysia (RM 0.10/day) calculation &amp; borrowing block threshold.</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Persona 2: Students & Young Readers -->
+        <div class="role-card role-students">
+          <div class="role-header">
+            <span class="role-badge">Student Readers</span>
+            <h3 class="role-title">Primary &amp; Secondary Students</h3>
+          </div>
+          <p class="role-desc">
+            Enable students to check out books independently, browse the collection, and monitor their Nilam reading progress.
+          </p>
+          <ul class="role-features-list">
+            <li>
+              <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              <span><strong>Simplified View:</strong> Streamlined touch interface with large controls and clear error dialogs.</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              <span><strong>Nilam Reading Champions:</strong> Reading leaderboards showing top borrowers by class and grade.</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              <span><strong>Online OPAC:</strong> Web-based catalog search by title, author, call number, and subject heading.</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              <span><strong>Self-Service Account:</strong> Optional student sign-in using IC or Student ID to view active loans and holds.</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Persona 3: School Admin & IT -->
+        <div class="role-card role-admin">
+          <div class="role-header">
+            <span class="role-badge">IT &amp; Administration</span>
+            <h3 class="role-title">School Administrators</h3>
+          </div>
+          <p class="role-desc">
+            Zero recurring server hosting expenses, zero complex server maintenance, and full data sovereignty for student records.
+          </p>
+          <ul class="role-features-list">
+            <li>
+              <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              <span><strong>Zero Server Stack:</strong> Standalone .NET 4.0 binary without Apache, MySQL, PHP, or Node.js.</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              <span><strong>Low Hardware Requirement:</strong> Runs on older school computers with 1 GB RAM on Windows 7–11.</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              <span><strong>Data Privacy:</strong> Student records reside in offline SQLite; cloud sync uses the school's own Google Drive.</span>
+            </li>
+            <li>
+              <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+              <span><strong>Database Maintenance:</strong> Built-in 1-click SQLite VACUUM optimization and automated ZIP backups.</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- Visual 4-Step Workflow: The Daily School Library Routine -->
+    <section class="section workflow-section" id="workflow">
+      <div style="text-align: center; max-width: 760px; margin: 0 auto;">
+        <span class="section-eyebrow">Circulation Workflow</span>
+        <h2 class="section-title">The 4-Step School Library Day</h2>
+        <p style="color: var(--text-muted); font-size: 1rem;">
+          How ErrinILS handles book intake, labeling, circulation, and reading reports:
+        </p>
+      </div>
+
+      <div class="workflow-grid">
+        <!-- Step 1 -->
+        <div class="workflow-card">
+          <div class="workflow-step-num">01</div>
+          <h4 class="workflow-card-title">Book Intake &amp; Cataloguing</h4>
+          <p class="workflow-card-desc">
+            Scan new book ISBN barcodes. ErrinILS queries 31 national, state, and academic union archives, fetching MARC21 metadata and Dewey call numbers in under 1 second.
+          </p>
+          <span class="workflow-tag">31 Union Archives</span>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="workflow-card">
+          <div class="workflow-step-num">02</div>
+          <h4 class="workflow-card-title">Batch Spine &amp; Barcode Labels</h4>
+          <p class="workflow-card-desc">
+            Multi-select newly catalogued books with Ctrl+A. Print standard 3.5"×1.1" barcode labels and 1"×1.5" Dewey spine labels with live antialiased alignment preview.
+          </p>
+          <span class="workflow-tag">Label Printing</span>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="workflow-card">
+          <div class="workflow-step-num">03</div>
+          <h4 class="workflow-card-title">Recess Circulation</h4>
+          <p class="workflow-card-desc">
+            Scan the student Malaysian IC card, then scan book barcodes. Automatic 7-day loan calculations, hold reservations, and fine checks keep queues moving.
+          </p>
+          <span class="workflow-tag">1-Second Wedge</span>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="workflow-card">
+          <div class="workflow-step-num">04</div>
+          <h4 class="workflow-card-title">Nilam Reading Reports</h4>
+          <p class="workflow-card-desc">
+            Open Reports to inspect the Reading Champions leaderboard. Track total books read per student and export verified CSV rosters for school assembly recognition.
+          </p>
+          <span class="workflow-tag">Reading Records</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Institutional Deployment Banner -->
+    <div class="deployment-banner">
+      <div class="deployment-banner-content">
+        <h3 class="deployment-banner-title">Deploy Standalone ErrinILS in Your School Library</h3>
+        <p class="deployment-banner-desc">
+          Zero dependencies, no recurring server hosting costs, and 100% offline persistence with optional private Google Drive synchronization.
+        </p>
+      </div>
+      <div>
+        <a href="download.html" class="btn btn-gold btn-lg">Download v1.4.3</a>
+      </div>
+    </div>
 
     <!-- Subsystem Architecture Overview -->
     <section class="section">
@@ -598,6 +786,67 @@
             </tr>
           </tbody>
         </table>
+      </div>
+    </section>
+
+    <!-- School Library FAQ Section -->
+    <section class="section" id="faq">
+      <div class="section-header">
+        <span class="section-eyebrow">School Deployment FAQ</span>
+        <h2 class="section-title">Common Questions from School Librarians &amp; IT Staff</h2>
+        <p class="section-subtitle">
+          Everything you need to know about deploying ErrinILS in your school library or media resource center:
+        </p>
+      </div>
+
+      <div class="faq-grid">
+        <!-- Q1 -->
+        <div class="faq-card">
+          <h4 class="faq-question">Can ErrinILS run on our older school computers?</h4>
+          <p class="faq-answer">
+            Yes. ErrinILS is written in pure C# targeting .NET Framework 4.0, which comes pre-installed on Windows 8, 8.1, 10, and 11 (Windows 7 only requires .NET 4.0 or 4.8). It runs comfortably on low-end netbooks with 1 GB of RAM and takes up less than 10 MB of disk space.
+          </p>
+        </div>
+
+        <!-- Q2 -->
+        <div class="faq-card">
+          <h4 class="faq-question">How does the Android Scanner Gun connect without cables?</h4>
+          <p class="faq-answer">
+            The ErrinILS Scanner companion app turns any Android phone into a high-speed barcode gun via your school Wi-Fi. You can pair instantly via QR code camera scan, 6-digit PIN, direct IP address, or one-click Subnet Auto-Discovery on Port 8586.
+          </p>
+        </div>
+
+        <!-- Q3 -->
+        <div class="faq-card">
+          <h4 class="faq-question">Is student confidential data (MyKid / IC) safe and private?</h4>
+          <p class="faq-answer">
+            Strictly private. Unlike cloud-hosted SaaS tools that store personal records on third-party servers, ErrinILS stores all student names, IC numbers, and loan history locally in an encrypted SQLite database. For multi-PC sync, student data synchronizes privately to your school's own Google Drive.
+          </p>
+        </div>
+
+        <!-- Q4 -->
+        <div class="faq-card">
+          <h4 class="faq-question">Can we batch print spine labels and barcodes for book stickers?</h4>
+          <p class="faq-answer">
+            Yes. In the Catalog, multi-select books using Ctrl+A, Shift-click, or checkboxes, then click "Batch Print Labels". You can print standard 1"×1.5" Dewey spine labels and 3.5"×1.1" barcode labels with live antialiased preview and customizable copies-per-record.
+          </p>
+        </div>
+
+        <!-- Q5 -->
+        <div class="faq-card">
+          <h4 class="faq-question">What happens if the school internet goes down?</h4>
+          <p class="faq-answer">
+            ErrinILS continues to work 100% offline. Student registration, barcode checkout, hold management, and fine calculations require zero internet connectivity. When internet access returns, background cloud sync resumes automatically without interrupting circulation.
+          </p>
+        </div>
+
+        <!-- Q6 -->
+        <div class="faq-card">
+          <h4 class="faq-question">Can multiple library stations operate at the same time?</h4>
+          <p class="faq-answer">
+            Yes. ErrinILS supports multi-PC parity through its dual-cloud synchronization architecture. Install ErrinILS on any number of library workstations or classroom computers connected to the same school Google Drive and GitHub repository to maintain synchronized records.
+          </p>
+        </div>
       </div>
     </section>
 

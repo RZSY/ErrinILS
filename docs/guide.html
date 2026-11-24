@@ -6,6 +6,9 @@
   <title>ErrinILS User Manual - Comprehensive Operating Guidelines</title>
   <meta name="description" content="Official, exhaustive user manual and operating handbook for ErrinILS version 1.4.3. Covers installation, circulation, 31-source cataloguing, batch label printing, Android companion scanner, cloud sync, student management, fines, weeding, QR remote pairing, analytics, and administration.">
   <link rel="icon" type="image/png" href="assets/icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <script>
     (function() {
@@ -26,12 +29,14 @@
         <img src="assets/icon.png" alt="ErrinILS Logo" class="brand-icon">
         <span>ErrinILS</span>
         <span class="brand-badge">v1.4.3</span>
+        <span class="brand-school-pill"><span class="school-dot"></span>School Edition</span>
       </a>
 
       <button class="mobile-menu-btn" aria-label="Toggle navigation" aria-expanded="false">☰</button>
 
       <nav class="main-nav">
         <a href="index.html" class="nav-link">Home</a>
+        <a href="index.html#roles" class="nav-link">School Roles</a>
         <a href="about.html" class="nav-link">About</a>
         <a href="download.html" class="nav-link">Download</a>
         <a href="guide.html" class="nav-link active">User Guide</a>
@@ -49,7 +54,7 @@
 
     <!-- Header & Action Bar -->
     <div style="border-bottom: 1px solid var(--border-subtle); padding-bottom: 24px; margin-bottom: 32px;">
-      <span class="section-eyebrow">Official Master Manual</span>
+      <span class="section-eyebrow">Official School Library Handbook (PSS Manual)</span>
       <h1 class="section-title" style="font-size: 2.5rem;">ErrinILS User Manual &amp; Guidelines</h1>
       <p class="section-subtitle">
         Exhaustive step-by-step operating guidelines for school librarians, administrators, IT staff, and student helpers. Covers daily circulation, 31-source automated copy-cataloguing, batch label printing &amp; multi-select, the Android companion scanner app, dual cloud sync, Malaysian IC student management, simplified circulation, weeding, remote QR access, and disaster recovery.
@@ -361,8 +366,7 @@
             </ol>
             <div class="callout callout-warning">
               <div class="callout-header">
-                <span>⚠️</span>
-                <span>Change Default Password</span>
+                <span>Important: Change Default Password</span>
               </div>
               <p>
                 ErrinILS ships with a built-in default administrator password (<code>admin123</code>). Change it immediately upon first launch in <strong>Settings → Admin Password</strong>.
@@ -981,7 +985,7 @@
                   <li>ErrinILS queries the 31 union catalogs (and Google Books / OpenLibrary fallbacks) to retrieve Title, Subtitle, Author, Publisher, Year, Dewey Call Number, and Subjects.</li>
                   <li>Scan the library's adhesive accession barcode sticker affixed to the book.</li>
                   <li>Tap <strong>Simpan ke Katalog</strong> to commit the book directly into the school catalog.</li>
-                  <li>Tap <strong>➕ Daftar Buku Seterusnya</strong> to immediately scan the next book in the stack.</li>
+                  <li>Tap <strong>Daftar Buku Seterusnya</strong> to immediately scan the next book in the stack.</li>
                 </ul>
               </li>
             </ul>

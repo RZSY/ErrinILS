@@ -92,7 +92,7 @@ function initScreenshotViewer() {
       src: 'assets/screenshot-circulation.png',
       alt: 'ErrinILS Circulation Desk Screen',
       title: 'ErrinILS — Circulation Desk',
-      caption: '<strong>Circulation Desk:</strong> Fast barcode scanning for Malaysian IC student cards and book barcodes. Shows active loans, loan limits (default 3 books / 7 days), hold queues, and fine status immediately.'
+      caption: '<strong>Circulation Desk:</strong> Ultra-fast barcode scanning for Malaysian IC student cards and book labels. Handles fast recess loan queues, enforces 3-book/7-day school loan limits, manages hold reservations, and displays fine status instantly.'
     },
     catalog: {
       src: 'assets/screenshot-catalog.png',
@@ -103,38 +103,38 @@ function initScreenshotViewer() {
     simple: {
       src: 'assets/screenshot-kiosk.png',
       alt: 'ErrinILS Simplified View Screen',
-      title: 'ErrinILS — Simplified View',
-      caption: '<strong>Simplified View:</strong> Simplified, touch-friendly circulation screen designed for quick checkout and return. Large buttons, clear status banners, and friendly error dialogs so students can borrow and return books independently.'
+      title: 'ErrinILS — Simplified View (Touch Kiosk)',
+      caption: '<strong>Simplified View Kiosk:</strong> Child-friendly, touch-screen self-checkout kiosk tailored for primary and secondary students. Features oversized touch buttons, cheerful status banners, and encouraging audio/visual prompts so children can check out and return books independently.'
     },
     reports: {
       src: 'assets/screenshot-reports.png',
       alt: 'ErrinILS Reports and Reading Champions Screen',
-      title: 'ErrinILS — Reports & Analytics',
-      caption: '<strong>Reports & Analytics:</strong> Instant reading statistics including the Nilam Reading Champions leaderboard, 6-month borrowing trends, Dewey classification distribution, and 1-click CSV export.'
+      title: 'ErrinILS — Reports & Nilam Reading Champions',
+      caption: '<strong>Reports & Reading Analytics:</strong> Real-time reading engagement metrics including the Nilam Reading Champions leaderboard, 6-month circulation trends, Dewey classification distribution, annual cohort archives, and 1-click CSV roster export for weekly school assembly certificates.'
     },
     students: {
       src: 'assets/screenshot-students.png',
       alt: 'ErrinILS Student & Patron Management Screen',
-      title: 'ErrinILS — Patron Management',
-      caption: '<strong>Student & Patron Management:</strong> Register students with automatic Malaysian IC / MyKid format validation (<code>YYMMDD-PB-###G</code>). Search by name, IC, or class standard with instant borrowing history.'
+      title: 'ErrinILS — Student Patron Management',
+      caption: '<strong>Student Patron Management:</strong> Register students with native mathematical validation for 12-digit Malaysian IC and MyKid numbers (<code>YYMMDD-PB-###G</code>). Batch import class rosters from Excel (.xlsx) or CSV, track historical borrowing records, and enforce 6-year privacy-preserving archive retention.'
     },
     fines: {
       src: 'assets/screenshot-fines.png',
       alt: 'ErrinILS Fines Management Screen',
-      title: 'ErrinILS — Fines & Overdues',
-      caption: '<strong>Fines & Overdues:</strong> Track overdue books and fine balances per student. Automatically blocks borrowing if overdue items exist or unpaid fines exceed threshold.'
+      title: 'ErrinILS — Fines & Overdues (RM)',
+      caption: '<strong>Fines & Overdues (Ringgit Malaysia):</strong> Track overdue book return notices and fine balances per student (default RM 0.10/day). Automatically alerts the librarian and blocks borrowing when overdue items exist or unpaid fines exceed the school threshold (default RM 5.00).'
     },
     settings: {
       src: 'assets/screenshot-settings.png',
       alt: 'ErrinILS Settings and Mobile QR Screen',
-      title: 'ErrinILS — Settings & Remote Access',
-      caption: '<strong>Settings & Remote Access:</strong> Pair phones and tablets over school Wi-Fi with a 6-digit PIN and QR code for wireless shelf audits, toggle OPAC patron login, and export static OPAC bundles for GitHub Pages.'
+      title: 'ErrinILS — Settings & Mobile Scanner Gun',
+      caption: '<strong>Settings & Wireless Scanner Companion:</strong> Pair teacher/librarian smartphones over school Wi-Fi with a 6-digit PIN and QR code to turn phones into wireless barcode scanner guns on Port 8586, toggle OPAC patron login, and execute 1-click SQLite VACUUM optimization.'
     },
     opac: {
       src: 'assets/screenshot-catalog.png',
       alt: 'ErrinILS Online Public Access Catalog (OPAC) Screen',
-      title: 'ErrinILS — Online Public Access Catalog (OPAC)',
-      caption: '<strong>Web OPAC & Static Export:</strong> Public online catalog matching the desktop dark theme, served at <code>/opac</code> with Subject Heading search, topic clouds, optional Student ID/IC login for loans & holds, and 1-click export to host for free on GitHub Pages.'
+      title: 'ErrinILS — Web OPAC & Static Export',
+      caption: '<strong>Online Public Catalog (OPAC):</strong> Web catalog served at <code>/opac</code> with dedicated Subject Heading discovery, topic clouds (Dinosaurs, Space, Science, History), optional Student ID/IC login for loans and holds, and 1-click export to host for free on school GitHub Pages.'
     }
   };
 

@@ -6,6 +6,9 @@
   <title>Download &amp; Install ErrinILS - Windows &amp; Android Companion APK</title>
   <meta name="description" content="Download ErrinILS v1.4.3 for Windows (Installer, Portable ZIP, Standalone EXE) and the ErrinILS Scanner Android APK. Zero dependencies, 31-source union copy-cataloging, batch label printing, and dual cloud sync.">
   <link rel="icon" type="image/png" href="assets/icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Outfit:wght@500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <script>
     (function() {
@@ -26,12 +29,14 @@
         <img src="assets/icon.png" alt="ErrinILS Logo" class="brand-icon">
         <span>ErrinILS</span>
         <span class="brand-badge">v1.4.3</span>
+        <span class="brand-school-pill"><span class="school-dot"></span>School Edition</span>
       </a>
 
       <button class="mobile-menu-btn" aria-label="Toggle navigation" aria-expanded="false">☰</button>
 
       <nav class="main-nav">
         <a href="index.html" class="nav-link">Home</a>
+        <a href="index.html#roles" class="nav-link">School Roles</a>
         <a href="about.html" class="nav-link">About</a>
         <a href="download.html" class="nav-link active">Download</a>
         <a href="guide.html" class="nav-link">User Guide</a>
@@ -61,7 +66,7 @@
       
       <!-- Option 1: Setup Installer (Featured) -->
       <div class="download-card featured">
-        <div class="download-card-ribbon">Recommended</div>
+        <div class="download-card-ribbon">Recommended for School PCs</div>
         <h3 class="download-card-title">Windows Installer</h3>
         <div class="download-card-meta">ErrinILS-Setup-1.4.3.exe • 294 KB</div>
         <p class="download-card-desc">
@@ -82,6 +87,7 @@
 
       <!-- Option 2: Portable ZIP -->
       <div class="download-card">
+        <div class="download-card-ribbon" style="background: var(--accent-gold-dim); color: var(--accent-gold); border: 1px solid rgba(180, 83, 9, 0.25);">USB Thumbdrive Ready</div>
         <h3 class="download-card-title">Portable ZIP Package</h3>
         <div class="download-card-meta">ErrinILS-Windows-v1.4.3.zip • 315 KB</div>
         <p class="download-card-desc">
@@ -92,7 +98,7 @@
           <li><span>Format:</span> <strong>ZIP Archive (.zip)</strong></li>
           <li><span>Target OS:</span> <strong>Win 7 / 8 / 10 / 11 (32 &amp; 64-bit)</strong></li>
           <li><span>Installation Required:</span> <strong>None (Extract &amp; Run)</strong></li>
-          <li><span>USB Thumbdrive Ready:</span> <strong>Yes</strong></li>
+          <li><span>USB Thumbdrive Ready:</span> <strong>Yes (Roaming Mode)</strong></li>
         </ul>
 
         <a href="https://github.com/RZSY/ErrinILS/releases/download/v1.4.3/ErrinILS-Windows-v1.4.3.zip" class="btn btn-secondary btn-lg" style="width: 100%;">
@@ -102,6 +108,7 @@
 
       <!-- Option 3: Standalone Binary -->
       <div class="download-card">
+        <div class="download-card-ribbon" style="background: var(--bg-surface-elevated); color: var(--text-muted); border: 1px solid var(--border-subtle);">Direct Raw EXE</div>
         <h3 class="download-card-title">Standalone Binary</h3>
         <div class="download-card-meta">ErrinILS.exe • 1.16 MB</div>
         <p class="download-card-desc">
@@ -122,7 +129,7 @@
 
       <!-- Option 4: Android Companion App (APK) -->
       <div class="download-card">
-        <div class="download-card-ribbon" style="background: var(--accent-blue); color: #fff;">Mobile Companion</div>
+        <div class="download-card-ribbon" style="background: var(--accent-blue-dim); color: var(--accent-blue); border: 1px solid rgba(29, 78, 216, 0.25);">Wireless Barcode Gun</div>
         <h3 class="download-card-title">Android Companion APK</h3>
         <div class="download-card-meta">ErrinILS-Scanner-v1.4.3.apk • 35.7 MB</div>
         <p class="download-card-desc">
@@ -138,6 +145,7 @@
 
         <a href="https://github.com/RZSY/ErrinILS/releases/download/v1.4.3/ErrinILS-Scanner-v1.4.3.apk" class="btn btn-secondary btn-lg" style="width: 100%; border-color: var(--accent-blue); color: var(--accent-blue);">
           Download Android APK (.apk)
+        </a>
         </a>
       </div>
 
